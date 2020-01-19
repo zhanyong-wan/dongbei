@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import os
 import sys
@@ -12,6 +13,11 @@ from src import dongbei
 class DongbeiTest(unittest.TestCase):
   def testRunEmptyProgram(self):
     self.assertEqual(dongbei.Run(''), '')
+
+  def testRunHelloWorld(self):
+    self.assertEqual(
+        dongbei.Run(u'唠：“这嘎哒嗷嗷美好哇！”'),
+        u'这嘎哒嗷嗷美好哇！')
 
 if __name__ == '__main__':
   unittest.main()
