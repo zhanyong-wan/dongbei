@@ -17,16 +17,20 @@ class DongbeiTest(unittest.TestCase):
   def testRunHelloWorld(self):
     self.assertEqual(
         dongbei.Run(u'唠：“这嘎哒嗷嗷美好哇！”'),
-        u'这嘎哒嗷嗷美好哇！')
+        u'这嘎哒嗷嗷美好哇！\n')
 
-  def testRunHelloWorld(self):
+  def testRunHelloWorld2(self):
     self.assertEqual(
         dongbei.Run(u'唠：“你那嘎哒也挺美好哇！”'),
-        u'你那嘎哒也挺美好哇！')
+        u'你那嘎哒也挺美好哇！\n')
 
   def testVarDecl(self):
     self.assertEqual(
         dongbei.Run(u'老张是活雷锋。'), '')
+
+  def testVarAssignment(self):
+    self.assertEqual(
+        dongbei.Run(u'老张是活雷锋。\n老张装250。'), '250')
 
 if __name__ == '__main__':
   unittest.main()
