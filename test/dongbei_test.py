@@ -19,5 +19,14 @@ class DongbeiTest(unittest.TestCase):
         dongbei.Run(u'唠：“这嘎哒嗷嗷美好哇！”'),
         u'这嘎哒嗷嗷美好哇！')
 
+  def testRunHelloWorld(self):
+    self.assertEqual(
+        dongbei.Run(u'唠：“你那嘎哒也挺美好哇！”'),
+        u'你那嘎哒也挺美好哇！')
+
+  def testVarDecl(self):
+    self.assertEqual(
+        dongbei.Run(u'老张是活雷锋。'), '')
+
 if __name__ == '__main__':
   unittest.main()
