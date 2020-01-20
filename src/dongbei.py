@@ -11,6 +11,8 @@ KW_BECOME = u'装'
 KW_BEGIN = u'开整了：'
 KW_CLOSE_QUOTE = u'”'
 KW_COLON = u'：'
+KW_DEC = u'退退'
+KW_DEC_BY = u'退'
 KW_END = u'整完了。'
 KW_FROM = u'从'
 KW_IS_VAR = u'是活雷锋'
@@ -26,6 +28,8 @@ KEYWORDS = (
     KW_BEGIN,
     KW_CLOSE_QUOTE,
     KW_COLON,
+    KW_DEC,
+    KW_DEC_BY,
     KW_END,
     KW_FROM,
     KW_INC,

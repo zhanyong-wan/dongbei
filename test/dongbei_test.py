@@ -103,7 +103,7 @@ class DongbeiTest(unittest.TestCase):
          Token(dongbei.TK_KEYWORD, u'。'),
          Token(dongbei.TK_KEYWORD, u'整完了。'),])
 
-  def testIncrements(self):
+  def testTokenizingIncrements(self):
     self.assertEqual(
         list(dongbei.Tokenize(u'老王走走')),
         [Token(dongbei.TK_IDENTIFIER, u'老王'),
@@ -113,6 +113,19 @@ class DongbeiTest(unittest.TestCase):
         [Token(dongbei.TK_IDENTIFIER, u'老王'),
          Token(dongbei.TK_KEYWORD, u'走'),
          Token(dongbei.TK_INTEGER_LITERAL, 2),
+         Token(dongbei.TK_KEYWORD, u'步'),
+        ])
+
+  def testTokenizingDecrements(self):
+    self.assertEqual(
+        list(dongbei.Tokenize(u'老王退退')),
+        [Token(dongbei.TK_IDENTIFIER, u'老王'),
+         Token(dongbei.TK_KEYWORD, u'退退'),])
+    self.assertEqual(
+        list(dongbei.Tokenize(u'老王退三步')),
+        [Token(dongbei.TK_IDENTIFIER, u'老王'),
+         Token(dongbei.TK_KEYWORD, u'退'),
+         Token(dongbei.TK_INTEGER_LITERAL, 3),
          Token(dongbei.TK_KEYWORD, u'步'),
         ])
     
