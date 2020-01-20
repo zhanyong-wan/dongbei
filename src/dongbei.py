@@ -30,11 +30,6 @@ TK_STRING_LITERAL = 'STRING'
 TK_INTEGER_LITERAL = 'INTEGER'
 TK_CHAR = 'CHAR'
 
-# Parser states.
-ST_SAY = 'SAY'
-ST_SAY_COLON = 'SAY_COLON'
-ST_IDENTIFIER = 'IDENTIFIER'
-
 # Statements.
 STMT_SAY = 'SAY'
 STMT_VAR_DECL = 'VAR_DECL'
@@ -55,7 +50,31 @@ class Token:
     return self.__unicode__().encode('utf-8')
 
   def __eq__(self, other):
-    return other is not None and self.kind == other.kind and self.value == other.value
+    return (other is not None and
+            self.kind == other.kind and
+            self.value == other.value)
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class Statement:
+  def __init__(self, kind, value):
+    self.kind = kind
+    self.value = value
+
+  def __str__(self):
+    return self.__unicode()
+
+  def __unicode__(self):
+    return u'%s <%s>' % (self.kind, self.value)
+
+  def __repr__(self):
+    return self.__unicode__().encode('utf-8')
+
+  def __eq__(self, other):
+    return (other is not None and
+            self.kind == other.kind and
+            self.value == other.value)
 
   def __ne__(self, other):
     return not (self == other)
@@ -206,7 +225,7 @@ def TranslateToAst(tokens, statements):
     # print('%s' % (tokens,))
     expr, tokens = ParseExpression(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-    statements.append((STMT_SAY, expr))
+    statements.append(Statement(STMT_SAY, expr))
   else:
     # print('2 %s' % (tokens,))
     id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
@@ -219,13 +238,13 @@ def TranslateToAst(tokens, statements):
     if is_var:
       _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
       # print('5 %s' % (tokens,))
-      statements.append((STMT_VAR_DECL, python_id))
+      statements.append(Statement(STMT_VAR_DECL, python_id))
     else:
       become, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_BECOME), tokens)
       if become:
         expr, tokens = ParseExpression(tokens)
         _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-        statements.append((STMT_ASSIGN, (python_id, expr)))
+        statements.append(Statement(STMT_ASSIGN, (python_id, expr)))
       else:
         sys.exit(u'名字过后应该是“是活雷锋”或者“装”。')
 
@@ -241,15 +260,15 @@ def TranslateExpression(expr):
   sys.exit(u'我不懂 %s 表达式。' % (expr,))
 
 def TranslateStatement(stmt):
-  if stmt[0] == STMT_VAR_DECL:
-    return '%s = None' % (stmt[1],)
-  if stmt[0] == STMT_ASSIGN:
-    var, expr = stmt[1]
+  if stmt.kind == STMT_VAR_DECL:
+    return '%s = None' % (stmt.value,)
+  if stmt.kind == STMT_ASSIGN:
+    var, expr = stmt.value
     return '%s = %s' % (var, TranslateExpression(expr))
-  if stmt[0] == STMT_SAY:
-    expr = stmt[1]
+  if stmt.kind == STMT_SAY:
+    expr = stmt.value
     return '_db_output += "%%s\\n" %% (%s,)' % (TranslateExpression(expr),)
-  sys.exit(u'我不懂 %s 语句。' % (stmt[0]))
+  sys.exit(u'我不懂 %s 语句。' % (stmt.kind))
   
 def Translate(tokens):
   statements = []
