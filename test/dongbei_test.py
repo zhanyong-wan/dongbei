@@ -128,6 +128,18 @@ class DongbeiTest(unittest.TestCase):
          Token(dongbei.TK_INTEGER_LITERAL, 3),
          Token(dongbei.TK_KEYWORD, u'步'),
         ])
+
+  def testParsingIncrements(self):
+    self.assertEqual(
+        dongbei.ParseToAst(u'老王走走。'),
+        [dongbei.Statement(dongbei.STMT_INC_BY,
+                           (Token(dongbei.TK_IDENTIFIER, u'老王'),
+                            Token(dongbei.TK_INTEGER_LITERAL, 1)))])
+    self.assertEqual(
+        dongbei.ParseToAst(u'老王走两步。'),
+        [dongbei.Statement(dongbei.STMT_INC_BY,
+                           (Token(dongbei.TK_IDENTIFIER, u'老王'),
+                            Token(dongbei.TK_INTEGER_LITERAL, 2)))])
     
   def testVarAssignmentFromVar(self):
     self.assertEqual(

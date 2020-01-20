@@ -54,6 +54,7 @@ TK_CHAR = 'CHAR'
 STMT_SAY = 'SAY'
 STMT_VAR_DECL = 'VAR_DECL'
 STMT_ASSIGN = 'ASSIGN'
+STMT_INC_BY = 'INC_BY'
 
 class Token:
   def __init__(self, kind, value):
@@ -64,13 +65,13 @@ class Token:
     return self.__unicode()
 
   def __unicode__(self):
-    return u'%s <%s>' % (self.kind, self.value)
+    return u'%s <%s>' % (self.kind, repr(self.value))
 
   def __repr__(self):
     return self.__unicode__().encode('utf-8')
 
   def __eq__(self, other):
-    return (other is not None and
+    return (isinstance(other, Token) and
             self.kind == other.kind and
             self.value == other.value)
 
@@ -86,13 +87,13 @@ class Statement:
     return self.__unicode()
 
   def __unicode__(self):
-    return u'%s <%s>' % (self.kind, self.value)
+    return u'%s <%s>' % (self.kind, repr(self.value))
 
   def __repr__(self):
     return self.__unicode__().encode('utf-8')
 
   def __eq__(self, other):
-    return (other is not None and
+    return (isinstance(other, Statement) and
             self.kind == other.kind and
             self.value == other.value)
 
@@ -268,7 +269,7 @@ def TranslateToAst(tokens, statements):
     # print('2 %s' % (tokens,))
     id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
     if not id:
-      sys.exit(u'语句必须以“唠”或者标识符开始。')
+      sys.exit(u'语句必须以“唠”或者标识符开始。实际是%s' % (tokens[0],))
     # print('3 %s' % (tokens,))
     python_id = GetPythonVarName(id.value)
     is_var, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_IS_VAR), tokens)
@@ -284,7 +285,22 @@ def TranslateToAst(tokens, statements):
         _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
         statements.append(Statement(STMT_ASSIGN, (python_id, expr)))
       else:
-        sys.exit(u'名字过后应该是“是活雷锋”或者“装”。')
+        inc, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_INC), tokens)
+        if inc:
+          _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+          statements.append(Statement(STMT_INC_BY,
+                                      (id, Token(TK_INTEGER_LITERAL, 1))))
+        else:
+          inc, tokens = TryConsumeToken(
+              Token(TK_KEYWORD, KW_INC_BY), tokens)
+          if inc:
+            num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+            _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_STEP), tokens)
+            _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+            statements.append(Statement(STMT_INC_BY, (id, num)))
+          else:
+            sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”，或者“走”。实际是%s'
+                     % (tokens[0],))
 
   TranslateToAst(tokens, statements)  
 
@@ -315,6 +331,12 @@ def Translate(tokens):
   for s in statements:
     py_code.append(TranslateStatement(s))
   return '\n'.join(py_code)
+
+def ParseToAst(code):
+  tokens = list(Tokenize(code))
+  statements = []
+  TranslateToAst(tokens, statements)
+  return statements
 
 def Run(code):
   tokens = list(Tokenize(code))
