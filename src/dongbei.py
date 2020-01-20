@@ -5,6 +5,8 @@ import io
 import re
 import sys
 
+KW_INC = u'走走'
+KW_INC_BY = u'走'
 KW_BECOME = u'装'
 KW_BEGIN = u'开整了：'
 KW_CLOSE_QUOTE = u'”'
@@ -16,6 +18,7 @@ KW_LOOP = u'磨叽：'
 KW_OPEN_QUOTE = u'“'
 KW_PERIOD = u'。'
 KW_SAY = u'唠'
+KW_STEP = u'步'
 KW_TO = u'到'
 
 KEYWORDS = (
@@ -25,11 +28,14 @@ KEYWORDS = (
     KW_COLON,
     KW_END,
     KW_FROM,
+    KW_INC,
+    KW_INC_BY,
     KW_IS_VAR,
     KW_LOOP,
     KW_OPEN_QUOTE,
     KW_PERIOD,
     KW_SAY,
+    KW_STEP,
     KW_TO,
     )
 
@@ -137,10 +143,28 @@ def BasicTokenize(code, last_token=None):
     yield tk
   
 
+CHINESE_DIGITS = {
+    u'零': 0,
+    u'一': 1,
+    u'二': 2,
+    u'两': 2,
+    u'三': 3,
+    u'四': 4,
+    u'五': 5,
+    u'六': 6,
+    u'七': 7,
+    u'八': 8,
+    u'九': 9,
+    u'十': 10,
+    }
+
 def ParseInteger(str):
   m = re.match(r'^([0-9]+)(.*)', str)
   if m:
     return (int(m.group(1)), m.group(2))
+  for chinese_digit, value in CHINESE_DIGITS.items():
+    if str.startswith(chinese_digit):
+      return (value, str[len(chinese_digit):])
   return (None, str)
 
     
