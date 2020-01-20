@@ -19,7 +19,7 @@ KW_IS_VAR = u'是活雷锋'
 KW_LOOP = u'磨叽：'
 KW_OPEN_QUOTE = u'“'
 KW_PERIOD = u'。'
-KW_SAY = u'唠'
+KW_SAY = u'唠唠'
 KW_STEP = u'步'
 KW_TO = u'到'
 
@@ -265,7 +265,7 @@ def TranslateOneStatement(tokens):
 
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if not id:
-    sys.exit(u'语句必须以“唠”或者标识符开始。实际是%s' % (tokens[0],))
+    sys.exit(u'语句必须以“唠唠”或者标识符开始。实际是%s' % (tokens[0],))
 
   # python_id = GetPythonVarName(id.value)
   is_var, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_IS_VAR), tokens)

@@ -18,12 +18,12 @@ class DongbeiTest(unittest.TestCase):
 
   def testRunHelloWorld(self):
     self.assertEqual(
-        dongbei.Run(u'唠：“这嘎哒嗷嗷美好哇！”。'),
+        dongbei.Run(u'唠唠：“这嘎哒嗷嗷美好哇！”。'),
         u'这嘎哒嗷嗷美好哇！\n')
 
   def testRunHelloWorld2(self):
     self.assertEqual(
-        dongbei.Run(u'唠：“你那嘎哒也挺美好哇！”。'),
+        dongbei.Run(u'唠唠：“你那嘎哒也挺美好哇！”。'),
         u'你那嘎哒也挺美好哇！\n')
 
   def testVarDecl(self):
@@ -32,7 +32,7 @@ class DongbeiTest(unittest.TestCase):
 
   def testVarAssignment(self):
     self.assertEqual(
-        dongbei.Run(u'老张是活雷锋。\n老张装250。\n唠：老张。'), '250\n')
+        dongbei.Run(u'老张是活雷锋。\n老张装250。\n唠唠：老张。'), '250\n')
 
   def testTokenize(self):
     self.assertEqual(
@@ -75,8 +75,8 @@ class DongbeiTest(unittest.TestCase):
          Token(dongbei.TK_IDENTIFIER, u'老张'),
          Token(dongbei.TK_KEYWORD, u'。')])
     self.assertEqual(
-        list(dongbei.Tokenize(u'唠：“你好”。')),
-        [Token(dongbei.TK_KEYWORD, u'唠'),
+        list(dongbei.Tokenize(u'唠唠：“你好”。')),
+        [Token(dongbei.TK_KEYWORD, u'唠唠'),
          Token(dongbei.TK_KEYWORD, u'：'),
          Token(dongbei.TK_KEYWORD, u'“'),
          Token(dongbei.TK_STRING_LITERAL, u'你好'),
@@ -95,9 +95,9 @@ class DongbeiTest(unittest.TestCase):
 
   def testTokenizeCompound(self):
     self.assertEqual(
-        list(dongbei.Tokenize(u'开整了：\n  唠：老王。\n整完了。')),
+        list(dongbei.Tokenize(u'开整了：\n  唠唠：老王。\n整完了。')),
         [Token(dongbei.TK_KEYWORD, u'开整了：'),
-         Token(dongbei.TK_KEYWORD, u'唠'),
+         Token(dongbei.TK_KEYWORD, u'唠唠'),
          Token(dongbei.TK_KEYWORD, u'：'),
          Token(dongbei.TK_IDENTIFIER, u'老王'),
          Token(dongbei.TK_KEYWORD, u'。'),
@@ -156,22 +156,22 @@ class DongbeiTest(unittest.TestCase):
   def testVarAssignmentFromVar(self):
     self.assertEqual(
         dongbei.Run(u'老张是活雷锋。\n老王是活雷锋。\n'
-                    u'老张装250。\n老王装老张。\n唠：老王。'), '250\n')
+                    u'老张装250。\n老王装老张。\n唠唠：老王。'), '250\n')
 
   def testIncrements(self):
     self.assertEqual(
-        dongbei.Run(u'老张是活雷锋。老张装二。老张走走。唠：老张。'),
+        dongbei.Run(u'老张是活雷锋。老张装二。老张走走。唠唠：老张。'),
         '3\n')
     self.assertEqual(
-        dongbei.Run(u'老张是活雷锋。老张装三。老张走五步。唠：老张。'),
+        dongbei.Run(u'老张是活雷锋。老张装三。老张走五步。唠唠：老张。'),
         '8\n')
 
   def testDecrements(self):
     self.assertEqual(
-        dongbei.Run(u'老张是活雷锋。老张装二。老张退退。唠：老张。'),
+        dongbei.Run(u'老张是活雷锋。老张装二。老张退退。唠唠：老张。'),
         '1\n')
     self.assertEqual(
-        dongbei.Run(u'老张是活雷锋。老张装三。老张退五步。唠：老张。'),
+        dongbei.Run(u'老张是活雷锋。老张装三。老张退五步。唠唠：老张。'),
         '-2\n')
 
 if __name__ == '__main__':
