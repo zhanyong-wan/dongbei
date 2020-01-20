@@ -343,6 +343,10 @@ def TranslateStatement(stmt):
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
     return '%s += %s' % (var, TranslateExpression(expr))
+  if stmt.kind == STMT_DEC_BY:
+    var_token, expr = stmt.value
+    var = GetPythonVarName(var_token.value)
+    return '%s -= %s' % (var, TranslateExpression(expr))
   sys.exit(u'我不懂 %s 语句。' % (stmt.kind))
   
 def Translate(tokens):

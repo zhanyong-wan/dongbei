@@ -166,5 +166,13 @@ class DongbeiTest(unittest.TestCase):
         dongbei.Run(u'老张是活雷锋。老张装三。老张走五步。唠：老张。'),
         '8\n')
 
+  def testDecrements(self):
+    self.assertEqual(
+        dongbei.Run(u'老张是活雷锋。老张装二。老张退退。唠：老张。'),
+        '1\n')
+    self.assertEqual(
+        dongbei.Run(u'老张是活雷锋。老张装三。老张退五步。唠：老张。'),
+        '-2\n')
+
 if __name__ == '__main__':
   unittest.main()
