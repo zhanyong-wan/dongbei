@@ -85,13 +85,15 @@ class DongbeiTest(unittest.TestCase):
 
   def testTokenizeLoop(self):
     self.assertEqual(
-        list(dongbei.Tokenize(u'老王从1到9磨叽：')),
+        list(dongbei.Tokenize(u'老王从1到9磨叽：磨叽完了。')),
         [Token(dongbei.TK_IDENTIFIER, u'老王'),
          Token(dongbei.TK_KEYWORD, u'从'),
          Token(dongbei.TK_INTEGER_LITERAL, 1),
          Token(dongbei.TK_KEYWORD, u'到'),
          Token(dongbei.TK_INTEGER_LITERAL, 9),
-         Token(dongbei.TK_KEYWORD, u'磨叽：')])
+         Token(dongbei.TK_KEYWORD, u'磨叽：'),
+         Token(dongbei.TK_KEYWORD, u'磨叽完了。'),
+        ])
 
   def testTokenizeCompound(self):
     self.assertEqual(

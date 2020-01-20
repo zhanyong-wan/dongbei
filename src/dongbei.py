@@ -14,6 +14,7 @@ KW_COLON = u'：'
 KW_DEC = u'退退'
 KW_DEC_BY = u'退'
 KW_END = u'整完了。'
+KW_END_LOOP = u'磨叽完了。'
 KW_FROM = u'从'
 KW_IS_VAR = u'是活雷锋'
 KW_LOOP = u'磨叽：'
@@ -31,6 +32,7 @@ KEYWORDS = (
     KW_DEC,
     KW_DEC_BY,
     KW_END,
+    KW_END_LOOP,
     KW_FROM,
     KW_INC,
     KW_INC_BY,
