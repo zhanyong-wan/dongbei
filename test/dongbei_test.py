@@ -158,5 +158,13 @@ class DongbeiTest(unittest.TestCase):
         dongbei.Run(u'老张是活雷锋。\n老王是活雷锋。\n'
                     u'老张装250。\n老王装老张。\n唠：老王。'), '250\n')
 
+  def testIncrements(self):
+    self.assertEqual(
+        dongbei.Run(u'老张是活雷锋。老张装二。老张走走。唠：老张。'),
+        '3\n')
+    self.assertEqual(
+        dongbei.Run(u'老张是活雷锋。老张装三。老张走五步。唠：老张。'),
+        '8\n')
+
 if __name__ == '__main__':
   unittest.main()

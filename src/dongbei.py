@@ -63,7 +63,7 @@ class Token:
     self.value = value
 
   def __str__(self):
-    return self.__unicode()
+    return self.__unicode__()
 
   def __unicode__(self):
     return u'%s <%s>' % (self.kind, repr(self.value))
@@ -85,7 +85,7 @@ class Statement:
     self.value = value
 
   def __str__(self):
-    return self.__unicode()
+    return self.__unicode__()
 
   def __unicode__(self):
     return u'%s <%s>' % (self.kind, repr(self.value))
@@ -267,17 +267,17 @@ def TranslateOneStatement(tokens):
   if not id:
     sys.exit(u'语句必须以“唠”或者标识符开始。实际是%s' % (tokens[0],))
 
-  python_id = GetPythonVarName(id.value)
+  # python_id = GetPythonVarName(id.value)
   is_var, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_IS_VAR), tokens)
   if is_var:
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-    return (Statement(STMT_VAR_DECL, python_id), tokens)
+    return (Statement(STMT_VAR_DECL, id), tokens)
 
   become, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_BECOME), tokens)
   if become:
     expr, tokens = ParseExpression(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-    return (Statement(STMT_ASSIGN, (python_id, expr)), tokens)
+    return (Statement(STMT_ASSIGN, (id, expr)), tokens)
 
   inc, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_INC), tokens)
   if inc:
@@ -329,13 +329,20 @@ def TranslateExpression(expr):
 
 def TranslateStatement(stmt):
   if stmt.kind == STMT_VAR_DECL:
-    return '%s = None' % (stmt.value,)
+    var_token = stmt.value
+    var = GetPythonVarName(var_token.value)
+    return '%s = None' % (var,)
   if stmt.kind == STMT_ASSIGN:
-    var, expr = stmt.value
+    var_token, expr = stmt.value
+    var = GetPythonVarName(var_token.value)
     return '%s = %s' % (var, TranslateExpression(expr))
   if stmt.kind == STMT_SAY:
     expr = stmt.value
     return '_db_output += "%%s\\n" %% (%s,)' % (TranslateExpression(expr),)
+  if stmt.kind == STMT_INC_BY:
+    var_token, expr = stmt.value
+    var = GetPythonVarName(var_token.value)
+    return '%s += %s' % (var, TranslateExpression(expr))
   sys.exit(u'我不懂 %s 语句。' % (stmt.kind))
   
 def Translate(tokens):
