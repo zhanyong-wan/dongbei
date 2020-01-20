@@ -83,6 +83,26 @@ class DongbeiTest(unittest.TestCase):
          Token(dongbei.TK_KEYWORD, u'”'),
          Token(dongbei.TK_KEYWORD, u'。')])
 
+  def testTokenizeLoop(self):
+    self.assertEqual(
+        list(dongbei.Tokenize(u'老王从1到9磨叽：')),
+        [Token(dongbei.TK_IDENTIFIER, u'老王'),
+         Token(dongbei.TK_KEYWORD, u'从'),
+         Token(dongbei.TK_INTEGER_LITERAL, 1),
+         Token(dongbei.TK_KEYWORD, u'到'),
+         Token(dongbei.TK_INTEGER_LITERAL, 9),
+         Token(dongbei.TK_KEYWORD, u'磨叽：')])
+
+  def testTokenizeCompound(self):
+    self.assertEqual(
+        list(dongbei.Tokenize(u'开整了：\n  唠：老王。\n整完了。')),
+        [Token(dongbei.TK_KEYWORD, u'开整了：'),
+         Token(dongbei.TK_KEYWORD, u'唠'),
+         Token(dongbei.TK_KEYWORD, u'：'),
+         Token(dongbei.TK_IDENTIFIER, u'老王'),
+         Token(dongbei.TK_KEYWORD, u'。'),
+         Token(dongbei.TK_KEYWORD, u'整完了。'),])
+    
   def testVarAssignmentFromVar(self):
     self.assertEqual(
         dongbei.Run(u'老张是活雷锋。\n老王是活雷锋。\n'

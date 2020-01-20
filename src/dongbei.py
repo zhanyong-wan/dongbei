@@ -6,21 +6,31 @@ import re
 import sys
 
 KW_BECOME = u'装'
+KW_BEGIN = u'开整了：'
 KW_CLOSE_QUOTE = u'”'
 KW_COLON = u'：'
+KW_END = u'整完了。'
+KW_FROM = u'从'
 KW_IS_VAR = u'是活雷锋'
+KW_LOOP = u'磨叽：'
 KW_OPEN_QUOTE = u'“'
 KW_PERIOD = u'。'
 KW_SAY = u'唠'
+KW_TO = u'到'
 
 KEYWORDS = (
     KW_BECOME,
+    KW_BEGIN,
     KW_CLOSE_QUOTE,
     KW_COLON,
+    KW_END,
+    KW_FROM,
     KW_IS_VAR,
+    KW_LOOP,
     KW_OPEN_QUOTE,
     KW_PERIOD,
     KW_SAY,
+    KW_TO,
     )
 
 # Types of tokens.
