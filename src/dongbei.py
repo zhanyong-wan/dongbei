@@ -55,6 +55,7 @@ STMT_SAY = 'SAY'
 STMT_VAR_DECL = 'VAR_DECL'
 STMT_ASSIGN = 'ASSIGN'
 STMT_INC_BY = 'INC_BY'
+STMT_DEC_BY = 'DEC_BY'
 
 class Token:
   def __init__(self, kind, value):
@@ -109,7 +110,8 @@ def TokenizeStringLiteralAndRest(code):
   yield Token(TK_STRING_LITERAL, code[:close_quote_pos])
   last_token = Token(TK_KEYWORD, KW_CLOSE_QUOTE)
   yield last_token
-  for tk in BasicTokenize(code[close_quote_pos + len(KW_CLOSE_QUOTE):], last_token):
+  for tk in BasicTokenize(code[close_quote_pos + len(KW_CLOSE_QUOTE):],
+                          last_token):
     yield tk
 
 
@@ -299,8 +301,22 @@ def TranslateToAst(tokens, statements):
             _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
             statements.append(Statement(STMT_INC_BY, (id, num)))
           else:
-            sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”，或者“走”。实际是%s'
-                     % (tokens[0],))
+            dec, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_DEC), tokens)
+            if dec:
+              _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+              statements.append(Statement(STMT_DEC_BY,
+                                          (id, Token(TK_INTEGER_LITERAL, 1))))
+            else:
+              dec, tokens = TryConsumeToken(
+                  Token(TK_KEYWORD, KW_DEC_BY), tokens)
+              if dec:
+                num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+                _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_STEP), tokens)
+                _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+                statements.append(Statement(STMT_DEC_BY, (id, num)))
+              else:
+                sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”、“走”、“退退”，或者“退”。实际是%s'
+                         % (tokens[0],))
 
   TranslateToAst(tokens, statements)  
 
