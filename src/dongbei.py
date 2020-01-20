@@ -262,52 +262,53 @@ def TranslateOneStatement(tokens):
     expr, tokens = ParseExpression(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
     return (Statement(STMT_SAY, expr), tokens)
-  else:
-    id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
-    if not id:
-      sys.exit(u'语句必须以“唠”或者标识符开始。实际是%s' % (tokens[0],))
-    python_id = GetPythonVarName(id.value)
-    is_var, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_IS_VAR), tokens)
-    if is_var:
-      _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-      return (Statement(STMT_VAR_DECL, python_id), tokens)
-    else:
-      become, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_BECOME), tokens)
-      if become:
-        expr, tokens = ParseExpression(tokens)
-        _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-        return (Statement(STMT_ASSIGN, (python_id, expr)), tokens)
-      else:
-        inc, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_INC), tokens)
-        if inc:
-          _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-          return (Statement(STMT_INC_BY,
-                            (id, Token(TK_INTEGER_LITERAL, 1))), tokens)
-        else:
-          inc, tokens = TryConsumeToken(
-              Token(TK_KEYWORD, KW_INC_BY), tokens)
-          if inc:
-            num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
-            _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_STEP), tokens)
-            _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-            return (Statement(STMT_INC_BY, (id, num)), tokens)
-          else:
-            dec, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_DEC), tokens)
-            if dec:
-              _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-              return (Statement(STMT_DEC_BY,
-                                (id, Token(TK_INTEGER_LITERAL, 1))), tokens)
-            else:
-              dec, tokens = TryConsumeToken(
-                  Token(TK_KEYWORD, KW_DEC_BY), tokens)
-              if dec:
-                num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
-                _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_STEP), tokens)
-                _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-                return (Statement(STMT_DEC_BY, (id, num)), tokens)
-              else:
-                sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”、“走”、“退退”，或者“退”。实际是%s'
-                         % (tokens[0],))
+
+  id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
+  if not id:
+    sys.exit(u'语句必须以“唠”或者标识符开始。实际是%s' % (tokens[0],))
+
+  python_id = GetPythonVarName(id.value)
+  is_var, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_IS_VAR), tokens)
+  if is_var:
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    return (Statement(STMT_VAR_DECL, python_id), tokens)
+
+  become, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_BECOME), tokens)
+  if become:
+    expr, tokens = ParseExpression(tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    return (Statement(STMT_ASSIGN, (python_id, expr)), tokens)
+
+  inc, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_INC), tokens)
+  if inc:
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    return (Statement(STMT_INC_BY,
+                      (id, Token(TK_INTEGER_LITERAL, 1))), tokens)
+
+  inc, tokens = TryConsumeToken(
+      Token(TK_KEYWORD, KW_INC_BY), tokens)
+  if inc:
+    num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_STEP), tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    return (Statement(STMT_INC_BY, (id, num)), tokens)
+
+  dec, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_DEC), tokens)
+  if dec:
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    return (Statement(STMT_DEC_BY,
+                      (id, Token(TK_INTEGER_LITERAL, 1))), tokens)
+
+  dec, tokens = TryConsumeToken(
+      Token(TK_KEYWORD, KW_DEC_BY), tokens)
+  if dec:
+    num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_STEP), tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    return (Statement(STMT_DEC_BY, (id, num)), tokens)
+
+  sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”、“走”、“退退”，或者“退”。实际是%s'
+           % (tokens[0],))
   
 def TranslateToAst(tokens, statements):
   if not tokens:
