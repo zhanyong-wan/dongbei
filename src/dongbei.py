@@ -254,44 +254,35 @@ def ParseExpression(tokens):
   _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_CLOSE_QUOTE), tokens)
   return str_token, tokens
   
-  
-def TranslateToAst(tokens, statements):
-  if not tokens:
-    return
-
-  # print('1 %s' % (tokens,))
+def TranslateOneStatement(tokens):
+  """Returns (statement, remainding_tokens)."""
   say, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_SAY), tokens)
   if say:
     colon, tokens = ConsumeToken(Token(TK_KEYWORD, KW_COLON), tokens)
-    # print('%s' % (tokens,))
     expr, tokens = ParseExpression(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-    statements.append(Statement(STMT_SAY, expr))
+    return (Statement(STMT_SAY, expr), tokens)
   else:
-    # print('2 %s' % (tokens,))
     id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
     if not id:
       sys.exit(u'语句必须以“唠”或者标识符开始。实际是%s' % (tokens[0],))
-    # print('3 %s' % (tokens,))
     python_id = GetPythonVarName(id.value)
     is_var, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_IS_VAR), tokens)
-    # print('4 %s' % (tokens,))
     if is_var:
       _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-      # print('5 %s' % (tokens,))
-      statements.append(Statement(STMT_VAR_DECL, python_id))
+      return (Statement(STMT_VAR_DECL, python_id), tokens)
     else:
       become, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_BECOME), tokens)
       if become:
         expr, tokens = ParseExpression(tokens)
         _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-        statements.append(Statement(STMT_ASSIGN, (python_id, expr)))
+        return (Statement(STMT_ASSIGN, (python_id, expr)), tokens)
       else:
         inc, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_INC), tokens)
         if inc:
           _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-          statements.append(Statement(STMT_INC_BY,
-                                      (id, Token(TK_INTEGER_LITERAL, 1))))
+          return (Statement(STMT_INC_BY,
+                            (id, Token(TK_INTEGER_LITERAL, 1))), tokens)
         else:
           inc, tokens = TryConsumeToken(
               Token(TK_KEYWORD, KW_INC_BY), tokens)
@@ -299,13 +290,13 @@ def TranslateToAst(tokens, statements):
             num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
             _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_STEP), tokens)
             _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-            statements.append(Statement(STMT_INC_BY, (id, num)))
+            return (Statement(STMT_INC_BY, (id, num)), tokens)
           else:
             dec, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_DEC), tokens)
             if dec:
               _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-              statements.append(Statement(STMT_DEC_BY,
-                                          (id, Token(TK_INTEGER_LITERAL, 1))))
+              return (Statement(STMT_DEC_BY,
+                                (id, Token(TK_INTEGER_LITERAL, 1))), tokens)
             else:
               dec, tokens = TryConsumeToken(
                   Token(TK_KEYWORD, KW_DEC_BY), tokens)
@@ -313,11 +304,17 @@ def TranslateToAst(tokens, statements):
                 num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
                 _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_STEP), tokens)
                 _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-                statements.append(Statement(STMT_DEC_BY, (id, num)))
+                return (Statement(STMT_DEC_BY, (id, num)), tokens)
               else:
                 sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”、“走”、“退退”，或者“退”。实际是%s'
                          % (tokens[0],))
+  
+def TranslateToAst(tokens, statements):
+  if not tokens:
+    return
 
+  statement, tokens = TranslateOneStatement(tokens)
+  statements.append(statement)
   TranslateToAst(tokens, statements)  
 
 def TranslateExpression(expr):
