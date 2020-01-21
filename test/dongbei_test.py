@@ -18,13 +18,13 @@ class DongbeiTest(unittest.TestCase):
 
   def testRunHelloWorld(self):
     self.assertEqual(
-        dongbei.Run(u'唠唠：“这嘎哒嗷嗷美好哇！”。'),
-        u'这嘎哒嗷嗷美好哇！\n')
+        dongbei.Run(u'唠唠：“这旮旯儿嗷嗷美好哇！”。'),
+        u'这旮旯儿嗷嗷美好哇！\n')
 
   def testRunHelloWorld2(self):
     self.assertEqual(
-        dongbei.Run(u'唠唠：“你那嘎哒也挺美好哇！”。'),
-        u'你那嘎哒也挺美好哇！\n')
+        dongbei.Run(u'唠唠：“你那旮旯儿也挺美好哇！”。'),
+        u'你那旮旯儿也挺美好哇！\n')
 
   def testVarDecl(self):
     self.assertEqual(
