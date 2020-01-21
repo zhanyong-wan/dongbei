@@ -13,15 +13,19 @@ KW_CLOSE_QUOTE = u'”'
 KW_COLON = u'：'
 KW_DEC = u'退退'
 KW_DEC_BY = u'退'
+KW_DIVIDE_BY = u'除以'
 KW_END = u'整完了。'
 KW_END_LOOP = u'磨叽完了。'
 KW_FROM = u'从'
 KW_IS_VAR = u'是活雷锋'
 KW_LOOP = u'磨叽：'
+KW_MINUS = u'减'
 KW_OPEN_QUOTE = u'“'
 KW_PERIOD = u'。'
+KW_PLUS = u'加'
 KW_SAY = u'唠唠'
 KW_STEP = u'步'
+KW_TIMES = u'乘'
 KW_TO = u'到'
 
 KEYWORDS = (
@@ -31,6 +35,7 @@ KEYWORDS = (
     KW_COLON,
     KW_DEC,
     KW_DEC_BY,
+    KW_DIVIDE_BY,
     KW_END,
     KW_END_LOOP,
     KW_FROM,
@@ -38,10 +43,13 @@ KEYWORDS = (
     KW_INC_BY,
     KW_IS_VAR,
     KW_LOOP,
+    KW_MINUS,
     KW_OPEN_QUOTE,
     KW_PERIOD,
+    KW_PLUS,
     KW_SAY,
     KW_STEP,
+    KW_TIMES,
     KW_TO,
     )
 
@@ -78,6 +86,26 @@ class Token:
     return (isinstance(other, Token) and
             self.kind == other.kind and
             self.value == other.value)
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class Expression:
+  def __init__(self, tokens):
+    self.tokens = tokens
+
+  def __str__(self):
+    return self.__unicode__()
+
+  def __unicode__(self):
+    return u'EXPRESSION %s' % (repr(self.tokens),)
+
+  def __repr__(self):
+    return self.__unicode__().encode('utf-8')
+
+  def __eq__(self, other):
+    return (isinstance(other, Expression) and
+            self.tokens == other.tokens)
 
   def __ne__(self, other):
     return not (self == other)
@@ -245,18 +273,46 @@ def ConsumeToken(token, tokens):
              (token, tokens[0]))
   return token, tokens[1:]
 
-def ParseExpression(tokens):
+def ParseExpressionToken(tokens):
+  """Returns (token, remaining tokens)."""
+
+  orig_tokens = tokens
+  
   integer, tokens = TryConsumeTokenType(TK_INTEGER_LITERAL, tokens)
   if integer is not None:
     return integer, tokens
+
   var, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if var is not None:
     return var, tokens
-  _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_OPEN_QUOTE), tokens)
-  str_token, tokens = ConsumeTokenType(TK_STRING_LITERAL, tokens)
-  _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_CLOSE_QUOTE), tokens)
-  return str_token, tokens
-  
+
+  open_quote, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_OPEN_QUOTE), tokens)
+  if open_quote:
+    str_token, tokens = ConsumeTokenType(TK_STRING_LITERAL, tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_CLOSE_QUOTE), tokens)
+    return str_token, tokens
+
+  token = tokens[0]
+  if token in (Token(TK_KEYWORD, KW_PLUS),
+               Token(TK_KEYWORD, KW_MINUS),
+               Token(TK_KEYWORD, KW_TIMES),
+               Token(TK_KEYWORD, KW_DIVIDE_BY)):
+    return token, tokens[1:]
+
+  return None, orig_tokens
+
+def ParseExpression(tokens):
+  """Return (expr, remaining tokens)."""
+
+  expr_tokens = []
+  while True:
+    token, tokens = ParseExpressionToken(tokens)
+    if token:
+      expr_tokens.append(token)
+    else:
+      break
+  return Expression(expr_tokens), tokens
+
 def TranslateToOneStatement(tokens):
   """Returns (statement, remainding_tokens, error)."""
 
@@ -288,39 +344,41 @@ def TranslateToOneStatement(tokens):
   if inc:
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
     return (Statement(STMT_INC_BY,
-                      (id, Token(TK_INTEGER_LITERAL, 1))), tokens)
+                      (id, Expression([Token(TK_INTEGER_LITERAL, 1)]))),
+            tokens)
 
   inc, tokens = TryConsumeToken(
       Token(TK_KEYWORD, KW_INC_BY), tokens)
   if inc:
-    num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+    expr, tokens = ParseExpression(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_STEP), tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-    return (Statement(STMT_INC_BY, (id, num)), tokens)
+    return (Statement(STMT_INC_BY, (id, expr)), tokens)
 
   dec, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_DEC), tokens)
   if dec:
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
     return (Statement(STMT_DEC_BY,
-                      (id, Token(TK_INTEGER_LITERAL, 1))), tokens)
+                      (id, Expression([Token(TK_INTEGER_LITERAL, 1)]))),
+            tokens)
 
   dec, tokens = TryConsumeToken(
       Token(TK_KEYWORD, KW_DEC_BY), tokens)
   if dec:
-    num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+    expr, tokens = ParseExpression(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_STEP), tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-    return (Statement(STMT_DEC_BY, (id, num)), tokens)
+    return (Statement(STMT_DEC_BY, (id, expr)), tokens)
 
   from_, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_FROM), tokens)
   if from_:
-    from_num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+    from_expr, tokens = ParseExpression(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_TO), tokens)
-    to_num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+    to_expr, tokens = ParseExpression(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_LOOP), tokens)
     stmts, tokens = TranslateToStatements(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_END_LOOP), tokens)
-    return (Statement(STMT_LOOP, (id, from_num, to_num, stmts)), tokens)
+    return (Statement(STMT_LOOP, (id, from_expr, to_expr, stmts)), tokens)
 
   # sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”、“走”、' +
   #          u'“退退”、“退”，或者“从”。实际是%s'
@@ -337,14 +395,28 @@ def TranslateToStatements(tokens):
       return stmts, tokens
     stmts.append(stmt)
 
-def TranslateExpression(expr):
-  if expr.kind == TK_INTEGER_LITERAL:
-    return '%s' % (expr.value,)
-  if expr.kind == TK_IDENTIFIER:
-    return GetPythonVarName(expr.value)
-  if expr.kind == TK_STRING_LITERAL:
-    return 'u"%s"' % (expr.value,)
-  sys.exit(u'我不懂 %s 表达式。' % (expr,))
+def TranslateExpressionToPython(expr):
+  """Returns the Python code for the given dongbei expression."""
+
+  python_code = ''
+  for token in expr.tokens:
+    if token.kind == TK_INTEGER_LITERAL:
+      python_code += '%s' % (token.value,)
+    elif token.kind == TK_IDENTIFIER:
+      python_code += GetPythonVarName(token.value)
+    elif token.kind == TK_STRING_LITERAL:
+      python_code += 'u"%s"' % (token.value,)
+    elif token == Token(TK_KEYWORD, KW_PLUS):
+      python_code += '+'
+    elif token == Token(TK_KEYWORD, KW_MINUS):
+      python_code += '-'
+    elif token == Token(TK_KEYWORD, KW_TIMES):
+      python_code += '*'
+    elif token == Token(TK_KEYWORD, KW_DIVIDE_BY):
+      python_code += '/'
+    else:
+      sys.exit(u'我不懂 %s 表达式。' % (token,))
+  return python_code
 
 def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_VAR_DECL:
@@ -354,23 +426,25 @@ def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_ASSIGN:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
-    return indent + '%s = %s' % (var, TranslateExpression(expr))
+    return indent + '%s = %s' % (var, TranslateExpressionToPython(expr))
   if stmt.kind == STMT_SAY:
     expr = stmt.value
-    return indent + '_db_output += "%%s\\n" %% (%s,)' % (TranslateExpression(expr),)
+    return indent + '_db_output += "%%s\\n" %% (%s,)' % (
+        TranslateExpressionToPython(expr),)
   if stmt.kind == STMT_INC_BY:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
-    return indent + '%s += %s' % (var, TranslateExpression(expr))
+    return indent + '%s += %s' % (var, TranslateExpressionToPython(expr))
   if stmt.kind == STMT_DEC_BY:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
-    return indent + '%s -= %s' % (var, TranslateExpression(expr))
+    return indent + '%s -= %s' % (var, TranslateExpressionToPython(expr))
   if stmt.kind == STMT_LOOP:
     var_token, from_val, to_val, stmts = stmt.value
     var = GetPythonVarName(var_token.value)
     loop = indent + 'for %s in range(%s, %s + 1):' % (
-        var, TranslateExpression(from_val), TranslateExpression(to_val))
+        var, TranslateExpressionToPython(from_val),
+        TranslateExpressionToPython(to_val))
     for s in stmts:
       loop += '\n' + TranslateStatementToPython(s, indent + '  ')
     if not stmts:

@@ -10,6 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from src import dongbei
 
+Expression = dongbei.Expression
 Token = dongbei.Token
 
 class DongbeiTest(unittest.TestCase):
@@ -83,6 +84,20 @@ class DongbeiTest(unittest.TestCase):
          Token(dongbei.TK_KEYWORD, u'”'),
          Token(dongbei.TK_KEYWORD, u'。')])
 
+  def testTokenizeArithmetic(self):
+    self.assertEqual(
+        list(dongbei.Tokenize(u'250加13减二乘五除以九')),
+        [Token(dongbei.TK_INTEGER_LITERAL, 250),
+         Token(dongbei.TK_KEYWORD, u'加'),
+         Token(dongbei.TK_INTEGER_LITERAL, 13),
+         Token(dongbei.TK_KEYWORD, u'减'),
+         Token(dongbei.TK_INTEGER_LITERAL, 2),
+         Token(dongbei.TK_KEYWORD, u'乘'),
+         Token(dongbei.TK_INTEGER_LITERAL, 5),
+         Token(dongbei.TK_KEYWORD, u'除以'),
+         Token(dongbei.TK_INTEGER_LITERAL, 9),
+        ])
+    
   def testTokenizeLoop(self):
     self.assertEqual(
         list(dongbei.Tokenize(u'老王从1到9磨叽：磨叽完了。')),
@@ -134,35 +149,58 @@ class DongbeiTest(unittest.TestCase):
   def testParsingIncrements(self):
     self.assertEqual(
         dongbei.ParseToAst(u'老王走走。'),
-        [dongbei.Statement(dongbei.STMT_INC_BY,
-                           (Token(dongbei.TK_IDENTIFIER, u'老王'),
-                            Token(dongbei.TK_INTEGER_LITERAL, 1)))])
+        [dongbei.Statement(
+            dongbei.STMT_INC_BY,
+            (Token(dongbei.TK_IDENTIFIER, u'老王'),
+             Expression([Token(dongbei.TK_INTEGER_LITERAL, 1)])))])
     self.assertEqual(
         dongbei.ParseToAst(u'老王走两步。'),
-        [dongbei.Statement(dongbei.STMT_INC_BY,
-                           (Token(dongbei.TK_IDENTIFIER, u'老王'),
-                            Token(dongbei.TK_INTEGER_LITERAL, 2)))])
+        [dongbei.Statement(
+            dongbei.STMT_INC_BY,
+            (Token(dongbei.TK_IDENTIFIER, u'老王'),
+             Expression([Token(dongbei.TK_INTEGER_LITERAL, 2)])))])
 
   def testParsingDecrements(self):
     self.assertEqual(
         dongbei.ParseToAst(u'老王退退。'),
-        [dongbei.Statement(dongbei.STMT_DEC_BY,
-                           (Token(dongbei.TK_IDENTIFIER, u'老王'),
-                            Token(dongbei.TK_INTEGER_LITERAL, 1)))])
+        [dongbei.Statement(
+            dongbei.STMT_DEC_BY,
+            (Token(dongbei.TK_IDENTIFIER, u'老王'),
+             Expression([Token(dongbei.TK_INTEGER_LITERAL, 1)])))])
     self.assertEqual(
         dongbei.ParseToAst(u'老王退三步。'),
-        [dongbei.Statement(dongbei.STMT_DEC_BY,
-                           (Token(dongbei.TK_IDENTIFIER, u'老王'),
-                            Token(dongbei.TK_INTEGER_LITERAL, 3)))])
+        [dongbei.Statement(
+            dongbei.STMT_DEC_BY,
+            (Token(dongbei.TK_IDENTIFIER, u'老王'),
+             Expression([Token(dongbei.TK_INTEGER_LITERAL, 3)])))])
+
+  def testParsingArithmetic(self):
+    self.assertEqual(
+        dongbei.ParseToAst(u'老王装250加13减二乘五除以六。'),
+        [dongbei.Statement(
+            dongbei.STMT_ASSIGN,
+            (Token(dongbei.TK_IDENTIFIER, u'老王'),
+             Expression([
+                 Token(dongbei.TK_INTEGER_LITERAL, 250),
+                 Token(dongbei.TK_KEYWORD, u'加'),
+                 Token(dongbei.TK_INTEGER_LITERAL, 13),
+                 Token(dongbei.TK_KEYWORD, u'减'),
+                 Token(dongbei.TK_INTEGER_LITERAL, 2),
+                 Token(dongbei.TK_KEYWORD, u'乘'),
+                 Token(dongbei.TK_INTEGER_LITERAL, 5),
+                 Token(dongbei.TK_KEYWORD, u'除以'),
+                 Token(dongbei.TK_INTEGER_LITERAL, 6),
+             ])))])
     
   def testParsingLoop(self):
     self.assertEqual(
         dongbei.ParseToAst(u'老王从1到9磨叽：磨叽完了。'),
-        [dongbei.Statement(dongbei.STMT_LOOP,
-                           (Token(dongbei.TK_IDENTIFIER, u'老王'),
-                            Token(dongbei.TK_INTEGER_LITERAL, 1),
-                            Token(dongbei.TK_INTEGER_LITERAL, 9),
-                            []))])
+        [dongbei.Statement(
+            dongbei.STMT_LOOP,
+            (Token(dongbei.TK_IDENTIFIER, u'老王'),
+             Expression([Token(dongbei.TK_INTEGER_LITERAL, 1)]),
+             Expression([Token(dongbei.TK_INTEGER_LITERAL, 9)]),
+             []))])
 
   def testVarAssignmentFromVar(self):
     self.assertEqual(
