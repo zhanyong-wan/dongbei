@@ -58,6 +58,7 @@ STMT_VAR_DECL = 'VAR_DECL'
 STMT_ASSIGN = 'ASSIGN'
 STMT_INC_BY = 'INC_BY'
 STMT_DEC_BY = 'DEC_BY'
+STMT_LOOP = 'LOOP'
 
 class Token:
   def __init__(self, kind, value):
@@ -256,8 +257,10 @@ def ParseExpression(tokens):
   _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_CLOSE_QUOTE), tokens)
   return str_token, tokens
   
-def TranslateOneStatement(tokens):
-  """Returns (statement, remainding_tokens)."""
+def TranslateToOneStatement(tokens):
+  """Returns (statement, remainding_tokens, error)."""
+
+  orig_tokens = tokens
   say, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_SAY), tokens)
   if say:
     colon, tokens = ConsumeToken(Token(TK_KEYWORD, KW_COLON), tokens)
@@ -267,9 +270,9 @@ def TranslateOneStatement(tokens):
 
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if not id:
-    sys.exit(u'语句必须以“唠唠”或者标识符开始。实际是%s' % (tokens[0],))
+    # sys.exit(u'语句必须以“唠唠”或者标识符开始。实际是%s' % (tokens[0],))
+    return (None, orig_tokens)
 
-  # python_id = GetPythonVarName(id.value)
   is_var, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_IS_VAR), tokens)
   if is_var:
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
@@ -309,16 +312,30 @@ def TranslateOneStatement(tokens):
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
     return (Statement(STMT_DEC_BY, (id, num)), tokens)
 
-  sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”、“走”、“退退”，或者“退”。实际是%s'
-           % (tokens[0],))
-  
-def TranslateToAst(tokens, statements):
-  if not tokens:
-    return
+  from_, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_FROM), tokens)
+  if from_:
+    from_num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_TO), tokens)
+    to_num, tokens = ConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_LOOP), tokens)
+    stmts, tokens = TranslateToStatements(tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_END_LOOP), tokens)
+    return (Statement(STMT_LOOP, (id, from_num, to_num, stmts)), tokens)
 
-  statement, tokens = TranslateOneStatement(tokens)
-  statements.append(statement)
-  TranslateToAst(tokens, statements)  
+  # sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”、“走”、' +
+  #          u'“退退”、“退”，或者“从”。实际是%s'
+  #          % (tokens[0],))
+  return (None, orig_tokens)
+
+def TranslateToStatements(tokens):
+  """Returns (statement list, remaining tokens)."""
+
+  stmts = []
+  while True:
+    stmt, tokens = TranslateToOneStatement(tokens)
+    if not stmt:
+      return stmts, tokens
+    stmts.append(stmt)
 
 def TranslateExpression(expr):
   if expr.kind == TK_INTEGER_LITERAL:
@@ -329,46 +346,56 @@ def TranslateExpression(expr):
     return 'u"%s"' % (expr.value,)
   sys.exit(u'我不懂 %s 表达式。' % (expr,))
 
-def TranslateStatement(stmt):
+def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_VAR_DECL:
     var_token = stmt.value
     var = GetPythonVarName(var_token.value)
-    return '%s = None' % (var,)
+    return indent + '%s = None' % (var,)
   if stmt.kind == STMT_ASSIGN:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
-    return '%s = %s' % (var, TranslateExpression(expr))
+    return indent + '%s = %s' % (var, TranslateExpression(expr))
   if stmt.kind == STMT_SAY:
     expr = stmt.value
-    return '_db_output += "%%s\\n" %% (%s,)' % (TranslateExpression(expr),)
+    return indent + '_db_output += "%%s\\n" %% (%s,)' % (TranslateExpression(expr),)
   if stmt.kind == STMT_INC_BY:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
-    return '%s += %s' % (var, TranslateExpression(expr))
+    return indent + '%s += %s' % (var, TranslateExpression(expr))
   if stmt.kind == STMT_DEC_BY:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
-    return '%s -= %s' % (var, TranslateExpression(expr))
+    return indent + '%s -= %s' % (var, TranslateExpression(expr))
+  if stmt.kind == STMT_LOOP:
+    var_token, from_val, to_val, stmts = stmt.value
+    var = GetPythonVarName(var_token.value)
+    loop = indent + 'for %s in range(%s, %s + 1):' % (
+        var, TranslateExpression(from_val), TranslateExpression(to_val))
+    for s in stmts:
+      loop += '\n' + TranslateStatementToPython(s, indent + '  ')
+    if not stmts:
+      loop += '\n' + indent + '  pass'
+    return loop
   sys.exit(u'我不懂 %s 语句。' % (stmt.kind))
   
 def Translate(tokens):
-  statements = []
-  TranslateToAst(tokens, statements)
+  statements, tokens = TranslateToStatements(tokens)
+  assert not tokens
   py_code = ['_db_output = ""']
   for s in statements:
-    py_code.append(TranslateStatement(s))
+    py_code.append(TranslateStatementToPython(s))
   return '\n'.join(py_code)
 
 def ParseToAst(code):
   tokens = list(Tokenize(code))
-  statements = []
-  TranslateToAst(tokens, statements)
+  statements, tokens = TranslateToStatements(tokens)
+  assert not tokens
   return statements
 
 def Run(code):
   tokens = list(Tokenize(code))
   py_code = Translate(tokens)
-  # print '%s' % (py_code,)
+  print '%s' % (py_code,)
   exec(py_code)
   print('%s' % (_db_output,))
   return _db_output

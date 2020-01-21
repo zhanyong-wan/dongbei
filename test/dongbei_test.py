@@ -155,6 +155,15 @@ class DongbeiTest(unittest.TestCase):
                            (Token(dongbei.TK_IDENTIFIER, u'老王'),
                             Token(dongbei.TK_INTEGER_LITERAL, 3)))])
     
+  def testParsingLoop(self):
+    self.assertEqual(
+        dongbei.ParseToAst(u'老王从1到9磨叽：磨叽完了。'),
+        [dongbei.Statement(dongbei.STMT_LOOP,
+                           (Token(dongbei.TK_IDENTIFIER, u'老王'),
+                            Token(dongbei.TK_INTEGER_LITERAL, 1),
+                            Token(dongbei.TK_INTEGER_LITERAL, 9),
+                            []))])
+
   def testVarAssignmentFromVar(self):
     self.assertEqual(
         dongbei.Run(u'老张是活雷锋。\n老王是活雷锋。\n'
@@ -175,6 +184,11 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         dongbei.Run(u'老张是活雷锋。老张装三。老张退五步。唠唠：老张。'),
         '-2\n')
+
+  def testLoop(self):
+    self.assertEqual(
+        dongbei.Run(u'老张从1到3磨叽：唠唠：老张。磨叽完了。'),
+        '1\n2\n3\n')
 
 if __name__ == '__main__':
   unittest.main()
