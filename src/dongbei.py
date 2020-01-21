@@ -152,15 +152,12 @@ def TokenizeStringLiteralAndRest(code):
     return
 
   yield Token(TK_STRING_LITERAL, code[:close_quote_pos])
-  last_token = Token(TK_KEYWORD, KW_CLOSE_QUOTE)
-  yield last_token
-  for tk in BasicTokenize(code[close_quote_pos + len(KW_CLOSE_QUOTE):],
-                          last_token):
+  yield Token(TK_KEYWORD, KW_CLOSE_QUOTE)
+  for tk in BasicTokenize(code[close_quote_pos + len(KW_CLOSE_QUOTE):]):
     yield tk
 
 
-def BasicTokenize(code, last_token=None):
-  # TODO: remove the last_token parameter.
+def BasicTokenize(code):
   # Skip spaces at the beginning.
   while True:
     old_len = len(code)
@@ -177,9 +174,8 @@ def BasicTokenize(code, last_token=None):
   m = re.match(u'^(【(.*?)】)', code)
   if m:
     id = m.group(2).strip()
-    last_token = Token(TK_IDENTIFIER, id)
-    yield last_token
-    for tk in BasicTokenize(code[len(m.group(1)):], last_token):
+    yield Token(TK_IDENTIFIER, id)
+    for tk in BasicTokenize(code[len(m.group(1)):]):
       yield tk
     return
     
@@ -193,13 +189,12 @@ def BasicTokenize(code, last_token=None):
         for tk in TokenizeStringLiteralAndRest(remaining_code):
           yield tk
       else:
-        for tk in BasicTokenize(remaining_code.lstrip(), last_token):
+        for tk in BasicTokenize(remaining_code.lstrip()):
           yield tk
       return
 
-  last_token = Token(TK_CHAR, code[0])
-  yield last_token
-  for tk in BasicTokenize(code[1:], last_token):
+  yield Token(TK_CHAR, code[0])
+  for tk in BasicTokenize(code[1:]):
     yield tk
   
 
