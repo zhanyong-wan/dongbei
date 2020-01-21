@@ -38,6 +38,9 @@ class DongbeiTest(unittest.TestCase):
 
   def testTokenize(self):
     self.assertEqual(
+        list(dongbei.BasicTokenize(u'【阶乘】')),
+        [Token(dongbei.TK_IDENTIFIER, u'阶乘'),])
+    self.assertEqual(
         list(dongbei.BasicTokenize(u'“ ”')),
         [Token(dongbei.TK_KEYWORD, u'“'),
          Token(dongbei.TK_STRING_LITERAL, u' '),

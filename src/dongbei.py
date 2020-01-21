@@ -160,6 +160,7 @@ def TokenizeStringLiteralAndRest(code):
 
 
 def BasicTokenize(code, last_token=None):
+  # TODO: remove the last_token parameter.
   # Skip spaces at the beginning.
   while True:
     old_len = len(code)
@@ -172,6 +173,16 @@ def BasicTokenize(code, last_token=None):
   if not code:
     return
 
+  # Parse 【标识符】.
+  m = re.match(u'^(【(.*?)】)', code)
+  if m:
+    id = m.group(2).strip()
+    last_token = Token(TK_IDENTIFIER, id)
+    yield last_token
+    for tk in BasicTokenize(code[len(m.group(1)):], last_token):
+      yield tk
+    return
+    
   # Try to parse a keyword at the beginning of the code.
   for keyword in KEYWORDS:
     if code.startswith(keyword):
