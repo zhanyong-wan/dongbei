@@ -146,6 +146,13 @@ class DongbeiTest(unittest.TestCase):
          Token(dongbei.TK_KEYWORD, u'步'),
         ])
 
+  def testTokenizingConcat(self):
+    self.assertEqual(
+        list(dongbei.Tokenize(u'老刘还有二')),
+        [Token(dongbei.TK_IDENTIFIER, u'老刘'),
+         Token(dongbei.TK_KEYWORD, u'还有'),
+         Token(dongbei.TK_INTEGER_LITERAL, 2),])
+    
   def testParsingIncrements(self):
     self.assertEqual(
         dongbei.ParseToAst(u'老王走走。'),
@@ -228,5 +235,9 @@ class DongbeiTest(unittest.TestCase):
         dongbei.Run(u'老张从1到3磨叽：唠唠：老张。磨叽完了。'),
         '1\n2\n3\n')
 
+  def testConcat(self):
+    self.assertEqual(
+        dongbei.Run(u'唠唠：“牛”还有二。'),
+        u'牛2\n')
 if __name__ == '__main__':
   unittest.main()

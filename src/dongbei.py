@@ -11,6 +11,7 @@ KW_BECOME = u'装'
 KW_BEGIN = u'开整了：'
 KW_CLOSE_QUOTE = u'”'
 KW_COLON = u'：'
+KW_CONCAT = u'还有'
 KW_DEC = u'退退'
 KW_DEC_BY = u'退'
 KW_DIVIDE_BY = u'除以'
@@ -33,6 +34,7 @@ KEYWORDS = (
     KW_BEGIN,
     KW_CLOSE_QUOTE,
     KW_COLON,
+    KW_CONCAT,
     KW_DEC,
     KW_DEC_BY,
     KW_DIVIDE_BY,
@@ -77,7 +79,8 @@ class Token:
     return self.__unicode__()
 
   def __unicode__(self):
-    return u'%s <%s>' % (self.kind, repr(self.value))
+    # return u'%s <%s>' % (self.kind, repr(self.value))
+    return u'%s <%s>' % (self.kind, self.value)
 
   def __repr__(self):
     return self.__unicode__().encode('utf-8')
@@ -296,7 +299,8 @@ def ParseExpressionToken(tokens):
   if token in (Token(TK_KEYWORD, KW_PLUS),
                Token(TK_KEYWORD, KW_MINUS),
                Token(TK_KEYWORD, KW_TIMES),
-               Token(TK_KEYWORD, KW_DIVIDE_BY)):
+               Token(TK_KEYWORD, KW_DIVIDE_BY),
+               Token(TK_KEYWORD, KW_CONCAT)):
     return token, tokens[1:]
 
   return None, orig_tokens
@@ -395,11 +399,11 @@ def TranslateToStatements(tokens):
       return stmts, tokens
     stmts.append(stmt)
 
-def TranslateExpressionToPython(expr):
+def TranslateExpressionTokensToPython(tokens):
   """Returns the Python code for the given dongbei expression."""
 
   python_code = ''
-  for token in expr.tokens:
+  for token in tokens:
     if token.kind == TK_INTEGER_LITERAL:
       python_code += '%s' % (token.value,)
     elif token.kind == TK_IDENTIFIER:
@@ -414,9 +418,17 @@ def TranslateExpressionToPython(expr):
       python_code += '*'
     elif token == Token(TK_KEYWORD, KW_DIVIDE_BY):
       python_code += '/'
+    elif token == Token(TK_KEYWORD, KW_CONCAT):
+      python_code += ') + unicode('
     else:
       sys.exit(u'我不懂 %s 表达式。' % (token,))
   return python_code
+
+def TranslateExpressionToPython(expr):
+  python_code = TranslateExpressionTokensToPython(expr.tokens)
+  if Token(TK_KEYWORD, KW_CONCAT) not in expr.tokens:
+    return python_code
+  return 'unicode(%s)' % (python_code,)
 
 def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_VAR_DECL:
@@ -454,7 +466,7 @@ def TranslateStatementToPython(stmt, indent = ''):
   
 def Translate(tokens):
   statements, tokens = TranslateToStatements(tokens)
-  assert not tokens
+  assert not tokens, ('多余符号：%s' % (tokens,))
   py_code = ['_db_output = ""']
   for s in statements:
     py_code.append(TranslateStatementToPython(s))
