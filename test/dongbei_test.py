@@ -11,6 +11,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src import dongbei
 
 Expression = dongbei.Expression
+Statement = dongbei.Statement
 Token = dongbei.Token
 
 class DongbeiTest(unittest.TestCase):
@@ -36,6 +37,21 @@ class DongbeiTest(unittest.TestCase):
         dongbei.Run(u'老张是活雷锋。\n老张装250。\n唠唠：老张。'), '250\n')
 
   def testTokenize(self):
+    self.assertEqual(
+        list(dongbei.BasicTokenize(u'“ ”')),
+        [Token(dongbei.TK_KEYWORD, u'“'),
+         Token(dongbei.TK_STRING_LITERAL, u' '),
+         Token(dongbei.TK_KEYWORD, u'”'),])
+    self.assertEqual(
+        list(dongbei.BasicTokenize(u'“”')),
+        [Token(dongbei.TK_KEYWORD, u'“'),
+         Token(dongbei.TK_STRING_LITERAL, u''),
+         Token(dongbei.TK_KEYWORD, u'”'),])
+    self.assertEqual(
+        list(dongbei.BasicTokenize(u'“ A B ”')),
+        [Token(dongbei.TK_KEYWORD, u'“'),
+         Token(dongbei.TK_STRING_LITERAL, u' A B '),
+         Token(dongbei.TK_KEYWORD, u'”'),])
     self.assertEqual(
         list(dongbei.BasicTokenize(u'老张')),
         [Token(dongbei.TK_CHAR, u'老'),
@@ -152,17 +168,30 @@ class DongbeiTest(unittest.TestCase):
         [Token(dongbei.TK_IDENTIFIER, u'老刘'),
          Token(dongbei.TK_KEYWORD, u'还有'),
          Token(dongbei.TK_INTEGER_LITERAL, 2),])
+
+  def testTokenizingFuncDef(self):
+    self.assertEqual(
+        list(dongbei.Tokenize(u'写九九表咋整：整完了。')),
+        [Token(dongbei.TK_IDENTIFIER, u'写九九表'),
+         Token(dongbei.TK_KEYWORD, u'咋整：'),
+         Token(dongbei.TK_KEYWORD, u'整完了。'),])
+
+  def testTokenizingFuncCall(self):
+    self.assertEqual(
+        list(dongbei.Tokenize(u'整写九九表')),
+        [Token(dongbei.TK_KEYWORD, u'整'),
+         Token(dongbei.TK_IDENTIFIER, u'写九九表'),])
     
   def testParsingIncrements(self):
     self.assertEqual(
         dongbei.ParseToAst(u'老王走走。'),
-        [dongbei.Statement(
+        [Statement(
             dongbei.STMT_INC_BY,
             (Token(dongbei.TK_IDENTIFIER, u'老王'),
              Expression([Token(dongbei.TK_INTEGER_LITERAL, 1)])))])
     self.assertEqual(
         dongbei.ParseToAst(u'老王走两步。'),
-        [dongbei.Statement(
+        [Statement(
             dongbei.STMT_INC_BY,
             (Token(dongbei.TK_IDENTIFIER, u'老王'),
              Expression([Token(dongbei.TK_INTEGER_LITERAL, 2)])))])
@@ -170,13 +199,13 @@ class DongbeiTest(unittest.TestCase):
   def testParsingDecrements(self):
     self.assertEqual(
         dongbei.ParseToAst(u'老王退退。'),
-        [dongbei.Statement(
+        [Statement(
             dongbei.STMT_DEC_BY,
             (Token(dongbei.TK_IDENTIFIER, u'老王'),
              Expression([Token(dongbei.TK_INTEGER_LITERAL, 1)])))])
     self.assertEqual(
         dongbei.ParseToAst(u'老王退三步。'),
-        [dongbei.Statement(
+        [Statement(
             dongbei.STMT_DEC_BY,
             (Token(dongbei.TK_IDENTIFIER, u'老王'),
              Expression([Token(dongbei.TK_INTEGER_LITERAL, 3)])))])
@@ -184,7 +213,7 @@ class DongbeiTest(unittest.TestCase):
   def testParsingArithmetic(self):
     self.assertEqual(
         dongbei.ParseToAst(u'老王装250加13减二乘五除以六。'),
-        [dongbei.Statement(
+        [Statement(
             dongbei.STMT_ASSIGN,
             (Token(dongbei.TK_IDENTIFIER, u'老王'),
              Expression([
@@ -202,13 +231,30 @@ class DongbeiTest(unittest.TestCase):
   def testParsingLoop(self):
     self.assertEqual(
         dongbei.ParseToAst(u'老王从1到9磨叽：磨叽完了。'),
-        [dongbei.Statement(
+        [Statement(
             dongbei.STMT_LOOP,
             (Token(dongbei.TK_IDENTIFIER, u'老王'),
              Expression([Token(dongbei.TK_INTEGER_LITERAL, 1)]),
              Expression([Token(dongbei.TK_INTEGER_LITERAL, 9)]),
              []))])
 
+  def testParsingFuncDef(self):
+    self.assertEqual(
+        dongbei.ParseToAst(u'写九九表咋整：整完了。'),
+        [Statement(dongbei.STMT_FUNC_DEF,
+                   (Token(dongbei.TK_IDENTIFIER, u'写九九表'),
+                    []  # Function body.
+                   ))])
+    self.assertEqual(
+        dongbei.ParseToAst(u'写九九表咋整：唠唠：1。整完了。'),
+        [Statement(dongbei.STMT_FUNC_DEF,
+                   (Token(dongbei.TK_IDENTIFIER, u'写九九表'),
+                    # Function body.
+                    [Statement(dongbei.STMT_SAY,
+                               Expression([Token(
+                                   dongbei.TK_INTEGER_LITERAL, 1)]))]
+                   ))])
+    
   def testVarAssignmentFromVar(self):
     self.assertEqual(
         dongbei.Run(u'老张是活雷锋。\n老王是活雷锋。\n'
@@ -239,5 +285,14 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         dongbei.Run(u'唠唠：“牛”还有二。'),
         u'牛2\n')
+
+  def testRunFunc(self):
+    self.assertEqual(
+        dongbei.Run(u'埋汰咋整：唠唠：“你虎了吧唧”。整完了。'),
+        u'')
+    self.assertEqual(
+        dongbei.Run(u'埋汰咋整：唠唠：“你虎了吧唧”。整完了。整埋汰。'),
+        u'你虎了吧唧\n')
+    
 if __name__ == '__main__':
   unittest.main()

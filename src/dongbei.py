@@ -9,6 +9,7 @@ KW_INC = u'走走'
 KW_INC_BY = u'走'
 KW_BECOME = u'装'
 KW_BEGIN = u'开整了：'
+KW_CALL = u'整'
 KW_CLOSE_QUOTE = u'”'
 KW_COLON = u'：'
 KW_CONCAT = u'还有'
@@ -18,6 +19,7 @@ KW_DIVIDE_BY = u'除以'
 KW_END = u'整完了。'
 KW_END_LOOP = u'磨叽完了。'
 KW_FROM = u'从'
+KW_FUNC_DEF = u'咋整：'
 KW_IS_VAR = u'是活雷锋'
 KW_LOOP = u'磨叽：'
 KW_MINUS = u'减'
@@ -38,9 +40,11 @@ KEYWORDS = (
     KW_DEC,
     KW_DEC_BY,
     KW_DIVIDE_BY,
-    KW_END,
+    KW_END,   # must match 整完了 before matching 整
+    KW_CALL,  # 整
     KW_END_LOOP,
     KW_FROM,
+    KW_FUNC_DEF,
     KW_INC,
     KW_INC_BY,
     KW_IS_VAR,
@@ -69,6 +73,8 @@ STMT_ASSIGN = 'ASSIGN'
 STMT_INC_BY = 'INC_BY'
 STMT_DEC_BY = 'DEC_BY'
 STMT_LOOP = 'LOOP'
+STMT_FUNC_DEF = 'FUNC_DEF'
+STMT_CALL = 'CALL'
 
 class Token:
   def __init__(self, kind, value):
@@ -101,7 +107,8 @@ class Expression:
     return self.__unicode__()
 
   def __unicode__(self):
-    return u'EXPRESSION %s' % (repr(self.tokens),)
+    # return u'EXPRESSION %s' % (repr(self.tokens),)
+    return u'EXPRESSION %s' % (self.tokens,)
 
   def __repr__(self):
     return self.__unicode__().encode('utf-8')
@@ -122,7 +129,10 @@ class Statement:
     return self.__unicode__()
 
   def __unicode__(self):
-    return u'%s <%s>' % (self.kind, repr(self.value))
+    # return u'%s <%s>' % (self.kind, repr(self.value))
+    
+    value_unicode = str(self.value).decode('utf-8')  # unicode(self.value)
+    return u'%s <%s>' % (self.kind, value_unicode)
 
   def __repr__(self):
     return self.__unicode__().encode('utf-8')
@@ -167,16 +177,14 @@ def BasicTokenize(code, last_token=None):
     if code.startswith(keyword):
       last_token = Token(TK_KEYWORD, keyword)
       yield last_token
-      for tk in BasicTokenize(code[len(keyword):].lstrip(), last_token):
-        yield tk
+      remaining_code = code[len(keyword):]
+      if last_token == Token(TK_KEYWORD, KW_OPEN_QUOTE):
+        for tk in TokenizeStringLiteralAndRest(remaining_code):
+          yield tk
+      else:
+        for tk in BasicTokenize(remaining_code.lstrip(), last_token):
+          yield tk
       return
-
-  # The code doesn't start with a keyword.
-  # Try to parse a string literal.
-  if last_token == Token(TK_KEYWORD, KW_OPEN_QUOTE):
-    for tk in TokenizeStringLiteralAndRest(code):
-      yield tk
-    return
 
   last_token = Token(TK_CHAR, code[0])
   yield last_token
@@ -258,7 +266,7 @@ def TryConsumeTokenType(tk_type, tokens):
 def ConsumeTokenType(tk_type, tokens):
   tk, tokens = TryConsumeTokenType(tk_type, tokens)
   if tk is None:
-    sys.exit(u'期望 %s，实际不是。' % (tk_type,))
+    sys.exit(u'期望 %s，实际是 %s' % (tk_type, tokens[0]))
   return tk, tokens
     
 def TryConsumeToken(token, tokens):
@@ -289,9 +297,10 @@ def ParseExpressionToken(tokens):
   if var is not None:
     return var, tokens
 
-  open_quote, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_OPEN_QUOTE), tokens)
+  open_quote, tokens = TryConsumeToken(
+      Token(TK_KEYWORD, KW_OPEN_QUOTE), tokens)
   if open_quote:
-    str_token, tokens = ConsumeTokenType(TK_STRING_LITERAL, tokens)
+    str_token, tokens = TryConsumeTokenType(TK_STRING_LITERAL, tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_CLOSE_QUOTE), tokens)
     return str_token, tokens
 
@@ -327,6 +336,12 @@ def TranslateToOneStatement(tokens):
     expr, tokens = ParseExpression(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
     return (Statement(STMT_SAY, expr), tokens)
+
+  call, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_CALL), tokens)
+  if call:
+    func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    return (Statement(STMT_CALL, func), tokens)
 
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if not id:
@@ -383,6 +398,13 @@ def TranslateToOneStatement(tokens):
     stmts, tokens = TranslateToStatements(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_END_LOOP), tokens)
     return (Statement(STMT_LOOP, (id, from_expr, to_expr, stmts)), tokens)
+
+  func_def, tokens = TryConsumeToken(
+      Token(TK_KEYWORD, KW_FUNC_DEF), tokens)
+  if func_def:
+    stmts, tokens = TranslateToStatements(tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_END), tokens)
+    return (Statement(STMT_FUNC_DEF, (id, stmts)), tokens)
 
   # sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”、“走”、' +
   #          u'“退退”、“退”，或者“从”。实际是%s'
@@ -441,7 +463,7 @@ def TranslateStatementToPython(stmt, indent = ''):
     return indent + '%s = %s' % (var, TranslateExpressionToPython(expr))
   if stmt.kind == STMT_SAY:
     expr = stmt.value
-    return indent + '_db_output += "%%s\\n" %% (%s,)' % (
+    return indent + '_db_append_output("%%s\\n" %% (%s,))' % (
         TranslateExpressionToPython(expr),)
   if stmt.kind == STMT_INC_BY:
     var_token, expr = stmt.value
@@ -462,12 +484,26 @@ def TranslateStatementToPython(stmt, indent = ''):
     if not stmts:
       loop += '\n' + indent + '  pass'
     return loop
+  if stmt.kind == STMT_FUNC_DEF:
+    func_token, stmts = stmt.value
+    func_name = GetPythonVarName(func_token.value)
+    code = indent + 'def %s():' % (func_name,)
+    for s in stmts:
+      code += '\n' + TranslateStatementToPython(s, indent + '  ')
+    if not stmts:
+      code += '\n' + indent + '  pass'
+    return code
+  if stmt.kind == STMT_CALL:
+    func_token = stmt.value
+    func_name = GetPythonVarName(func_token.value)
+    code = indent + '%s()' % (func_name,)
+    return code
   sys.exit(u'我不懂 %s 语句。' % (stmt.kind))
   
 def Translate(tokens):
   statements, tokens = TranslateToStatements(tokens)
   assert not tokens, ('多余符号：%s' % (tokens,))
-  py_code = ['_db_output = ""']
+  py_code = []
   for s in statements:
     py_code.append(TranslateStatementToPython(s))
   return '\n'.join(py_code)
@@ -475,13 +511,20 @@ def Translate(tokens):
 def ParseToAst(code):
   tokens = list(Tokenize(code))
   statements, tokens = TranslateToStatements(tokens)
-  assert not tokens
+  assert not tokens, ('多余符号：%s' % (tokens,))
   return statements
+
+_db_output = ''
+def _db_append_output(s):
+  global _db_output
+  _db_output += s
 
 def Run(code):
   tokens = list(Tokenize(code))
   py_code = Translate(tokens)
   print '%s' % (py_code,)
+  global _db_output
+  _db_output = ''
   exec(py_code)
   print('%s' % (_db_output,))
   return _db_output
