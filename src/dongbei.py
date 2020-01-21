@@ -10,6 +10,7 @@ KW_INC_BY = u'走'
 KW_BECOME = u'装'
 KW_BEGIN = u'开整了：'
 KW_CALL = u'整'
+KW_CLOSE_PAREN = u'）'
 KW_CLOSE_QUOTE = u'”'
 KW_COLON = u'：'
 KW_CONCAT = u'还有'
@@ -23,6 +24,7 @@ KW_FUNC_DEF = u'咋整：'
 KW_IS_VAR = u'是活雷锋'
 KW_LOOP = u'磨叽：'
 KW_MINUS = u'减'
+KW_OPEN_PAREN = u'（'
 KW_OPEN_QUOTE = u'“'
 KW_PERIOD = u'。'
 KW_PLUS = u'加'
@@ -34,6 +36,7 @@ KW_TO = u'到'
 KEYWORDS = (
     KW_BECOME,
     KW_BEGIN,
+    KW_CLOSE_PAREN,
     KW_CLOSE_QUOTE,
     KW_COLON,
     KW_CONCAT,
@@ -50,6 +53,7 @@ KEYWORDS = (
     KW_IS_VAR,
     KW_LOOP,
     KW_MINUS,
+    KW_OPEN_PAREN,
     KW_OPEN_QUOTE,
     KW_PERIOD,
     KW_PLUS,
@@ -346,8 +350,16 @@ def TranslateToOneStatement(tokens):
   call, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_CALL), tokens)
   if call:
     func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+    open_paren, tokens = TryConsumeToken(
+        Token(TK_KEYWORD, KW_OPEN_PAREN), tokens)
+    if open_paren:
+      arg, tokens = ParseExpression(tokens)
+      _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_CLOSE_PAREN), tokens)
+      args = [arg]
+    else:
+      args = []
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
-    return (Statement(STMT_CALL, func), tokens)
+    return (Statement(STMT_CALL, (func, args)), tokens)
 
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if not id:
@@ -405,12 +417,23 @@ def TranslateToOneStatement(tokens):
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_END_LOOP), tokens)
     return (Statement(STMT_LOOP, (id, from_expr, to_expr, stmts)), tokens)
 
+  open_paren, tokens = TryConsumeToken(
+      Token(TK_KEYWORD, KW_OPEN_PAREN), tokens)
+  if open_paren:
+    param, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_CLOSE_PAREN), tokens)
+    func_def, tokens = ConsumeToken(
+        Token(TK_KEYWORD, KW_FUNC_DEF), tokens)
+    stmts, tokens = TranslateToStatements(tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_END), tokens)
+    return (Statement(STMT_FUNC_DEF, (id, [param], stmts)), tokens)
+
   func_def, tokens = TryConsumeToken(
       Token(TK_KEYWORD, KW_FUNC_DEF), tokens)
   if func_def:
     stmts, tokens = TranslateToStatements(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_END), tokens)
-    return (Statement(STMT_FUNC_DEF, (id, stmts)), tokens)
+    return (Statement(STMT_FUNC_DEF, (id, [], stmts)), tokens)
 
   # sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”、“走”、' +
   #          u'“退退”、“退”，或者“从”。实际是%s'
@@ -491,18 +514,20 @@ def TranslateStatementToPython(stmt, indent = ''):
       loop += '\n' + indent + '  pass'
     return loop
   if stmt.kind == STMT_FUNC_DEF:
-    func_token, stmts = stmt.value
+    func_token, params, stmts = stmt.value
     func_name = GetPythonVarName(func_token.value)
-    code = indent + 'def %s():' % (func_name,)
+    param_names = map(lambda tk: GetPythonVarName(tk.value), params)
+    code = indent + 'def %s(%s):' % (func_name, ', '.join(param_names))
     for s in stmts:
       code += '\n' + TranslateStatementToPython(s, indent + '  ')
     if not stmts:
       code += '\n' + indent + '  pass'
     return code
   if stmt.kind == STMT_CALL:
-    func_token = stmt.value
+    func_token, args = stmt.value
     func_name = GetPythonVarName(func_token.value)
-    code = indent + '%s()' % (func_name,)
+    args_code = map(TranslateExpressionToPython, args)
+    code = indent + '%s(%s)' % (func_name, ', '.join(args_code))
     return code
   sys.exit(u'我不懂 %s 语句。' % (stmt.kind))
   

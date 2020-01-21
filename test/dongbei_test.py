@@ -41,6 +41,12 @@ class DongbeiTest(unittest.TestCase):
         list(dongbei.BasicTokenize(u'【阶乘】')),
         [Token(dongbei.TK_IDENTIFIER, u'阶乘'),])
     self.assertEqual(
+        list(dongbei.BasicTokenize(u'【阶乘】（几）')),
+        [Token(dongbei.TK_IDENTIFIER, u'阶乘'),
+         Token(dongbei.TK_KEYWORD, u'（'),
+         Token(dongbei.TK_CHAR, u'几'),
+         Token(dongbei.TK_KEYWORD, u'）'),])
+    self.assertEqual(
         list(dongbei.BasicTokenize(u'“ ”')),
         [Token(dongbei.TK_KEYWORD, u'“'),
          Token(dongbei.TK_STRING_LITERAL, u' '),
@@ -246,18 +252,36 @@ class DongbeiTest(unittest.TestCase):
         dongbei.ParseToAst(u'写九九表咋整：整完了。'),
         [Statement(dongbei.STMT_FUNC_DEF,
                    (Token(dongbei.TK_IDENTIFIER, u'写九九表'),
+                    [],  # Formal parameters.
                     []  # Function body.
                    ))])
     self.assertEqual(
         dongbei.ParseToAst(u'写九九表咋整：唠唠：1。整完了。'),
         [Statement(dongbei.STMT_FUNC_DEF,
                    (Token(dongbei.TK_IDENTIFIER, u'写九九表'),
+                    [],  # Formal parameters.
                     # Function body.
                     [Statement(dongbei.STMT_SAY,
                                Expression([Token(
                                    dongbei.TK_INTEGER_LITERAL, 1)]))]
                    ))])
     
+  def testParsingFuncDefWithParam(self):
+    self.assertEqual(
+        dongbei.ParseToAst(u'【阶乘】（几）咋整：整完了。'),
+        [Statement(dongbei.STMT_FUNC_DEF,
+                   (Token(dongbei.TK_IDENTIFIER, u'阶乘'),
+                    [Token(dongbei.TK_IDENTIFIER, u'几')],  # Formal parameters.
+                    []  # Function body.
+                   ))])
+    
+  def testParsingFuncCallWithParam(self):
+    self.assertEqual(
+        dongbei.ParseToAst(u'整【阶乘】（五）。'),
+        [Statement(dongbei.STMT_CALL,
+                   (Token(dongbei.TK_IDENTIFIER, u'阶乘'),
+                    [Expression([Token(dongbei.TK_INTEGER_LITERAL, 5)])]))])
+
   def testVarAssignmentFromVar(self):
     self.assertEqual(
         dongbei.Run(u'老张是活雷锋。\n老王是活雷锋。\n'
@@ -296,6 +320,12 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         dongbei.Run(u'埋汰咋整：唠唠：“你虎了吧唧”。整完了。整埋汰。'),
         u'你虎了吧唧\n')
+
+  def testFuncCallWithParam(self):
+    self.assertEqual(
+        dongbei.Run(u'【加一】（几）咋整：唠唠：几加一。整完了。\n'
+                    u'整【加一】（五）。'),
+        u'6\n')
     
 if __name__ == '__main__':
   unittest.main()
