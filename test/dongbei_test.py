@@ -132,7 +132,8 @@ class DongbeiTest(unittest.TestCase):
          Token(dongbei.TK_KEYWORD, u'到'),
          Token(dongbei.TK_INTEGER_LITERAL, 9),
          Token(dongbei.TK_KEYWORD, u'磨叽：'),
-         Token(dongbei.TK_KEYWORD, u'磨叽完了。'),
+         Token(dongbei.TK_KEYWORD, u'磨叽完了'),
+         Token(dongbei.TK_KEYWORD, u'。'),
         ])
 
   def testTokenizeCompound(self):
@@ -143,7 +144,8 @@ class DongbeiTest(unittest.TestCase):
          Token(dongbei.TK_KEYWORD, u'：'),
          Token(dongbei.TK_IDENTIFIER, u'老王'),
          Token(dongbei.TK_KEYWORD, u'。'),
-         Token(dongbei.TK_KEYWORD, u'整完了。'),])
+         Token(dongbei.TK_KEYWORD, u'整完了'),
+         Token(dongbei.TK_KEYWORD, u'。'),])
 
   def testTokenizingIncrements(self):
     self.assertEqual(
@@ -183,7 +185,8 @@ class DongbeiTest(unittest.TestCase):
         list(dongbei.Tokenize(u'写九九表咋整：整完了。')),
         [Token(dongbei.TK_IDENTIFIER, u'写九九表'),
          Token(dongbei.TK_KEYWORD, u'咋整：'),
-         Token(dongbei.TK_KEYWORD, u'整完了。'),])
+         Token(dongbei.TK_KEYWORD, u'整完了'),
+         Token(dongbei.TK_KEYWORD, u'。'),])
 
   def testTokenizingFuncCall(self):
     self.assertEqual(

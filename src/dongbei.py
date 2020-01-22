@@ -17,8 +17,8 @@ KW_CONCAT = u'还有'
 KW_DEC = u'退退'
 KW_DEC_BY = u'退'
 KW_DIVIDE_BY = u'除以'
-KW_END = u'整完了。'
-KW_END_LOOP = u'磨叽完了。'
+KW_END = u'整完了'
+KW_END_LOOP = u'磨叽完了'
 KW_FROM = u'从'
 KW_FUNC_DEF = u'咋整：'
 KW_IS_VAR = u'是活雷锋'
@@ -415,6 +415,7 @@ def TranslateToOneStatement(tokens):
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_LOOP), tokens)
     stmts, tokens = TranslateToStatements(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_END_LOOP), tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
     return (Statement(STMT_LOOP, (id, from_expr, to_expr, stmts)), tokens)
 
   open_paren, tokens = TryConsumeToken(
@@ -426,6 +427,7 @@ def TranslateToOneStatement(tokens):
         Token(TK_KEYWORD, KW_FUNC_DEF), tokens)
     stmts, tokens = TranslateToStatements(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_END), tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
     return (Statement(STMT_FUNC_DEF, (id, [param], stmts)), tokens)
 
   func_def, tokens = TryConsumeToken(
@@ -433,6 +435,7 @@ def TranslateToOneStatement(tokens):
   if func_def:
     stmts, tokens = TranslateToStatements(tokens)
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_END), tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
     return (Statement(STMT_FUNC_DEF, (id, [], stmts)), tokens)
 
   # sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”、“走”、' +
