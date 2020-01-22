@@ -5,8 +5,7 @@ import io
 import re
 import sys
 
-KW_INC = u'走走'
-KW_INC_BY = u'走'
+KW_BANG = u'！'
 KW_BECOME = u'装'
 KW_BEGIN = u'开整了：'
 KW_CALL = u'整'
@@ -21,6 +20,8 @@ KW_END = u'整完了'
 KW_END_LOOP = u'磨叽完了'
 KW_FROM = u'从'
 KW_FUNC_DEF = u'咋整：'
+KW_INC = u'走走'
+KW_INC_BY = u'走'
 KW_IS_VAR = u'是活雷锋'
 KW_LOOP = u'磨叽：'
 KW_MINUS = u'减'
@@ -34,6 +35,7 @@ KW_TIMES = u'乘'
 KW_TO = u'到'
 
 KEYWORDS = (
+    KW_BANG,
     KW_BECOME,
     KW_BEGIN,
     KW_CLOSE_PAREN,
@@ -187,6 +189,9 @@ def BasicTokenize(code):
   for keyword in KEYWORDS:
     if code.startswith(keyword):
       last_token = Token(TK_KEYWORD, keyword)
+      # Normalize ！to 。
+      if keyword == KW_BANG:
+        last_token = Token(TK_KEYWORD, KW_PERIOD)
       yield last_token
       remaining_code = code[len(keyword):]
       if last_token == Token(TK_KEYWORD, KW_OPEN_QUOTE):

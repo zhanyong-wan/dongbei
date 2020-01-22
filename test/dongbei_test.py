@@ -329,6 +329,12 @@ class DongbeiTest(unittest.TestCase):
         dongbei.Run(u'【加一】（几）咋整：唠唠：几加一。整完了。\n'
                     u'整【加一】（五）。'),
         u'6\n')
+
+  def testNormalizingBang(self):
+    self.assertEqual(
+        dongbei.Run(u'【加一】（几）咋整：唠唠：几加一！整完了！\n'
+                    u'整【加一】（五）！'),
+        u'6\n')
     
 if __name__ == '__main__':
   unittest.main()
