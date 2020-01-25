@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# TODO: define wrapper for Token(TK_KEYWORD, ...).
+
 import io
 import re
 import sys
@@ -29,6 +31,7 @@ KW_OPEN_PAREN = u'（'
 KW_OPEN_QUOTE = u'“'
 KW_PERIOD = u'。'
 KW_PLUS = u'加'
+KW_RETURN = u'滚犊子吧'
 KW_SAY = u'唠唠'
 KW_STEP = u'步'
 KW_TIMES = u'乘'
@@ -59,6 +62,7 @@ KEYWORDS = (
     KW_OPEN_QUOTE,
     KW_PERIOD,
     KW_PLUS,
+    KW_RETURN,
     KW_SAY,
     KW_STEP,
     KW_TIMES,
@@ -81,6 +85,7 @@ STMT_DEC_BY = 'DEC_BY'
 STMT_LOOP = 'LOOP'
 STMT_FUNC_DEF = 'FUNC_DEF'
 STMT_CALL = 'CALL'
+STMT_RETURN = 'RETURN'
 
 class Token:
   def __init__(self, kind, value):
@@ -299,19 +304,23 @@ def ConsumeToken(token, tokens):
              (token, tokens[0]))
   return token, tokens[1:]
 
-def ParseExpressionToken(tokens):
+def ParseExpressionToken(tokens, allow_close_paren):
+  # TODO: make this return a token list instead of one token.
   """Returns (token, remaining tokens)."""
 
   orig_tokens = tokens
-  
+
+  # Do we see an integer literal?
   integer, tokens = TryConsumeTokenType(TK_INTEGER_LITERAL, tokens)
   if integer is not None:
     return integer, tokens
 
+  # Do we see a variable?
   var, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if var is not None:
     return var, tokens
 
+  # Do we see a string literal?
   open_quote, tokens = TryConsumeToken(
       Token(TK_KEYWORD, KW_OPEN_QUOTE), tokens)
   if open_quote:
@@ -319,12 +328,22 @@ def ParseExpressionToken(tokens):
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_CLOSE_QUOTE), tokens)
     return str_token, tokens
 
+  # Do we see a function call?
+  call, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_CALL), tokens)
+  if call:
+    return call, tokens
+    
+  # Do we see an operator or a parenthesis?
   token = tokens[0]
   if token in (Token(TK_KEYWORD, KW_PLUS),
                Token(TK_KEYWORD, KW_MINUS),
                Token(TK_KEYWORD, KW_TIMES),
                Token(TK_KEYWORD, KW_DIVIDE_BY),
-               Token(TK_KEYWORD, KW_CONCAT)):
+               Token(TK_KEYWORD, KW_CONCAT),
+               Token(TK_KEYWORD, KW_OPEN_PAREN),
+  ):
+    return token, tokens[1:]
+  if allow_close_paren and token == Token(TK_KEYWORD, KW_CLOSE_PAREN):
     return token, tokens[1:]
 
   return None, orig_tokens
@@ -333,10 +352,16 @@ def ParseExpression(tokens):
   """Return (expr, remaining tokens)."""
 
   expr_tokens = []
+  paren_level = 0  # How many level are we in parentheses?
   while True:
-    token, tokens = ParseExpressionToken(tokens)
+    token, tokens = ParseExpressionToken(
+        tokens, allow_close_paren = paren_level > 0)
     if token:
       expr_tokens.append(token)
+      if token == Token(TK_KEYWORD, KW_OPEN_PAREN):
+        paren_level += 1
+      elif token == Token(TK_KEYWORD, KW_CLOSE_PAREN):
+        paren_level -= 1
     else:
       break
   return Expression(expr_tokens), tokens
@@ -366,6 +391,12 @@ def TranslateToOneStatement(tokens):
     _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
     return (Statement(STMT_CALL, (func, args)), tokens)
 
+  ret, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_RETURN), tokens)
+  if ret:
+    expr, tokens = ParseExpression(tokens)
+    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    return (Statement(STMT_RETURN, expr), tokens)
+    
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if not id:
     # sys.exit(u'语句必须以“唠唠”或者标识符开始。实际是%s' % (tokens[0],))
@@ -462,7 +493,10 @@ def TranslateExpressionTokensToPython(tokens):
   """Returns the Python code for the given dongbei expression."""
 
   python_code = ''
-  for token in tokens:
+  while len(tokens) > 0:
+    token = tokens[0]
+    tokens = tokens[1:]
+
     if token.kind == TK_INTEGER_LITERAL:
       python_code += '%s' % (token.value,)
     elif token.kind == TK_IDENTIFIER:
@@ -479,8 +513,21 @@ def TranslateExpressionTokensToPython(tokens):
       python_code += '/'
     elif token == Token(TK_KEYWORD, KW_CONCAT):
       python_code += ') + unicode('
+    elif token == Token(TK_KEYWORD, KW_CALL):
+      if len(tokens) == 0:
+        sys.exit(u'“整”后面必须跟函数名。')
+      func = tokens[0]
+      python_code += GetPythonVarName(func.value)
+      tokens = tokens[1:]
+      if len(tokens) == 0 or tokens[0] != Token(TK_KEYWORD, KW_OPEN_PAREN):
+        python_code += '()'
+    elif token == Token(TK_KEYWORD, KW_OPEN_PAREN):
+      python_code += '('
+    elif token == Token(TK_KEYWORD, KW_CLOSE_PAREN):
+      python_code += ')'
     else:
       sys.exit(u'我不懂 %s 表达式。' % (token,))
+
   return python_code
 
 def TranslateExpressionToPython(expr):
@@ -537,6 +584,10 @@ def TranslateStatementToPython(stmt, indent = ''):
     args_code = map(TranslateExpressionToPython, args)
     code = indent + '%s(%s)' % (func_name, ', '.join(args_code))
     return code
+  if stmt.kind == STMT_RETURN:
+    expr = stmt.value
+    expr_code = TranslateExpressionToPython(expr)
+    return indent + 'return ' + expr_code
   sys.exit(u'我不懂 %s 语句。' % (stmt.kind))
   
 def Translate(tokens):

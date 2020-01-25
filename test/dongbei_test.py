@@ -330,6 +330,12 @@ class DongbeiTest(unittest.TestCase):
                     u'整【加一】（五）。'),
         u'6\n')
 
+  def testFuncWithReturnValue(self):
+    self.assertEqual(
+        dongbei.Run(u'【加一】（几）咋整：滚犊子吧几加一。整完了。\n'
+                    u'唠唠：整【加一】（二）。'),
+        u'3\n')
+    
   def testNormalizingBang(self):
     self.assertEqual(
         dongbei.Run(u'【加一】（几）咋整：唠唠：几加一！整完了！\n'
