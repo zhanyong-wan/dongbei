@@ -175,9 +175,9 @@ class DongbeiTest(unittest.TestCase):
 
   def testTokenizingConcat(self):
     self.assertEqual(
-        list(dongbei.Tokenize(u'老刘还有二')),
+        list(dongbei.Tokenize(u'老刘、二')),
         [Token(dongbei.TK_IDENTIFIER, u'老刘'),
-         dongbei.Keyword(u'还有'),
+         dongbei.Keyword(u'、'),
          Token(dongbei.TK_INTEGER_LITERAL, 2),])
 
   def testTokenizingFuncDef(self):
@@ -313,7 +313,7 @@ class DongbeiTest(unittest.TestCase):
 
   def testConcat(self):
     self.assertEqual(
-        dongbei.Run(u'唠唠：“牛”还有二。'),
+        dongbei.Run(u'唠唠：“牛”、二。'),
         u'牛2\n')
 
   def testRunFunc(self):
