@@ -1,6 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""dongbei语言执行器
+
+用法：
+    dongbei.py 源程序文件名...XS
+"""
+
 import io
 import re
 import sys
@@ -614,14 +620,21 @@ def _db_append_output(s):
 def Run(code):
   tokens = list(Tokenize(code))
   py_code = Translate(tokens)
-  print '%s' % (py_code,)
+  print('Python 代码：')
+  print('%s' % (py_code,))
   global _db_output
   _db_output = ''
   exec(py_code)
+  print('运行结果：')
   print('%s' % (_db_output,))
   return _db_output
 
 
 if __name__ == '__main__':
-  with io.open(sys.argv[1], 'r', encoding='utf-8') as src_file:
-    Run(src_file.read())
+  if len(sys.argv) == 1:
+    sys.exit(__doc__)
+
+  for filepath in sys.argv[1:]:
+    with io.open(filepath, 'r', encoding='utf-8') as src_file:
+      print('执行 %s ...' % (filepath,))
+      Run(src_file.read())
