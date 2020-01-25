@@ -43,24 +43,24 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         list(dongbei.BasicTokenize(u'【阶乘】（几）')),
         [Token(dongbei.TK_IDENTIFIER, u'阶乘'),
-         Token(dongbei.TK_KEYWORD, u'（'),
+         dongbei.Keyword(u'（'),
          Token(dongbei.TK_CHAR, u'几'),
-         Token(dongbei.TK_KEYWORD, u'）'),])
+         dongbei.Keyword(u'）'),])
     self.assertEqual(
         list(dongbei.BasicTokenize(u'“ ”')),
-        [Token(dongbei.TK_KEYWORD, u'“'),
+        [dongbei.Keyword(u'“'),
          Token(dongbei.TK_STRING_LITERAL, u' '),
-         Token(dongbei.TK_KEYWORD, u'”'),])
+         dongbei.Keyword(u'”'),])
     self.assertEqual(
         list(dongbei.BasicTokenize(u'“”')),
-        [Token(dongbei.TK_KEYWORD, u'“'),
+        [dongbei.Keyword(u'“'),
          Token(dongbei.TK_STRING_LITERAL, u''),
-         Token(dongbei.TK_KEYWORD, u'”'),])
+         dongbei.Keyword(u'”'),])
     self.assertEqual(
         list(dongbei.BasicTokenize(u'“ A B ”')),
-        [Token(dongbei.TK_KEYWORD, u'“'),
+        [dongbei.Keyword(u'“'),
          Token(dongbei.TK_STRING_LITERAL, u' A B '),
-         Token(dongbei.TK_KEYWORD, u'”'),])
+         dongbei.Keyword(u'”'),])
     self.assertEqual(
         list(dongbei.BasicTokenize(u'老张')),
         [Token(dongbei.TK_CHAR, u'老'),
@@ -80,46 +80,46 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         list(dongbei.Tokenize(u'老张是活雷锋')),
         [Token(dongbei.TK_IDENTIFIER, u'老张'),
-         Token(dongbei.TK_KEYWORD, u'是活雷锋')])
+         dongbei.Keyword(u'是活雷锋')])
     self.assertEqual(
         list(dongbei.Tokenize(u'老张是活雷锋。\n老王是活雷锋。\n')),
         [Token(dongbei.TK_IDENTIFIER, u'老张'),
-         Token(dongbei.TK_KEYWORD, u'是活雷锋'),
-         Token(dongbei.TK_KEYWORD, u'。'),
+         dongbei.Keyword(u'是活雷锋'),
+         dongbei.Keyword(u'。'),
          Token(dongbei.TK_IDENTIFIER, u'老王'),
-         Token(dongbei.TK_KEYWORD, u'是活雷锋'),
-         Token(dongbei.TK_KEYWORD, u'。'),
+         dongbei.Keyword(u'是活雷锋'),
+         dongbei.Keyword(u'。'),
         ])
     self.assertEqual(
         list(dongbei.Tokenize(u'老张装250。\n老王装老张。\n')),
         [Token(dongbei.TK_IDENTIFIER, u'老张'),
-         Token(dongbei.TK_KEYWORD, u'装'),
+         dongbei.Keyword(u'装'),
          Token(dongbei.TK_INTEGER_LITERAL, 250),
-         Token(dongbei.TK_KEYWORD, u'。'),
+         dongbei.Keyword(u'。'),
          Token(dongbei.TK_IDENTIFIER, u'老王'),
-         Token(dongbei.TK_KEYWORD, u'装'),
+         dongbei.Keyword(u'装'),
          Token(dongbei.TK_IDENTIFIER, u'老张'),
-         Token(dongbei.TK_KEYWORD, u'。')])
+         dongbei.Keyword(u'。')])
     self.assertEqual(
         list(dongbei.Tokenize(u'唠唠：“你好”。')),
-        [Token(dongbei.TK_KEYWORD, u'唠唠'),
-         Token(dongbei.TK_KEYWORD, u'：'),
-         Token(dongbei.TK_KEYWORD, u'“'),
+        [dongbei.Keyword(u'唠唠'),
+         dongbei.Keyword(u'：'),
+         dongbei.Keyword(u'“'),
          Token(dongbei.TK_STRING_LITERAL, u'你好'),
-         Token(dongbei.TK_KEYWORD, u'”'),
-         Token(dongbei.TK_KEYWORD, u'。')])
+         dongbei.Keyword(u'”'),
+         dongbei.Keyword(u'。')])
 
   def testTokenizeArithmetic(self):
     self.assertEqual(
         list(dongbei.Tokenize(u'250加13减二乘五除以九')),
         [Token(dongbei.TK_INTEGER_LITERAL, 250),
-         Token(dongbei.TK_KEYWORD, u'加'),
+         dongbei.Keyword(u'加'),
          Token(dongbei.TK_INTEGER_LITERAL, 13),
-         Token(dongbei.TK_KEYWORD, u'减'),
+         dongbei.Keyword(u'减'),
          Token(dongbei.TK_INTEGER_LITERAL, 2),
-         Token(dongbei.TK_KEYWORD, u'乘'),
+         dongbei.Keyword(u'乘'),
          Token(dongbei.TK_INTEGER_LITERAL, 5),
-         Token(dongbei.TK_KEYWORD, u'除以'),
+         dongbei.Keyword(u'除以'),
          Token(dongbei.TK_INTEGER_LITERAL, 9),
         ])
     
@@ -127,71 +127,71 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         list(dongbei.Tokenize(u'老王从1到9磨叽：磨叽完了。')),
         [Token(dongbei.TK_IDENTIFIER, u'老王'),
-         Token(dongbei.TK_KEYWORD, u'从'),
+         dongbei.Keyword(u'从'),
          Token(dongbei.TK_INTEGER_LITERAL, 1),
-         Token(dongbei.TK_KEYWORD, u'到'),
+         dongbei.Keyword(u'到'),
          Token(dongbei.TK_INTEGER_LITERAL, 9),
-         Token(dongbei.TK_KEYWORD, u'磨叽：'),
-         Token(dongbei.TK_KEYWORD, u'磨叽完了'),
-         Token(dongbei.TK_KEYWORD, u'。'),
+         dongbei.Keyword(u'磨叽：'),
+         dongbei.Keyword(u'磨叽完了'),
+         dongbei.Keyword(u'。'),
         ])
 
   def testTokenizeCompound(self):
     self.assertEqual(
         list(dongbei.Tokenize(u'开整了：\n  唠唠：老王。\n整完了。')),
-        [Token(dongbei.TK_KEYWORD, u'开整了：'),
-         Token(dongbei.TK_KEYWORD, u'唠唠'),
-         Token(dongbei.TK_KEYWORD, u'：'),
+        [dongbei.Keyword(u'开整了：'),
+         dongbei.Keyword(u'唠唠'),
+         dongbei.Keyword(u'：'),
          Token(dongbei.TK_IDENTIFIER, u'老王'),
-         Token(dongbei.TK_KEYWORD, u'。'),
-         Token(dongbei.TK_KEYWORD, u'整完了'),
-         Token(dongbei.TK_KEYWORD, u'。'),])
+         dongbei.Keyword(u'。'),
+         dongbei.Keyword(u'整完了'),
+         dongbei.Keyword(u'。'),])
 
   def testTokenizingIncrements(self):
     self.assertEqual(
         list(dongbei.Tokenize(u'老王走走')),
         [Token(dongbei.TK_IDENTIFIER, u'老王'),
-         Token(dongbei.TK_KEYWORD, u'走走'),])
+         dongbei.Keyword(u'走走'),])
     self.assertEqual(
         list(dongbei.Tokenize(u'老王走两步')),
         [Token(dongbei.TK_IDENTIFIER, u'老王'),
-         Token(dongbei.TK_KEYWORD, u'走'),
+         dongbei.Keyword(u'走'),
          Token(dongbei.TK_INTEGER_LITERAL, 2),
-         Token(dongbei.TK_KEYWORD, u'步'),
+         dongbei.Keyword(u'步'),
         ])
 
   def testTokenizingDecrements(self):
     self.assertEqual(
         list(dongbei.Tokenize(u'老王退退')),
         [Token(dongbei.TK_IDENTIFIER, u'老王'),
-         Token(dongbei.TK_KEYWORD, u'退退'),])
+         dongbei.Keyword(u'退退'),])
     self.assertEqual(
         list(dongbei.Tokenize(u'老王退三步')),
         [Token(dongbei.TK_IDENTIFIER, u'老王'),
-         Token(dongbei.TK_KEYWORD, u'退'),
+         dongbei.Keyword(u'退'),
          Token(dongbei.TK_INTEGER_LITERAL, 3),
-         Token(dongbei.TK_KEYWORD, u'步'),
+         dongbei.Keyword(u'步'),
         ])
 
   def testTokenizingConcat(self):
     self.assertEqual(
         list(dongbei.Tokenize(u'老刘还有二')),
         [Token(dongbei.TK_IDENTIFIER, u'老刘'),
-         Token(dongbei.TK_KEYWORD, u'还有'),
+         dongbei.Keyword(u'还有'),
          Token(dongbei.TK_INTEGER_LITERAL, 2),])
 
   def testTokenizingFuncDef(self):
     self.assertEqual(
         list(dongbei.Tokenize(u'写九九表咋整：整完了。')),
         [Token(dongbei.TK_IDENTIFIER, u'写九九表'),
-         Token(dongbei.TK_KEYWORD, u'咋整：'),
-         Token(dongbei.TK_KEYWORD, u'整完了'),
-         Token(dongbei.TK_KEYWORD, u'。'),])
+         dongbei.Keyword(u'咋整：'),
+         dongbei.Keyword(u'整完了'),
+         dongbei.Keyword(u'。'),])
 
   def testTokenizingFuncCall(self):
     self.assertEqual(
         list(dongbei.Tokenize(u'整写九九表')),
-        [Token(dongbei.TK_KEYWORD, u'整'),
+        [dongbei.Keyword(u'整'),
          Token(dongbei.TK_IDENTIFIER, u'写九九表'),])
     
   def testParsingIncrements(self):
@@ -230,13 +230,13 @@ class DongbeiTest(unittest.TestCase):
             (Token(dongbei.TK_IDENTIFIER, u'老王'),
              Expression([
                  Token(dongbei.TK_INTEGER_LITERAL, 250),
-                 Token(dongbei.TK_KEYWORD, u'加'),
+                 dongbei.Keyword(u'加'),
                  Token(dongbei.TK_INTEGER_LITERAL, 13),
-                 Token(dongbei.TK_KEYWORD, u'减'),
+                 dongbei.Keyword(u'减'),
                  Token(dongbei.TK_INTEGER_LITERAL, 2),
-                 Token(dongbei.TK_KEYWORD, u'乘'),
+                 dongbei.Keyword(u'乘'),
                  Token(dongbei.TK_INTEGER_LITERAL, 5),
-                 Token(dongbei.TK_KEYWORD, u'除以'),
+                 dongbei.Keyword(u'除以'),
                  Token(dongbei.TK_INTEGER_LITERAL, 6),
              ])))])
     

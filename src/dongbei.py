@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# TODO: define wrapper for Token(TK_KEYWORD, ...).
-
 import io
 import re
 import sys
@@ -156,6 +154,10 @@ class Statement:
   def __ne__(self, other):
     return not (self == other)
 
+def Keyword(str):
+  """Returns a keyword token whose value is the given string."""
+  return Token(TK_KEYWORD, str)
+
 def TokenizeStringLiteralAndRest(code):
   close_quote_pos = code.find(KW_CLOSE_QUOTE)
   if close_quote_pos < 0:
@@ -163,7 +165,7 @@ def TokenizeStringLiteralAndRest(code):
     return
 
   yield Token(TK_STRING_LITERAL, code[:close_quote_pos])
-  yield Token(TK_KEYWORD, KW_CLOSE_QUOTE)
+  yield Keyword(KW_CLOSE_QUOTE)
   for tk in BasicTokenize(code[close_quote_pos + len(KW_CLOSE_QUOTE):]):
     yield tk
 
@@ -193,13 +195,13 @@ def BasicTokenize(code):
   # Try to parse a keyword at the beginning of the code.
   for keyword in KEYWORDS:
     if code.startswith(keyword):
-      last_token = Token(TK_KEYWORD, keyword)
+      last_token = Keyword(keyword)
       # Normalize ！to 。
       if keyword == KW_BANG:
-        last_token = Token(TK_KEYWORD, KW_PERIOD)
+        last_token = Keyword(KW_PERIOD)
       yield last_token
       remaining_code = code[len(keyword):]
-      if last_token == Token(TK_KEYWORD, KW_OPEN_QUOTE):
+      if last_token == Keyword(KW_OPEN_QUOTE):
         for tk in TokenizeStringLiteralAndRest(remaining_code):
           yield tk
       else:
@@ -322,28 +324,28 @@ def ParseExpressionToken(tokens, allow_close_paren):
 
   # Do we see a string literal?
   open_quote, tokens = TryConsumeToken(
-      Token(TK_KEYWORD, KW_OPEN_QUOTE), tokens)
+      Keyword(KW_OPEN_QUOTE), tokens)
   if open_quote:
     str_token, tokens = TryConsumeTokenType(TK_STRING_LITERAL, tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_CLOSE_QUOTE), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_CLOSE_QUOTE), tokens)
     return str_token, tokens
 
   # Do we see a function call?
-  call, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_CALL), tokens)
+  call, tokens = TryConsumeToken(Keyword(KW_CALL), tokens)
   if call:
     return call, tokens
     
   # Do we see an operator or a parenthesis?
   token = tokens[0]
-  if token in (Token(TK_KEYWORD, KW_PLUS),
-               Token(TK_KEYWORD, KW_MINUS),
-               Token(TK_KEYWORD, KW_TIMES),
-               Token(TK_KEYWORD, KW_DIVIDE_BY),
-               Token(TK_KEYWORD, KW_CONCAT),
-               Token(TK_KEYWORD, KW_OPEN_PAREN),
+  if token in (Keyword(KW_PLUS),
+               Keyword(KW_MINUS),
+               Keyword(KW_TIMES),
+               Keyword(KW_DIVIDE_BY),
+               Keyword(KW_CONCAT),
+               Keyword(KW_OPEN_PAREN),
   ):
     return token, tokens[1:]
-  if allow_close_paren and token == Token(TK_KEYWORD, KW_CLOSE_PAREN):
+  if allow_close_paren and token == Keyword(KW_CLOSE_PAREN):
     return token, tokens[1:]
 
   return None, orig_tokens
@@ -358,9 +360,9 @@ def ParseExpression(tokens):
         tokens, allow_close_paren = paren_level > 0)
     if token:
       expr_tokens.append(token)
-      if token == Token(TK_KEYWORD, KW_OPEN_PAREN):
+      if token == Keyword(KW_OPEN_PAREN):
         paren_level += 1
-      elif token == Token(TK_KEYWORD, KW_CLOSE_PAREN):
+      elif token == Keyword(KW_CLOSE_PAREN):
         paren_level -= 1
     else:
       break
@@ -370,31 +372,31 @@ def TranslateToOneStatement(tokens):
   """Returns (statement, remainding_tokens, error)."""
 
   orig_tokens = tokens
-  say, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_SAY), tokens)
+  say, tokens = TryConsumeToken(Keyword(KW_SAY), tokens)
   if say:
-    colon, tokens = ConsumeToken(Token(TK_KEYWORD, KW_COLON), tokens)
+    colon, tokens = ConsumeToken(Keyword(KW_COLON), tokens)
     expr, tokens = ParseExpression(tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_SAY, expr), tokens)
 
-  call, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_CALL), tokens)
+  call, tokens = TryConsumeToken(Keyword(KW_CALL), tokens)
   if call:
     func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
     open_paren, tokens = TryConsumeToken(
-        Token(TK_KEYWORD, KW_OPEN_PAREN), tokens)
+        Keyword(KW_OPEN_PAREN), tokens)
     if open_paren:
       arg, tokens = ParseExpression(tokens)
-      _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_CLOSE_PAREN), tokens)
+      _, tokens = ConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
       args = [arg]
     else:
       args = []
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_CALL, (func, args)), tokens)
 
-  ret, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_RETURN), tokens)
+  ret, tokens = TryConsumeToken(Keyword(KW_RETURN), tokens)
   if ret:
     expr, tokens = ParseExpression(tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_RETURN, expr), tokens)
     
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
@@ -402,76 +404,76 @@ def TranslateToOneStatement(tokens):
     # sys.exit(u'语句必须以“唠唠”或者标识符开始。实际是%s' % (tokens[0],))
     return (None, orig_tokens)
 
-  is_var, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_IS_VAR), tokens)
+  is_var, tokens = TryConsumeToken(Keyword(KW_IS_VAR), tokens)
   if is_var:
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_VAR_DECL, id), tokens)
 
-  become, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_BECOME), tokens)
+  become, tokens = TryConsumeToken(Keyword(KW_BECOME), tokens)
   if become:
     expr, tokens = ParseExpression(tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_ASSIGN, (id, expr)), tokens)
 
-  inc, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_INC), tokens)
+  inc, tokens = TryConsumeToken(Keyword(KW_INC), tokens)
   if inc:
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_INC_BY,
                       (id, Expression([Token(TK_INTEGER_LITERAL, 1)]))),
             tokens)
 
   inc, tokens = TryConsumeToken(
-      Token(TK_KEYWORD, KW_INC_BY), tokens)
+      Keyword(KW_INC_BY), tokens)
   if inc:
     expr, tokens = ParseExpression(tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_STEP), tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_STEP), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_INC_BY, (id, expr)), tokens)
 
-  dec, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_DEC), tokens)
+  dec, tokens = TryConsumeToken(Keyword(KW_DEC), tokens)
   if dec:
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_DEC_BY,
                       (id, Expression([Token(TK_INTEGER_LITERAL, 1)]))),
             tokens)
 
   dec, tokens = TryConsumeToken(
-      Token(TK_KEYWORD, KW_DEC_BY), tokens)
+      Keyword(KW_DEC_BY), tokens)
   if dec:
     expr, tokens = ParseExpression(tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_STEP), tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_STEP), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_DEC_BY, (id, expr)), tokens)
 
-  from_, tokens = TryConsumeToken(Token(TK_KEYWORD, KW_FROM), tokens)
+  from_, tokens = TryConsumeToken(Keyword(KW_FROM), tokens)
   if from_:
     from_expr, tokens = ParseExpression(tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_TO), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_TO), tokens)
     to_expr, tokens = ParseExpression(tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_LOOP), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_LOOP), tokens)
     stmts, tokens = TranslateToStatements(tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_END_LOOP), tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_END_LOOP), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_LOOP, (id, from_expr, to_expr, stmts)), tokens)
 
   open_paren, tokens = TryConsumeToken(
-      Token(TK_KEYWORD, KW_OPEN_PAREN), tokens)
+      Keyword(KW_OPEN_PAREN), tokens)
   if open_paren:
     param, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_CLOSE_PAREN), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
     func_def, tokens = ConsumeToken(
-        Token(TK_KEYWORD, KW_FUNC_DEF), tokens)
+        Keyword(KW_FUNC_DEF), tokens)
     stmts, tokens = TranslateToStatements(tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_END), tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_END), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_FUNC_DEF, (id, [param], stmts)), tokens)
 
   func_def, tokens = TryConsumeToken(
-      Token(TK_KEYWORD, KW_FUNC_DEF), tokens)
+      Keyword(KW_FUNC_DEF), tokens)
   if func_def:
     stmts, tokens = TranslateToStatements(tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_END), tokens)
-    _, tokens = ConsumeToken(Token(TK_KEYWORD, KW_PERIOD), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_END), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_FUNC_DEF, (id, [], stmts)), tokens)
 
   # sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”、“走”、' +
@@ -503,27 +505,27 @@ def TranslateExpressionTokensToPython(tokens):
       python_code += GetPythonVarName(token.value)
     elif token.kind == TK_STRING_LITERAL:
       python_code += 'u"%s"' % (token.value,)
-    elif token == Token(TK_KEYWORD, KW_PLUS):
+    elif token == Keyword(KW_PLUS):
       python_code += '+'
-    elif token == Token(TK_KEYWORD, KW_MINUS):
+    elif token == Keyword(KW_MINUS):
       python_code += '-'
-    elif token == Token(TK_KEYWORD, KW_TIMES):
+    elif token == Keyword(KW_TIMES):
       python_code += '*'
-    elif token == Token(TK_KEYWORD, KW_DIVIDE_BY):
+    elif token == Keyword(KW_DIVIDE_BY):
       python_code += '/'
-    elif token == Token(TK_KEYWORD, KW_CONCAT):
+    elif token == Keyword(KW_CONCAT):
       python_code += ') + unicode('
-    elif token == Token(TK_KEYWORD, KW_CALL):
+    elif token == Keyword(KW_CALL):
       if len(tokens) == 0:
         sys.exit(u'“整”后面必须跟函数名。')
       func = tokens[0]
       python_code += GetPythonVarName(func.value)
       tokens = tokens[1:]
-      if len(tokens) == 0 or tokens[0] != Token(TK_KEYWORD, KW_OPEN_PAREN):
+      if len(tokens) == 0 or tokens[0] != Keyword(KW_OPEN_PAREN):
         python_code += '()'
-    elif token == Token(TK_KEYWORD, KW_OPEN_PAREN):
+    elif token == Keyword(KW_OPEN_PAREN):
       python_code += '('
-    elif token == Token(TK_KEYWORD, KW_CLOSE_PAREN):
+    elif token == Keyword(KW_CLOSE_PAREN):
       python_code += ')'
     else:
       sys.exit(u'我不懂 %s 表达式。' % (token,))
@@ -532,7 +534,7 @@ def TranslateExpressionTokensToPython(tokens):
 
 def TranslateExpressionToPython(expr):
   python_code = TranslateExpressionTokensToPython(expr.tokens)
-  if Token(TK_KEYWORD, KW_CONCAT) not in expr.tokens:
+  if Keyword(KW_CONCAT) not in expr.tokens:
     return python_code
   return 'unicode(%s)' % (python_code,)
 
