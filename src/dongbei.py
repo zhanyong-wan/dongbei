@@ -176,6 +176,16 @@ def TokenizeStringLiteralAndRest(code):
     yield tk
 
 
+def TryParseKeyword(keyword, code):
+  """Returns (parsed keyword string, remaining code)."""
+  orig_code = code
+  for char in keyword:
+    code = code.lstrip()
+    if not code.startswith(char):
+      return None, orig_code
+    code = code[1:]
+  return keyword, code
+
 def BasicTokenize(code):
   # Skip spaces at the beginning.
   while True:
@@ -200,13 +210,13 @@ def BasicTokenize(code):
     
   # Try to parse a keyword at the beginning of the code.
   for keyword in KEYWORDS:
-    if code.startswith(keyword):
+    kw, remaining_code = TryParseKeyword(keyword, code)
+    if kw:
       last_token = Keyword(keyword)
       # Normalize ！to 。
       if keyword == KW_BANG:
         last_token = Keyword(KW_PERIOD)
       yield last_token
-      remaining_code = code[len(keyword):]
       if last_token == Keyword(KW_OPEN_QUOTE):
         for tk in TokenizeStringLiteralAndRest(remaining_code):
           yield tk
@@ -482,9 +492,6 @@ def TranslateToOneStatement(tokens):
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_FUNC_DEF, (id, [], stmts)), tokens)
 
-  # sys.exit(u'名字过后应该是“是活雷锋”、“装”、“走走”、“走”、' +
-  #          u'“退退”、“退”，或者“从”。实际是%s'
-  #          % (tokens[0],))
   return (None, orig_tokens)
 
 def TranslateToStatements(tokens):

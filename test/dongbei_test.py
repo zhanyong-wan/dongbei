@@ -89,6 +89,12 @@ class DongbeiTest(unittest.TestCase):
         [Token(dongbei.TK_IDENTIFIER, u'老张'),
          dongbei.Keyword(u'是活雷锋')])
     self.assertEqual(
+        list(dongbei.Tokenize(u'老张是 活雷\n锋 。 ')),
+        [Token(dongbei.TK_IDENTIFIER, u'老张'),
+         dongbei.Keyword(u'是活雷锋'),
+         dongbei.Keyword(u'。'),
+        ])
+    self.assertEqual(
         list(dongbei.Tokenize(u'老张是活雷锋。\n老王是活雷锋。\n')),
         [Token(dongbei.TK_IDENTIFIER, u'老张'),
          dongbei.Keyword(u'是活雷锋'),
