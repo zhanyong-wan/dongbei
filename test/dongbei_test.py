@@ -69,6 +69,10 @@ class DongbeiTest(unittest.TestCase):
         [Token(dongbei.TK_CHAR, u'老'),
          Token(dongbei.TK_CHAR, u'张'),])
     self.assertEqual(
+        list(dongbei.BasicTokenize(u'  老 张   ')),
+        [Token(dongbei.TK_CHAR, u'老'),
+         Token(dongbei.TK_CHAR, u'张'),])
+    self.assertEqual(
         list(dongbei.Tokenize(u'# 123456\n老张')),
         [Token(dongbei.TK_IDENTIFIER, u'老张')])
     self.assertEqual(
