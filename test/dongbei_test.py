@@ -41,6 +41,9 @@ class DongbeiTest(unittest.TestCase):
         list(dongbei.BasicTokenize(u'【阶乘】')),
         [Token(dongbei.TK_IDENTIFIER, u'阶乘'),])
     self.assertEqual(
+        list(dongbei.BasicTokenize(u'【 阶  乘   】')),
+        [Token(dongbei.TK_IDENTIFIER, u'阶乘'),])
+    self.assertEqual(
         list(dongbei.BasicTokenize(u'【阶乘】（几）')),
         [Token(dongbei.TK_IDENTIFIER, u'阶乘'),
          dongbei.Keyword(u'（'),

@@ -192,7 +192,7 @@ def BasicTokenize(code):
   # Parse 【标识符】.
   m = re.match(u'^(【(.*?)】)', code)
   if m:
-    id = m.group(2).strip()
+    id = re.sub(r'\s+', '', m.group(2))  # Ignore whitespace.
     yield Token(TK_IDENTIFIER, id)
     for tk in BasicTokenize(code[len(m.group(1)):]):
       yield tk
