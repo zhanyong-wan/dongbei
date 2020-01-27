@@ -328,6 +328,9 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         dongbei.Run(u'唠唠：“牛”、二。'),
         u'牛2\n')
+    self.assertEqual(
+        dongbei.Run(u'唠唠：“老王”、665加一。'),
+        u'老王666\n')
 
   def testRunFunc(self):
     self.assertEqual(
