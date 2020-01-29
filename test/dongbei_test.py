@@ -324,6 +324,16 @@ class DongbeiTest(unittest.TestCase):
         dongbei.Run(u'老张从1到3磨叽：唠唠：老张。磨叽完了。'),
         '1\n2\n3\n')
 
+  def testLoopWithNoStatement(self):
+    self.assertEqual(
+        dongbei.Run(u'老张从1到2磨叽：磨叽完了。'),
+        '')
+
+  def testLoopWithMultipleStatements(self):
+    self.assertEqual(
+        dongbei.Run(u'老张从1到2磨叽：唠唠：老张。唠唠：老张加一。磨叽完了。'),
+        '1\n2\n2\n3\n')
+
   def testConcat(self):
     self.assertEqual(
         dongbei.Run(u'唠唠：“牛”、二。'),
