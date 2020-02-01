@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python3
 # -*- coding: utf-8 -*-
 
 """dongbei语言执行器
@@ -97,14 +97,10 @@ class Token:
     self.value = value
 
   def __str__(self):
-    return self.__unicode__()
-
-  def __unicode__(self):
-    # return u'%s <%s>' % (self.kind, repr(self.value))
     return u'%s <%s>' % (self.kind, self.value)
 
   def __repr__(self):
-    return self.__unicode__().encode('utf-8')
+    return self.__str__()
 
   def __eq__(self, other):
     return (isinstance(other, Token) and
@@ -119,14 +115,11 @@ class Expression:
     self.tokens = tokens
 
   def __str__(self):
-    return self.__unicode__()
-
-  def __unicode__(self):
-    # return u'EXPRESSION %s' % (repr(self.tokens),)
-    return u'EXPRESSION %s' % (self.tokens,)
+    tokens_str = ', '.join(str(token) for token in self.tokens)
+    return u'EXPRESSION [%s]' % (tokens_str,)
 
   def __repr__(self):
-    return self.__unicode__().encode('utf-8')
+    return self.__str__()
 
   def __eq__(self, other):
     return (isinstance(other, Expression) and
@@ -141,16 +134,11 @@ class Statement:
     self.value = value
 
   def __str__(self):
-    return self.__unicode__()
-
-  def __unicode__(self):
-    # return u'%s <%s>' % (self.kind, repr(self.value))
-    
-    value_unicode = str(self.value).decode('utf-8')  # unicode(self.value)
-    return u'%s <%s>' % (self.kind, value_unicode)
+    value_str = str(self.value)
+    return u'%s <%s>' % (self.kind, value_str)
 
   def __repr__(self):
-    return self.__unicode__().encode('utf-8')
+    return self.__str__()
 
   def __eq__(self, other):
     return (isinstance(other, Statement) and
@@ -527,7 +515,7 @@ def TranslateExpressionTokensToPython(tokens):
     elif token == Keyword(KW_DIVIDE_BY):
       python_code += '/'
     elif token == Keyword(KW_CONCAT):
-      python_code += ') + unicode('
+      python_code += ') + str('
     elif token == Keyword(KW_CALL):
       if len(tokens) == 0:
         sys.exit(u'“整”后面必须跟函数名。')
@@ -549,7 +537,7 @@ def TranslateExpressionToPython(expr):
   python_code = TranslateExpressionTokensToPython(expr.tokens)
   if Keyword(KW_CONCAT) not in expr.tokens:
     return python_code
-  return 'unicode(%s)' % (python_code,)
+  return 'str(%s)' % (python_code,)
 
 def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_VAR_DECL:
