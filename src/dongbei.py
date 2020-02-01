@@ -141,7 +141,23 @@ class AtomicExpr(Expr):
     return self.__str__()
 
   def __eq__(self, other):
-    return type(other) == AtomicExpr and self.token == other.token
+    return type(self) == type(other) and self.token == other.token
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class ParenExpr(Expr):
+  def __init__(self, expr):
+    self.expr = expr
+
+  def __str__(self):
+    return 'PAREN_EXPR<%s>' % (self.expr,)
+
+  def __repr__(self):
+    return self.__str__()
+
+  def __eq__(self, other):
+    return type(self) == type(other) and self.expr == other.expr
 
   def __ne__(self, other):
     return not (self == other)
@@ -406,6 +422,13 @@ def NewParseExpr(tokens):
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if id:
     return AtomicExpr(id), tokens
+
+  # Do we see a parenthesis?
+  open_paren, tokens = TryConsumeToken(Keyword(KW_OPEN_PAREN), tokens)
+  if open_paren:
+    expr, tokens = NewParseExpr(tokens)
+    _, tokens = ConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
+    return ParenExpr(expr), tokens
 
   return None, tokens
 

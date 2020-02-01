@@ -12,6 +12,7 @@ from src import dongbei
 from src.dongbei import AtomicExpr
 from src.dongbei import ComparisonExpr
 from src.dongbei import Expr
+from src.dongbei import ParenExpr
 from src.dongbei import ParseExprFromStr
 from src.dongbei import Statement
 from src.dongbei import Token
@@ -26,6 +27,12 @@ class DongbeiParseExprTest(unittest.TestCase):
   def testParseIdentifier(self):
     self.assertEqual(ParseExprFromStr(u'老王')[0],
                      AtomicExpr(Token(dongbei.TK_IDENTIFIER, u'老王')))
+
+  def testParseParens(self):
+    # Wide parens.
+    self.assertEqual(ParseExprFromStr(u'（老王）')[0],
+                     ParenExpr(
+                         AtomicExpr(Token(dongbei.TK_IDENTIFIER, u'老王'))))
 
 class DongbeiTest(unittest.TestCase):
   def testRunEmptyProgram(self):
