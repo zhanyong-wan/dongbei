@@ -396,9 +396,17 @@ def ParseExprToken(tokens, allow_close_paren):
 
 def NewParseExpr(tokens):
   """Returns (expr, remaining tokens)."""
+
+  # Do we see an integer literal?
   num, tokens = TryConsumeTokenType(TK_INTEGER_LITERAL, tokens)
   if num:
     return AtomicExpr(num), tokens
+
+  # Do we see an identifier?
+  id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
+  if id:
+    return AtomicExpr(id), tokens
+
   return None, tokens
 
 def ParseExprFromStr(str):
