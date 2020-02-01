@@ -130,39 +130,44 @@ class Expr:
   def __ne__(self, other):
     return not (self == other)
 
-class AtomicExpr(Expr):
+class NewExpr:
+  def __init__(self):
+    pass
+
+  def __repr__(self):
+    return self.__str__()
+
+  def __eq__(self, other):
+    return type(self) == type(other) and self.Equals(other)
+
+  def Equals(self, other):
+    """Returns true if self and other (which is guaranteed to have the same type) are equal."""
+    raise Exception('A subclass of NewExpr must implement Equals().')
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class AtomicExpr(NewExpr):
   def __init__(self, token):
     self.token = token
 
   def __str__(self):
     return 'ATOMIC_EXPR<%s>' % (self.token,)
 
-  def __repr__(self):
-    return self.__str__()
+  def Equals(self, other):
+    return self.token == other.token
 
-  def __eq__(self, other):
-    return type(self) == type(other) and self.token == other.token
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class ParenExpr(Expr):
+class ParenExpr(NewExpr):
   def __init__(self, expr):
     self.expr = expr
 
   def __str__(self):
     return 'PAREN_EXPR<%s>' % (self.expr,)
 
-  def __repr__(self):
-    return self.__str__()
+  def Equals(self, other):
+    return self.expr == other.expr
 
-  def __eq__(self, other):
-    return type(self) == type(other) and self.expr == other.expr
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class ComparisonExpr(Expr):
+class ComparisonExpr(NewExpr):
   def __init__(self, op1, relation, op2):
     self.op1 = op1
     self.relation = relation
@@ -172,17 +177,10 @@ class ComparisonExpr(Expr):
     return u'COMPARISON_EXPR(%s, %s, %s)' % (
         self.op1, self.relation, self.op2)
 
-  def __repr__(self):
-    return self.__str__()
-
-  def __eq__(self, other):
-    return (type(other) == ComparisonExpr and
-            self.op1 == other.op1 and
+  def Equals(other):
+    return (self.op1 == other.op1 and
             self.relation == other.relation and
             self.op2 == other.op2)
-
-  def __ne__(self, other):
-    return not (self == other)
 
 class Statement:
   def __init__(self, kind, value):
