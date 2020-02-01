@@ -9,12 +9,20 @@ import unittest
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from src import dongbei
+from src.dongbei import AtomicExpr
+from src.dongbei import ComparisonExpr
+from src.dongbei import Expr
+from src.dongbei import ParseExprFromStr
+from src.dongbei import Statement
+from src.dongbei import Token
 
-ComparisonExpr = dongbei.ComparisonExpr
-Expr = dongbei.Expr
-Statement = dongbei.Statement
-Token = dongbei.Token
-
+class DongbeiParseExprTest(unittest.TestCase):
+  def testParseInteger(self):
+    self.assertEqual(ParseExprFromStr(u'5')[0],
+                     AtomicExpr(Token(dongbei.TK_INTEGER_LITERAL, 5)))
+    self.assertEqual(ParseExprFromStr(u'九')[0],
+                     AtomicExpr(Token(dongbei.TK_INTEGER_LITERAL, 9)))
+    
 class DongbeiTest(unittest.TestCase):
   def testRunEmptyProgram(self):
     self.assertEqual(dongbei.Run(''), '')

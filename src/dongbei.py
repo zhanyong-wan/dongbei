@@ -118,7 +118,7 @@ class Expr:
 
   def __str__(self):
     tokens_str = ', '.join(str(token) for token in self.tokens)
-    return u'EXPRESSION [%s]' % (tokens_str,)
+    return u'EXPR [%s]' % (tokens_str,)
 
   def __repr__(self):
     return self.__str__()
@@ -130,6 +130,22 @@ class Expr:
   def __ne__(self, other):
     return not (self == other)
 
+class AtomicExpr(Expr):
+  def __init__(self, token):
+    self.token = token
+
+  def __str__(self):
+    return 'ATOMIC_EXPR<%s>' % (self.token,)
+
+  def __repr__(self):
+    return self.__str__()
+
+  def __eq__(self, other):
+    return type(other) == AtomicExpr and self.token == other.token
+
+  def __ne__(self, other):
+    return not (self == other)
+
 class ComparisonExpr(Expr):
   def __init__(self, op1, relation, op2):
     self.op1 = op1
@@ -137,7 +153,7 @@ class ComparisonExpr(Expr):
     self.op2 = op2
 
   def __str__(self):
-    return u'COMPARISON_EXPRESSION(%s, %s, %s)' % (
+    return u'COMPARISON_EXPR(%s, %s, %s)' % (
         self.op1, self.relation, self.op2)
 
   def __repr__(self):
@@ -378,8 +394,18 @@ def ParseExprToken(tokens, allow_close_paren):
 
   return None, orig_tokens
 
+def NewParseExpr(tokens):
+  """Returns (expr, remaining tokens)."""
+  num, tokens = TryConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+  if num:
+    return AtomicExpr(num), tokens
+  return None, tokens
+
+def ParseExprFromStr(str):
+  return NewParseExpr(list(Tokenize(str)))
+
 def ParseExpr(tokens):
-  """Return (expr, remaining tokens)."""
+  """Returns (expr, remaining tokens)."""
 
   expr_tokens = []
   paren_level = 0  # How many level are we in parentheses?
