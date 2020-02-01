@@ -18,6 +18,7 @@ KW_CALL = u'整'
 KW_CLOSE_PAREN = u'）'
 KW_CLOSE_QUOTE = u'”'
 KW_COLON = u'：'
+KW_COMPARE = u'比'
 KW_CONCAT = u'、'
 KW_DEC = u'退退'
 KW_DEC_BY = u'退'
@@ -48,6 +49,7 @@ KEYWORDS = (
     KW_CLOSE_PAREN,
     KW_CLOSE_QUOTE,
     KW_COLON,
+    KW_COMPARE,
     KW_CONCAT,
     KW_DEC,
     KW_DEC_BY,
@@ -110,7 +112,7 @@ class Token:
   def __ne__(self, other):
     return not (self == other)
 
-class Expression:
+class Expr:
   def __init__(self, tokens):
     self.tokens = tokens
 
@@ -122,8 +124,30 @@ class Expression:
     return self.__str__()
 
   def __eq__(self, other):
-    return (isinstance(other, Expression) and
+    return (type(other) == Expr and
             self.tokens == other.tokens)
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class ComparisonExpr(Expr):
+  def __init__(self, op1, relation, op2):
+    self.op1 = op1
+    self.relation = relation
+    self.op2 = op2
+
+  def __str__(self):
+    return u'COMPARISON_EXPRESSION(%s, %s, %s)' % (
+        self.op1, self.relation, self.op2)
+
+  def __repr__(self):
+    return self.__str__()
+
+  def __eq__(self, other):
+    return (type(other) == ComparisonExpr and
+            self.op1 == other.op1 and
+            self.relation == other.relation and
+            self.op2 == other.op2)
 
   def __ne__(self, other):
     return not (self == other)
@@ -310,7 +334,7 @@ def ConsumeToken(token, tokens):
              (token, tokens[0]))
   return token, tokens[1:]
 
-def ParseExpressionToken(tokens, allow_close_paren):
+def ParseExprToken(tokens, allow_close_paren):
   # TODO: make this return a token list instead of one token.
   """Returns (token, remaining tokens)."""
 
@@ -354,13 +378,13 @@ def ParseExpressionToken(tokens, allow_close_paren):
 
   return None, orig_tokens
 
-def ParseExpression(tokens):
+def ParseExpr(tokens):
   """Return (expr, remaining tokens)."""
 
   expr_tokens = []
   paren_level = 0  # How many level are we in parentheses?
   while True:
-    token, tokens = ParseExpressionToken(
+    token, tokens = ParseExprToken(
         tokens, allow_close_paren = paren_level > 0)
     if token:
       expr_tokens.append(token)
@@ -370,7 +394,7 @@ def ParseExpression(tokens):
         paren_level -= 1
     else:
       break
-  return Expression(expr_tokens), tokens
+  return Expr(expr_tokens), tokens
 
 def TranslateToOneStatement(tokens):
   """Returns (statement, remainding_tokens, error)."""
@@ -379,7 +403,7 @@ def TranslateToOneStatement(tokens):
   say, tokens = TryConsumeToken(Keyword(KW_SAY), tokens)
   if say:
     colon, tokens = ConsumeToken(Keyword(KW_COLON), tokens)
-    expr, tokens = ParseExpression(tokens)
+    expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_SAY, expr), tokens)
 
@@ -389,7 +413,7 @@ def TranslateToOneStatement(tokens):
     open_paren, tokens = TryConsumeToken(
         Keyword(KW_OPEN_PAREN), tokens)
     if open_paren:
-      arg, tokens = ParseExpression(tokens)
+      arg, tokens = ParseExpr(tokens)
       _, tokens = ConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
       args = [arg]
     else:
@@ -399,7 +423,7 @@ def TranslateToOneStatement(tokens):
 
   ret, tokens = TryConsumeToken(Keyword(KW_RETURN), tokens)
   if ret:
-    expr, tokens = ParseExpression(tokens)
+    expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_RETURN, expr), tokens)
     
@@ -415,7 +439,7 @@ def TranslateToOneStatement(tokens):
 
   become, tokens = TryConsumeToken(Keyword(KW_BECOME), tokens)
   if become:
-    expr, tokens = ParseExpression(tokens)
+    expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_ASSIGN, (id, expr)), tokens)
 
@@ -423,13 +447,13 @@ def TranslateToOneStatement(tokens):
   if inc:
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_INC_BY,
-                      (id, Expression([Token(TK_INTEGER_LITERAL, 1)]))),
+                      (id, Expr([Token(TK_INTEGER_LITERAL, 1)]))),
             tokens)
 
   inc, tokens = TryConsumeToken(
       Keyword(KW_INC_BY), tokens)
   if inc:
-    expr, tokens = ParseExpression(tokens)
+    expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeToken(Keyword(KW_STEP), tokens)
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_INC_BY, (id, expr)), tokens)
@@ -438,22 +462,22 @@ def TranslateToOneStatement(tokens):
   if dec:
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_DEC_BY,
-                      (id, Expression([Token(TK_INTEGER_LITERAL, 1)]))),
+                      (id, Expr([Token(TK_INTEGER_LITERAL, 1)]))),
             tokens)
 
   dec, tokens = TryConsumeToken(
       Keyword(KW_DEC_BY), tokens)
   if dec:
-    expr, tokens = ParseExpression(tokens)
+    expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeToken(Keyword(KW_STEP), tokens)
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_DEC_BY, (id, expr)), tokens)
 
   from_, tokens = TryConsumeToken(Keyword(KW_FROM), tokens)
   if from_:
-    from_expr, tokens = ParseExpression(tokens)
+    from_expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeToken(Keyword(KW_TO), tokens)
-    to_expr, tokens = ParseExpression(tokens)
+    to_expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeToken(Keyword(KW_LOOP), tokens)
     stmts, tokens = TranslateToStatements(tokens)
     _, tokens = ConsumeToken(Keyword(KW_END_LOOP), tokens)
@@ -492,7 +516,7 @@ def TranslateToStatements(tokens):
       return stmts, tokens
     stmts.append(stmt)
 
-def TranslateExpressionTokensToPython(tokens):
+def TranslateExprTokensToPython(tokens):
   """Returns the Python code for the given dongbei expression."""
 
   python_code = ''
@@ -533,8 +557,8 @@ def TranslateExpressionTokensToPython(tokens):
 
   return python_code
 
-def TranslateExpressionToPython(expr):
-  python_code = TranslateExpressionTokensToPython(expr.tokens)
+def TranslateExprToPython(expr):
+  python_code = TranslateExprTokensToPython(expr.tokens)
   if Keyword(KW_CONCAT) not in expr.tokens:
     return python_code
   return 'str(%s)' % (python_code,)
@@ -547,25 +571,25 @@ def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_ASSIGN:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
-    return indent + '%s = %s' % (var, TranslateExpressionToPython(expr))
+    return indent + '%s = %s' % (var, TranslateExprToPython(expr))
   if stmt.kind == STMT_SAY:
     expr = stmt.value
     return indent + '_db_append_output("%%s\\n" %% (%s,))' % (
-        TranslateExpressionToPython(expr),)
+        TranslateExprToPython(expr),)
   if stmt.kind == STMT_INC_BY:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
-    return indent + '%s += %s' % (var, TranslateExpressionToPython(expr))
+    return indent + '%s += %s' % (var, TranslateExprToPython(expr))
   if stmt.kind == STMT_DEC_BY:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
-    return indent + '%s -= %s' % (var, TranslateExpressionToPython(expr))
+    return indent + '%s -= %s' % (var, TranslateExprToPython(expr))
   if stmt.kind == STMT_LOOP:
     var_token, from_val, to_val, stmts = stmt.value
     var = GetPythonVarName(var_token.value)
     loop = indent + 'for %s in range(%s, %s + 1):' % (
-        var, TranslateExpressionToPython(from_val),
-        TranslateExpressionToPython(to_val))
+        var, TranslateExprToPython(from_val),
+        TranslateExprToPython(to_val))
     for s in stmts:
       loop += '\n' + TranslateStatementToPython(s, indent + '  ')
     if not stmts:
@@ -584,12 +608,12 @@ def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_CALL:
     func_token, args = stmt.value
     func_name = GetPythonVarName(func_token.value)
-    args_code = map(TranslateExpressionToPython, args)
+    args_code = map(TranslateExprToPython, args)
     code = indent + '%s(%s)' % (func_name, ', '.join(args_code))
     return code
   if stmt.kind == STMT_RETURN:
     expr = stmt.value
-    expr_code = TranslateExpressionToPython(expr)
+    expr_code = TranslateExprToPython(expr)
     return indent + 'return ' + expr_code
   sys.exit(u'我不懂 %s 语句。' % (stmt.kind))
   
