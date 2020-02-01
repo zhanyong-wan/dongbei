@@ -16,6 +16,7 @@ KW_BECOME = u'装'
 KW_BEGIN = u'开整了：'
 KW_CALL = u'整'
 KW_CLOSE_PAREN = u'）'
+KW_CLOSE_PAREN_NARROW = ')'
 KW_CLOSE_QUOTE = u'”'
 KW_COLON = u'：'
 KW_COMPARE = u'比'
@@ -33,6 +34,7 @@ KW_IS_VAR = u'是活雷锋'
 KW_LOOP = u'磨叽：'
 KW_MINUS = u'减'
 KW_OPEN_PAREN = u'（'
+KW_OPEN_PAREN_NARROW = '('
 KW_OPEN_QUOTE = u'“'
 KW_PERIOD = u'。'
 KW_PLUS = u'加'
@@ -47,6 +49,7 @@ KEYWORDS = (
     KW_BECOME,
     KW_BEGIN,
     KW_CLOSE_PAREN,
+    KW_CLOSE_PAREN_NARROW,
     KW_CLOSE_QUOTE,
     KW_COLON,
     KW_COMPARE,
@@ -65,6 +68,7 @@ KEYWORDS = (
     KW_LOOP,
     KW_MINUS,
     KW_OPEN_PAREN,
+    KW_OPEN_PAREN_NARROW,
     KW_OPEN_QUOTE,
     KW_PERIOD,
     KW_PLUS,
@@ -74,6 +78,13 @@ KEYWORDS = (
     KW_TIMES,
     KW_TO,
     )
+
+# Maps a keyword to its normalized form.
+KEYWORD_TO_NORMALIZED_KEYWORD = {
+    KW_BANG: KW_PERIOD,
+    KW_OPEN_PAREN_NARROW: KW_OPEN_PAREN,
+    KW_CLOSE_PAREN_NARROW: KW_CLOSE_PAREN,
+    }
 
 # Types of tokens.
 TK_KEYWORD = 'KEYWORD'
@@ -254,10 +265,8 @@ def BasicTokenize(code):
   for keyword in KEYWORDS:
     kw, remaining_code = TryParseKeyword(keyword, code)
     if kw:
+      keyword = KEYWORD_TO_NORMALIZED_KEYWORD.get(keyword, keyword)
       last_token = Keyword(keyword)
-      # Normalize ！to 。
-      if keyword == KW_BANG:
-        last_token = Keyword(KW_PERIOD)
       yield last_token
       if last_token == Keyword(KW_OPEN_QUOTE):
         for tk in TokenizeStringLiteralAndRest(remaining_code):

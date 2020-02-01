@@ -33,6 +33,10 @@ class DongbeiParseExprTest(unittest.TestCase):
     self.assertEqual(ParseExprFromStr(u'（老王）')[0],
                      ParenExpr(
                          AtomicExpr(Token(dongbei.TK_IDENTIFIER, u'老王'))))
+    # Narrow parens.
+    self.assertEqual(ParseExprFromStr(u'(老王)')[0],
+                     ParenExpr(
+                         AtomicExpr(Token(dongbei.TK_IDENTIFIER, u'老王'))))
 
 class DongbeiTest(unittest.TestCase):
   def testRunEmptyProgram(self):
