@@ -158,6 +158,21 @@ class NewExpr:
   def __ne__(self, other):
     return not (self == other)
 
+class ArithmeticExpr(NewExpr):
+  def __init__(self, op1, operation, op2):
+    self.op1 = op1
+    self.operation = operation
+    self.op2 = op2
+
+  def __str__(self):
+    return 'ARITHMETIC_EXPR<%s, %s, %s>' % (
+        self.op1, self.operation, self.op2)
+
+  def Equals(self, other):
+    return (self.op1 == other.op1 and
+            self.operation == other.operation and
+            self.op2 == other.op2)
+
 class AtomicExpr(NewExpr):
   def __init__(self, token):
     self.token = token
@@ -416,6 +431,26 @@ def ParseExprToken(tokens, allow_close_paren):
     return token, tokens[1:]
 
   return None, orig_tokens
+
+# Expression grammer:
+#
+#   Expr ::= ComparisonExpr | ArithmeticExpr
+#   ComparisonExpr ::= ArithmeticExpr 比 ArithmeticExpr 大 |
+#                      ArithmeticExpr 比 ArithmeticExpr 小 |
+#                      ArithmeticExpr 跟 ArithmeticExpr 一样一样的 |
+#                      ArithmeticExpr 跟 ArithmeticExpr 不是一样一样的
+#   ArithmeticExpr ::= TermExpr |
+#                      ArithmeticExpr 加 TermExpr |
+#                      ArithmeticExpr 减 TermExpr
+#   TermExpr ::= AtomicExpr |
+#                TermExpr 乘 AtomicExpr |
+#                TermExpr 除以 AtomicExpr
+#   AtomicExpr ::= LiteralExpr | ParenExpr | CallExpr
+#   ParenExpr ::= （ Expr ）
+#   CallExpr ::= 整 Identifier |
+#                整 Identifier（ExprList）
+#   ExprList ::= Expr |
+#                Expr，ExprList
 
 def NewParseExpr(tokens):
   """Returns (expr, remaining tokens)."""

@@ -9,6 +9,7 @@ import unittest
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from src import dongbei
+from src.dongbei import ArithmeticExpr
 from src.dongbei import AtomicExpr
 from src.dongbei import ComparisonExpr
 from src.dongbei import Expr
@@ -37,6 +38,14 @@ class DongbeiParseExprTest(unittest.TestCase):
     self.assertEqual(ParseExprFromStr(u'(老王)')[0],
                      ParenExpr(
                          AtomicExpr(Token(dongbei.TK_IDENTIFIER, u'老王'))))
+
+  #def testParseArithmetic(self):
+  #  self.assertEqual(ParseExprFromStr(u'老王加五')[0],
+  #                   ArithmeticExpr(
+  #                       AtomicExpr(Token(dongbei.TK_IDENTIFIER, u'老王')),
+  #                       dongbei.Keyword(dongbei.KW_PLUS),
+  #                       AtomicExpr(Token(dongbei.TK_INTEGER_LITERAL, 5)))
+  #                   )
 
 class DongbeiTest(unittest.TestCase):
   def testRunEmptyProgram(self):
