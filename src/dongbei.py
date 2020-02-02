@@ -659,7 +659,7 @@ def ParseExpr(tokens):
 def ParseExprFromStr(str):
   return ParseExpr(list(Tokenize(str)))
 
-def TranslateToOneStatement(tokens):
+def ParseStmt(tokens):
   """Returns (statement, remainding_tokens)."""
 
   orig_tokens = tokens
@@ -699,7 +699,7 @@ def TranslateToOneStatement(tokens):
   if check:
     expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeToken(Keyword(KW_THEN), tokens)
-    then_stmt, tokens = TranslateToOneStatement(tokens)
+    then_stmt, tokens = ParseStmt(tokens)
     return Statement(STMT_CONDITIONAL, (expr, then_stmt, None)), tokens
 
   # Parse an identifier name.
@@ -763,7 +763,7 @@ def TranslateToOneStatement(tokens):
     _, tokens = ConsumeToken(Keyword(KW_TO), tokens)
     to_expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeToken(Keyword(KW_LOOP), tokens)
-    stmts, tokens = TranslateToStatements(tokens)
+    stmts, tokens = ParseStmts(tokens)
     _, tokens = ConsumeToken(Keyword(KW_END_LOOP), tokens)
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_LOOP, (id, from_expr, to_expr, stmts)), tokens)
@@ -776,7 +776,7 @@ def TranslateToOneStatement(tokens):
     _, tokens = ConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
     func_def, tokens = ConsumeToken(
         Keyword(KW_FUNC_DEF), tokens)
-    stmts, tokens = TranslateToStatements(tokens)
+    stmts, tokens = ParseStmts(tokens)
     _, tokens = ConsumeToken(Keyword(KW_END), tokens)
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_FUNC_DEF, (id, [param], stmts)), tokens)
@@ -784,7 +784,7 @@ def TranslateToOneStatement(tokens):
   func_def, tokens = TryConsumeToken(
       Keyword(KW_FUNC_DEF), tokens)
   if func_def:
-    stmts, tokens = TranslateToStatements(tokens)
+    stmts, tokens = ParseStmts(tokens)
     _, tokens = ConsumeToken(Keyword(KW_END), tokens)
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_FUNC_DEF, (id, [], stmts)), tokens)
@@ -792,60 +792,17 @@ def TranslateToOneStatement(tokens):
   return (None, orig_tokens)
 
 def ParseStmtFromStr(tokens):
-  return TranslateToOneStatement(list(Tokenize(tokens)))
+  return ParseStmt(list(Tokenize(tokens)))
 
-# TODO: rename Translate* to Parse*.
-def TranslateToStatements(tokens):
+def ParseStmts(tokens):
   """Returns (statement list, remaining tokens)."""
 
   stmts = []
   while True:
-    stmt, tokens = TranslateToOneStatement(tokens)
+    stmt, tokens = ParseStmt(tokens)
     if not stmt:
       return stmts, tokens
     stmts.append(stmt)
-
-# TODO: remove.
-def TranslateExprTokensToPython(tokens):
-  """Returns the Python code for the given dongbei expression."""
-
-  python_code = ''
-  while len(tokens) > 0:
-    token = tokens[0]
-    tokens = tokens[1:]
-
-    if token.kind == TK_INTEGER_LITERAL:
-      python_code += '%s' % (token.value,)
-    elif token.kind == TK_IDENTIFIER:
-      python_code += GetPythonVarName(token.value)
-    elif token.kind == TK_STRING_LITERAL:
-      python_code += 'u"%s"' % (token.value,)
-    elif token == Keyword(KW_PLUS):
-      python_code += '+'
-    elif token == Keyword(KW_MINUS):
-      python_code += '-'
-    elif token == Keyword(KW_TIMES):
-      python_code += '*'
-    elif token == Keyword(KW_DIVIDE_BY):
-      python_code += '/'
-    elif token == Keyword(KW_CONCAT):
-      python_code += ') + str('
-    elif token == Keyword(KW_CALL):
-      if len(tokens) == 0:
-        sys.exit(u'“整”后面必须跟函数名。')
-      func = tokens[0]
-      python_code += GetPythonVarName(func.value)
-      tokens = tokens[1:]
-      if len(tokens) == 0 or tokens[0] != Keyword(KW_OPEN_PAREN):
-        python_code += '()'
-    elif token == Keyword(KW_OPEN_PAREN):
-      python_code += '('
-    elif token == Keyword(KW_CLOSE_PAREN):
-      python_code += ')'
-    else:
-      sys.exit(u'我不懂 %s 表达式。' % (token,))
-
-  return python_code
 
 def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_VAR_DECL:
@@ -906,8 +863,8 @@ def TranslateStatementToPython(stmt, indent = ''):
     
   sys.exit(u'我不懂 %s 语句咋执行。' % (stmt.kind))
   
-def Translate(tokens):
-  statements, tokens = TranslateToStatements(tokens)
+def TranslateTokensToPython(tokens):
+  statements, tokens = ParseStmts(tokens)
   assert not tokens, ('多余符号：%s' % (tokens,))
   py_code = []
   for s in statements:
@@ -916,7 +873,7 @@ def Translate(tokens):
 
 def ParseToAst(code):
   tokens = list(Tokenize(code))
-  statements, tokens = TranslateToStatements(tokens)
+  statements, tokens = ParseStmts(tokens)
   assert not tokens, ('多余符号：%s' % (tokens,))
   return statements
 
@@ -927,7 +884,7 @@ def _db_append_output(s):
 
 def Run(code):
   tokens = list(Tokenize(code))
-  py_code = Translate(tokens)
+  py_code = TranslateTokensToPython(tokens)
   print('Python 代码：')
   print('%s' % (py_code,))
   global _db_output
