@@ -10,7 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from src import dongbei
 from src.dongbei import ArithmeticExpr
-from src.dongbei import AtomicExpr
+from src.dongbei import LiteralExpr
 from src.dongbei import BasicTokenize
 from src.dongbei import ComparisonExpr
 from src.dongbei import Expr
@@ -39,30 +39,30 @@ from src.dongbei import Tokenize
 class DongbeiParseExprTest(unittest.TestCase):
   def testParseInteger(self):
     self.assertEqual(ParseExprFromStr(u'5')[0],
-                     AtomicExpr(Token(TK_INTEGER_LITERAL, 5)))
+                     LiteralExpr(Token(TK_INTEGER_LITERAL, 5)))
     self.assertEqual(ParseExprFromStr(u'九')[0],
-                     AtomicExpr(Token(TK_INTEGER_LITERAL, 9)))
+                     LiteralExpr(Token(TK_INTEGER_LITERAL, 9)))
     
   def testParseIdentifier(self):
     self.assertEqual(ParseExprFromStr(u'老王')[0],
-                     AtomicExpr(Token(TK_IDENTIFIER, u'老王')))
+                     LiteralExpr(Token(TK_IDENTIFIER, u'老王')))
 
   def testParseParens(self):
     # Wide parens.
     self.assertEqual(ParseExprFromStr(u'（老王）')[0],
                      ParenExpr(
-                         AtomicExpr(Token(TK_IDENTIFIER, u'老王'))))
+                         LiteralExpr(Token(TK_IDENTIFIER, u'老王'))))
     # Narrow parens.
     self.assertEqual(ParseExprFromStr(u'(老王)')[0],
                      ParenExpr(
-                         AtomicExpr(Token(TK_IDENTIFIER, u'老王'))))
+                         LiteralExpr(Token(TK_IDENTIFIER, u'老王'))))
 
   #def testParseArithmetic(self):
   #  self.assertEqual(ParseExprFromStr(u'老王加五')[0],
   #                   ArithmeticExpr(
-  #                       AtomicExpr(Token(TK_IDENTIFIER, u'老王')),
+  #                       LiteralExpr(Token(TK_IDENTIFIER, u'老王')),
   #                       Keyword(KW_PLUS),
-  #                       AtomicExpr(Token(TK_INTEGER_LITERAL, 5)))
+  #                       LiteralExpr(Token(TK_INTEGER_LITERAL, 5)))
   #                   )
 
 class DongbeiTest(unittest.TestCase):

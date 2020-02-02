@@ -173,12 +173,12 @@ class ArithmeticExpr(NewExpr):
             self.operation == other.operation and
             self.op2 == other.op2)
 
-class AtomicExpr(NewExpr):
+class LiteralExpr(NewExpr):
   def __init__(self, token):
     self.token = token
 
   def __str__(self):
-    return 'ATOMIC_EXPR<%s>' % (self.token,)
+    return 'LITERAL_EXPR<%s>' % (self.token,)
 
   def Equals(self, other):
     return self.token == other.token
@@ -458,12 +458,12 @@ def NewParseExpr(tokens):
   # Do we see an integer literal?
   num, tokens = TryConsumeTokenType(TK_INTEGER_LITERAL, tokens)
   if num:
-    return AtomicExpr(num), tokens
+    return LiteralExpr(num), tokens
 
   # Do we see an identifier?
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if id:
-    return AtomicExpr(id), tokens
+    return LiteralExpr(id), tokens
 
   # Do we see a parenthesis?
   open_paren, tokens = TryConsumeToken(Keyword(KW_OPEN_PAREN), tokens)
