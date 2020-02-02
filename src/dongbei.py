@@ -159,6 +159,12 @@ class Expr:
     """Translates this expression to Python."""
     raise Exception('%s must implement ToPython().' % (type(self),))
 
+def DongbeiStr(value):
+  """Converts a value to its dongbei string."""
+  if type(value) == bool:
+    return '对' if value else '错'
+  return str(value)
+
 class ConcatExpr(Expr):
   def __init__(self, exprs):
     self.exprs = exprs
@@ -170,7 +176,8 @@ class ConcatExpr(Expr):
     return self.exprs == other.exprs
 
   def ToPython(self):
-    return ' + '.join('str(%s)' % (expr.ToPython(),) for expr in self.exprs)
+    return ' + '.join('DongbeiStr(%s)' % (
+        expr.ToPython(),) for expr in self.exprs)
 
 ARITHMETIC_OPERATION_TO_PYTHON = {
     u'加': '+',
@@ -258,6 +265,14 @@ class CallExpr(Expr):
         GetPythonVarName(self.func.value),
         ', '.join(arg.ToPython() for arg in self.args))
 
+# Maps a dongbei comparison keyword to the Python version.
+COMPARISON_KEYWORD_TO_PYTHON = {
+    KW_GREATER: '>',
+    KW_LESS: '<',
+    KW_EQUAL: '==',
+    KW_NOT_EQUAL: '!=',
+    }
+
 class ComparisonExpr(Expr):
   def __init__(self, op1, relation, op2):
     self.op1 = op1
@@ -272,6 +287,11 @@ class ComparisonExpr(Expr):
     return (self.op1 == other.op1 and
             self.relation == other.relation and
             self.op2 == other.op2)
+
+  def ToPython(self):
+    return '%s %s %s' % (self.op1.ToPython(),
+                         COMPARISON_KEYWORD_TO_PYTHON[self.relation.value],
+                         self.op2.ToPython())
 
 class Statement:
   def __init__(self, kind, value):
@@ -807,7 +827,7 @@ def TranslateStatementToPython(stmt, indent = ''):
     return indent + '%s = %s' % (var, expr.ToPython())
   if stmt.kind == STMT_SAY:
     expr = stmt.value
-    return indent + '_db_append_output("%%s\\n" %% (%s,))' % (
+    return indent + '_db_append_output("%%s\\n" %% (DongbeiStr(%s),))' % (
         expr.ToPython(),)
   if stmt.kind == STMT_INC_BY:
     var_token, expr = stmt.value

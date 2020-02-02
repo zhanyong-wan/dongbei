@@ -495,6 +495,14 @@ class DongbeiTest(unittest.TestCase):
         Run(u'老张从1到2磨叽：唠唠：老张。唠唠：老张加一。磨叽完了。'),
         '1\n2\n2\n3\n')
 
+  def testPrintBool(self):
+    self.assertEqual(
+        Run(u'唠唠：五比二大。'),
+        u'对\n')
+    self.assertEqual(
+        Run(u'唠唠：五比二大、五比二小、一跟2一样一样的、1跟二不是一样一样的。'),
+        u'对错错对\n')
+
   def testConcat(self):
     self.assertEqual(
         Run(u'唠唠：“牛”、二。'),
