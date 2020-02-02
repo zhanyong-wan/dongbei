@@ -138,7 +138,7 @@ class Token:
   def __ne__(self, other):
     return not (self == other)
 
-class NewExpr:
+class Expr:
   def __init__(self):
     pass
 
@@ -159,7 +159,7 @@ class NewExpr:
     """Translates this expression to Python."""
     raise Exception('%s must implement ToPython().' % (type(self),))
 
-class ConcatExpr(NewExpr):
+class ConcatExpr(Expr):
   def __init__(self, exprs):
     self.exprs = exprs
 
@@ -179,7 +179,7 @@ ARITHMETIC_OPERATION_TO_PYTHON = {
     u'除以': '/',
     }
 
-class ArithmeticExpr(NewExpr):
+class ArithmeticExpr(Expr):
   def __init__(self, op1, operation, op2):
     self.op1 = op1
     self.operation = operation
@@ -200,7 +200,7 @@ class ArithmeticExpr(NewExpr):
                              self.operation.value],
                          self.op2.ToPython())
 
-class LiteralExpr(NewExpr):
+class LiteralExpr(Expr):
   def __init__(self, token):
     self.token = token
 
@@ -217,7 +217,7 @@ class LiteralExpr(NewExpr):
       return 'u"%s"' % (self.token.value,)
     raise Exception('Unexpected token kind %s' % (self.token.kind,))
 
-class VariableExpr(NewExpr):
+class VariableExpr(Expr):
   def __init__(self, var):
     self.var = var
 
@@ -230,7 +230,7 @@ class VariableExpr(NewExpr):
   def ToPython(self):
     return GetPythonVarName(self.var.value)
 
-class ParenExpr(NewExpr):
+class ParenExpr(Expr):
   def __init__(self, expr):
     self.expr = expr
 
@@ -240,7 +240,7 @@ class ParenExpr(NewExpr):
   def Equals(self, other):
     return self.expr == other.expr
 
-class CallExpr(NewExpr):
+class CallExpr(Expr):
   def __init__(self, func, args):
     self.func = func
     self.args = args
@@ -258,7 +258,7 @@ class CallExpr(NewExpr):
         GetPythonVarName(self.func.value),
         ', '.join(arg.ToPython() for arg in self.args))
 
-class ComparisonExpr(NewExpr):
+class ComparisonExpr(Expr):
   def __init__(self, op1, relation, op2):
     self.op1 = op1
     self.relation = relation
@@ -498,7 +498,7 @@ def ParseAtomicExpr(tokens):
   # Do we see a parenthesis?
   open_paren, tokens = TryConsumeToken(Keyword(KW_OPEN_PAREN), tokens)
   if open_paren:
-    expr, tokens = NewParseExpr(tokens)
+    expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
     return ParenExpr(expr), tokens
 
@@ -510,7 +510,7 @@ def ParseAtomicExpr(tokens):
     args = []
     if open_paren:
       while True:
-        expr, tokens = NewParseExpr(tokens)
+        expr, tokens = ParseExpr(tokens)
         args.append(expr)
         close_paren, tokens = TryConsumeToken(
             Keyword(KW_CLOSE_PAREN), tokens)
@@ -606,7 +606,7 @@ def ParseNonConcatExpr(tokens):
 
   return arith, tokens
 
-def NewParseExpr(tokens):
+def ParseExpr(tokens):
   nc_expr, tokens = ParseNonConcatExpr(tokens)
   if not nc_expr:
     return None, tokens
@@ -632,10 +632,7 @@ def NewParseExpr(tokens):
   return ConcatExpr(nc_exprs), tokens
   
 def ParseExprFromStr(str):
-  return NewParseExpr(list(Tokenize(str)))
-
-def ParseExpr(tokens):
-  return NewParseExpr(tokens)
+  return ParseExpr(list(Tokenize(str)))
 
 def TranslateToOneStatement(tokens):
   """Returns (statement, remainding_tokens, error)."""
