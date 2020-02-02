@@ -472,7 +472,6 @@ def ParseExprToken(tokens, allow_close_paren):
 #   ArithmeticExpr ::= TermExpr |
 #                      ArithmeticExpr 加 TermExpr |
 #                      ArithmeticExpr 减 TermExpr
-#            # TODO: 加减
 #   TermExpr ::= AtomicExpr |
 #                TermExpr 乘 AtomicExpr |
 #                TermExpr 除以 AtomicExpr
@@ -561,7 +560,35 @@ def ParseTermExpr(tokens):
   return expr, tokens
 
 def ParseArithmeticExpr(tokens):
-  return ParseTermExpr(tokens)
+  term, tokens = ParseTermExpr(tokens)
+  if not term:
+    return None, tokens
+
+  terms = [term]  # All terms of the expression.
+  operators = []  # Operators between the terms. The len of this is len(terms) - 1.
+
+  while True:
+    pre_operator_tokens = tokens
+    operator, tokens = TryConsumeToken(Keyword(KW_PLUS), tokens)
+    if not operator:
+      operator, tokens = TryConsumeToken(Keyword(KW_MINUS), tokens)
+    if not operator:
+      break
+
+    term, tokens = ParseTermExpr(tokens)
+    if term:
+      operators.append(operator)
+      terms.append(term)
+    else:
+      # We have a trailing operator without a term to follow it.
+      tokens = pre_operator_tokens
+      break
+
+  assert len(terms) == len(operators) + 1
+  expr = terms[0]
+  for i, operator in enumerate(operators):
+    expr = ArithmeticExpr(expr, operator, terms[i + 1])
+  return expr, tokens
 
 def NewParseExpr(tokens):
   return ParseArithmeticExpr(tokens)

@@ -110,6 +110,32 @@ class DongbeiParseExprTest(unittest.TestCase):
                          VariableExpr(Token(TK_IDENTIFIER, u'老刘'))
                      ))
 
+  def testParseArithmeticExpr(self):
+    self.assertEqual(ParseExprFromStr(u'5加六')[0],
+                     ArithmeticExpr(
+                         LiteralExpr(Token(TK_INTEGER_LITERAL, 5)),
+                         Keyword(u'加'),
+                         LiteralExpr(Token(TK_INTEGER_LITERAL, 6))
+                     ))
+    self.assertEqual(ParseExprFromStr(u'5加六乘3')[0],
+                     ArithmeticExpr(
+                         LiteralExpr(Token(TK_INTEGER_LITERAL, 5)),
+                         Keyword(u'加'),
+                         ArithmeticExpr(
+                             LiteralExpr(Token(TK_INTEGER_LITERAL, 6)),
+                             Keyword(u'乘'),
+                             LiteralExpr(Token(TK_INTEGER_LITERAL, 3)))))
+    self.assertEqual(ParseExprFromStr(u'5减六减老王')[0],
+                     ArithmeticExpr(
+                         ArithmeticExpr(
+                             LiteralExpr(Token(TK_INTEGER_LITERAL, 5)),
+                             Keyword(u'减'),
+                             LiteralExpr(Token(TK_INTEGER_LITERAL, 6))
+                         ),
+                         Keyword(u'减'),
+                         VariableExpr(Token(TK_IDENTIFIER, u'老王')))
+                     )
+
 class DongbeiTest(unittest.TestCase):
   def testRunEmptyProgram(self):
     self.assertEqual(Run(''), '')
