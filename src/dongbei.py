@@ -19,6 +19,7 @@ KW_CLOSE_PAREN = u'）'
 KW_CLOSE_PAREN_NARROW = ')'
 KW_CLOSE_QUOTE = u'”'
 KW_COLON = u'：'
+KW_COMMA = u'，'
 KW_COMPARE = u'比'
 KW_CONCAT = u'、'
 KW_DEC = u'退退'
@@ -52,6 +53,7 @@ KEYWORDS = (
     KW_CLOSE_PAREN_NARROW,
     KW_CLOSE_QUOTE,
     KW_COLON,
+    KW_COMMA,
     KW_COMPARE,
     KW_CONCAT,
     KW_DEC,
@@ -472,7 +474,6 @@ def ParseExprToken(tokens, allow_close_paren):
 #                TermExpr 乘 AtomicExpr |
 #                TermExpr 除以 AtomicExpr
 #   AtomicExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr
-#                # TODO: string literal
 #   ParenExpr ::= （ Expr ）
 #   CallExpr ::= 整 Identifier |
 #                整 Identifier（ExprList） # TODO: support list
@@ -511,12 +512,16 @@ def ParseAtomicExpr(tokens):
   if call:
     func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
     open_paren, tokens = TryConsumeToken(Keyword(KW_OPEN_PAREN), tokens)
+    args = []
     if open_paren:
-      expr, tokens = NewParseExpr(tokens)
-      _, tokens = ConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
-      args = [expr]
-    else:
-      args = []
+      while True:
+        expr, tokens = NewParseExpr(tokens)
+        args.append(expr)
+        close_paren, tokens = TryConsumeToken(
+            Keyword(KW_CLOSE_PAREN), tokens)
+        if close_paren:
+          break
+        _, tokens = ConsumeToken(Keyword(KW_COMMA), tokens)
     return CallExpr(func, args), tokens
       
   return None, tokens

@@ -72,6 +72,15 @@ class DongbeiParseExprTest(unittest.TestCase):
     self.assertEqual(ParseExprFromStr(u'整老王(6)')[0],
                      CallExpr(Token(TK_IDENTIFIER, u'老王'),
                               [LiteralExpr(Token(TK_INTEGER_LITERAL, 6))]))
+    self.assertEqual(ParseExprFromStr(u'整老王(老刘，6)')[0],
+                     CallExpr(Token(TK_IDENTIFIER, u'老王'),
+                              [VariableExpr(Token(TK_IDENTIFIER, u'老刘')),
+                               LiteralExpr(Token(TK_INTEGER_LITERAL, 6))]))
+    self.assertEqual(ParseExprFromStr(u'整老王(“你”，老刘，6)')[0],
+                     CallExpr(Token(TK_IDENTIFIER, u'老王'),
+                              [LiteralExpr(Token(TK_STRING_LITERAL, u'你')),
+                               VariableExpr(Token(TK_IDENTIFIER, u'老刘')),
+                               LiteralExpr(Token(TK_INTEGER_LITERAL, 6))]))
 
   def testParseTermExpr(self):
     self.assertEqual(ParseExprFromStr(u'老王乘五')[0],
