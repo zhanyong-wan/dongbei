@@ -793,14 +793,21 @@ def ParseStmt(tokens):
   open_paren, tokens = TryConsumeToken(
       Keyword(KW_OPEN_PAREN), tokens)
   if open_paren:
-    param, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-    _, tokens = ConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
+    params = []
+    while True:
+      param, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+      params.append(param)
+      close_paren, tokens = TryConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
+      if close_paren:
+        break
+      _, tokens = ConsumeToken(Keyword(KW_COMMA), tokens)
+        
     func_def, tokens = ConsumeToken(
         Keyword(KW_FUNC_DEF), tokens)
     stmts, tokens = ParseStmts(tokens)
     _, tokens = ConsumeToken(Keyword(KW_END), tokens)
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
-    return (Statement(STMT_FUNC_DEF, (id, [param], stmts)), tokens)
+    return (Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens)
 
   func_def, tokens = TryConsumeToken(
       Keyword(KW_FUNC_DEF), tokens)

@@ -609,6 +609,17 @@ class DongbeiTest(unittest.TestCase):
         '''),
         u'120\n')
 
+  def testMultiArgFunc(self):
+    self.assertEqual(
+        Run(u'''
+求和（甲，乙）咋整：
+  滚犊子吧 甲加乙。
+整完了。
+
+唠唠：整求和（五，七）。
+        '''),
+        u'12\n')
+
   def testNormalizingBang(self):
     self.assertEqual(
         Run(u'【加一】（几）咋整：唠唠：几加一！整完了！\n'
