@@ -28,6 +28,7 @@ KW_CONCAT = u'、'
 KW_DEC = u'退退'
 KW_DEC_BY = u'退'
 KW_DIVIDE_BY = u'除以'
+KW_ELSE = u'要不行咧就'
 KW_END = u'整完了'
 KW_END_LOOP = u'磨叽完了'
 KW_EQUAL = u'一样一样的'
@@ -70,6 +71,7 @@ KEYWORDS = (
     KW_DEC,
     KW_DEC_BY,
     KW_DIVIDE_BY,
+    KW_ELSE,
     KW_END,   # must match 整完了 before matching 整
     KW_CALL,  # 整
     KW_END_LOOP,
@@ -332,29 +334,29 @@ def TokenizeStringLiteralAndRest(code):
   yield Token(TK_STRING_LITERAL, code[:close_quote_pos])
   yield Keyword(KW_CLOSE_QUOTE)
   for tk in BasicTokenize(code[close_quote_pos + len(KW_CLOSE_QUOTE):]):
-    yield tk
+    yield tk    
 
+def SkipWhitespaceAndComment(code):
+  while True:
+    old_len = len(code)
+    code = code.lstrip()
+    if code.startswith('#'):  # comment
+      code = re.sub(r'^.*', '', code)  # Ignore the comment line.
+    if len(code) == old_len:  # cannot skip any further.
+      return code
 
 def TryParseKeyword(keyword, code):
   """Returns (parsed keyword string, remaining code)."""
   orig_code = code
   for char in keyword:
-    code = code.lstrip()
+    code = SkipWhitespaceAndComment(code)
     if not code.startswith(char):
       return None, orig_code
     code = code[1:]
   return keyword, code
 
 def BasicTokenize(code):
-  # Skip spaces at the beginning.
-  while True:
-    old_len = len(code)
-    code = code.lstrip()
-    if code.startswith('#'):  # comment
-      code = re.sub(r'^.*', '', code)  # Ignore the comment line.
-    if len(code) == old_len:
-      break
-    
+  code = SkipWhitespaceAndComment(code)
   if not code:
     return
 
@@ -711,7 +713,13 @@ def ParseStmt(tokens):
     expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeToken(Keyword(KW_THEN), tokens)
     then_stmt, tokens = ParseStmt(tokens)
-    return Statement(STMT_CONDITIONAL, (expr, then_stmt, None)), tokens
+    # Parse the optional else-branch.
+    kw_else, tokens = TryConsumeToken(Keyword(KW_ELSE), tokens)
+    if kw_else:
+      else_stmt, tokens = ParseStmt(tokens)
+    else:
+      else_stmt = None
+    return Statement(STMT_CONDITIONAL, (expr, then_stmt, else_stmt)), tokens
 
   # Parse an identifier name.
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
@@ -890,7 +898,9 @@ def TranslateStatementToPython(stmt, indent = ''):
     condition, then_stmt, else_stmt = stmt.value
     code = indent + 'if %s:\n' % (condition.ToPython(),)
     code += TranslateStatementToPython(then_stmt, indent + '  ')
-    # TODO: handle else_stmt.
+    if else_stmt:
+      code += '\n' + indent + 'else:\n'
+      code += TranslateStatementToPython(else_stmt, indent + '  ')
     return code
     
   sys.exit(u'我不懂 %s 语句咋执行。' % (stmt.kind))

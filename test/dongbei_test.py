@@ -554,6 +554,27 @@ class DongbeiTest(unittest.TestCase):
             u'    唠唠：5。\n'
             u'整完了。'),
         u'5\n')
+    self.assertEqual(
+        Run(u'瞅瞅：5比6大吗？要行咧就唠唠：“OK”。\n'
+            u'要不行咧就唠唠：“不OK”。'),
+        u'不OK\n')
+    self.assertEqual(
+        Run(u'瞅瞅：5比6大吗？\n'
+            u'要行咧就唠唠：“OK”。\n'
+            u'要不行咧就开整：\n'
+            u'  唠唠：“不OK”。\n'
+            u'  唠唠：“还是不OK”。\n'
+            u'整完了。'),
+        u'不OK\n还是不OK\n')
+    # Else should match the last If.
+    self.assertEqual(
+        Run(u'''
+          瞅瞅：2比1大吗？   # condition 1: True
+          要行咧就瞅瞅：2比3大吗？  # condition 2: False
+              要行咧就唠唠：“A”。  # for condition 2
+              要不行咧就唠唠：“B”。# for condition 2
+          '''),
+        u'B\n')
 
   def testRunFunc(self):
     self.assertEqual(
