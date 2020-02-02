@@ -474,8 +474,8 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         ParseToAst(u'整【阶乘】（五）。'),
         [Statement(STMT_CALL,
-                   (Token(TK_IDENTIFIER, u'阶乘'),
-                    [LiteralExpr(Token(TK_INTEGER_LITERAL, 5))]))])
+                   CallExpr(Token(TK_IDENTIFIER, u'阶乘'),
+                            [LiteralExpr(Token(TK_INTEGER_LITERAL, 5))]))])
 
   def testVarAssignmentFromVar(self):
     self.assertEqual(
@@ -617,6 +617,15 @@ class DongbeiTest(unittest.TestCase):
 整完了。
 
 唠唠：整求和（五，七）。
+        '''),
+        u'12\n')
+    self.assertEqual(
+        Run(u'''
+求和（甲，乙）咋整：
+  唠唠：甲加乙。
+整完了。
+
+整求和（五，七）。
         '''),
         u'12\n')
 

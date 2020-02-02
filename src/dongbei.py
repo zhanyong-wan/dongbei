@@ -505,6 +505,26 @@ def ConsumeToken(token, tokens):
 #   ExprList ::= Expr |
 #                Expr，ExprList
 
+def ParseCallExpr(tokens):
+  """Returns (call_expr, remaining tokens)."""
+  call, tokens = TryConsumeToken(Keyword(KW_CALL), tokens)
+  if not call:
+    return None, tokens
+
+  func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+  open_paren, tokens = TryConsumeToken(Keyword(KW_OPEN_PAREN), tokens)
+  args = []
+  if open_paren:
+    while True:
+      expr, tokens = ParseExpr(tokens)
+      args.append(expr)
+      close_paren, tokens = TryConsumeToken(
+          Keyword(KW_CLOSE_PAREN), tokens)
+      if close_paren:
+        break
+      _, tokens = ConsumeToken(Keyword(KW_COMMA), tokens)
+  return CallExpr(func, args), tokens
+ 
 def ParseAtomicExpr(tokens):
   """Returns (expr, remaining tokens)."""
 
@@ -533,21 +553,9 @@ def ParseAtomicExpr(tokens):
     return ParenExpr(expr), tokens
 
   # Do we see a function call?
-  call, tokens = TryConsumeToken(Keyword(KW_CALL), tokens)
-  if call:
-    func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-    open_paren, tokens = TryConsumeToken(Keyword(KW_OPEN_PAREN), tokens)
-    args = []
-    if open_paren:
-      while True:
-        expr, tokens = ParseExpr(tokens)
-        args.append(expr)
-        close_paren, tokens = TryConsumeToken(
-            Keyword(KW_CLOSE_PAREN), tokens)
-        if close_paren:
-          break
-        _, tokens = ConsumeToken(Keyword(KW_COMMA), tokens)
-    return CallExpr(func, args), tokens
+  call_expr, tokens = ParseCallExpr(tokens)
+  if call_expr:
+    return call_expr, tokens
       
   return None, tokens
 
@@ -688,19 +696,10 @@ def ParseStmt(tokens):
     return (Statement(STMT_SAY, expr), tokens)
 
   # Parse 整
-  call, tokens = TryConsumeToken(Keyword(KW_CALL), tokens)
-  if call:
-    func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-    open_paren, tokens = TryConsumeToken(
-        Keyword(KW_OPEN_PAREN), tokens)
-    if open_paren:
-      arg, tokens = ParseExpr(tokens)
-      _, tokens = ConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
-      args = [arg]
-    else:
-      args = []
+  call_expr, tokens = ParseCallExpr(tokens)
+  if call_expr:
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
-    return (Statement(STMT_CALL, (func, args)), tokens)
+    return Statement(STMT_CALL, call_expr), tokens
 
   # Parse 滚犊子吧
   ret, tokens = TryConsumeToken(Keyword(KW_RETURN), tokens)
@@ -884,7 +883,8 @@ def TranslateStatementToPython(stmt, indent = ''):
     return code
 
   if stmt.kind == STMT_CALL:
-    func_token, args = stmt.value
+    func_token = stmt.value.func
+    args = stmt.value.args
     func_name = GetPythonVarName(func_token.value)
     code = indent + '%s(%s)' % (func_name,
                                 ', '.join(arg.ToPython() for arg in args))
