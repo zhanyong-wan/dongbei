@@ -472,9 +472,10 @@ def ParseExprToken(tokens, allow_close_paren):
 
 # Expression grammar:
 #
-#   Expr ::= ComparisonExpr | ArithmeticExpr
-#            # TODO: ComparisonExpr
-#            # TODO: ConcatExpr
+#   Expr ::= NonConcatExpr |
+#            Expr、NonConcatExpr
+#            # TODO: 、
+#   NonConcatExpr ::= ComparisonExpr | ArithmeticExpr
 #   ComparisonExpr ::= ArithmeticExpr 比 ArithmeticExpr 大 |
 #                      ArithmeticExpr 比 ArithmeticExpr 小 |
 #                      ArithmeticExpr 跟 ArithmeticExpr 一样一样的 |
@@ -600,7 +601,7 @@ def ParseArithmeticExpr(tokens):
     expr = ArithmeticExpr(expr, operator, terms[i + 1])
   return expr, tokens
 
-def NewParseExpr(tokens):
+def ParseNonConcatExpr(tokens):
   arith, tokens = ParseArithmeticExpr(tokens)
   if not arith:
     return None, tokens
@@ -623,6 +624,9 @@ def NewParseExpr(tokens):
 
   return arith, tokens
 
+def NewParseExpr(tokens):
+  return ParseNonConcatExpr(tokens)
+  
 def ParseExprFromStr(str):
   return NewParseExpr(list(Tokenize(str)))
 
