@@ -57,13 +57,28 @@ class DongbeiParseExprTest(unittest.TestCase):
                      ParenExpr(
                          LiteralExpr(Token(TK_IDENTIFIER, u'老王'))))
 
-  #def testParseArithmetic(self):
-  #  self.assertEqual(ParseExprFromStr(u'老王加五')[0],
-  #                   ArithmeticExpr(
-  #                       LiteralExpr(Token(TK_IDENTIFIER, u'老王')),
-  #                       Keyword(KW_PLUS),
-  #                       LiteralExpr(Token(TK_INTEGER_LITERAL, 5)))
-  #                   )
+  def testParseTermExpr(self):
+    self.assertEqual(ParseExprFromStr(u'老王乘五')[0],
+                     ArithmeticExpr(
+                         LiteralExpr(Token(TK_IDENTIFIER, u'老王')),
+                         Keyword(u'乘'),
+                         LiteralExpr(Token(TK_INTEGER_LITERAL, 5)))
+                     )
+    self.assertEqual(ParseExprFromStr(u'五除以老王')[0],
+                     ArithmeticExpr(
+                         LiteralExpr(Token(TK_INTEGER_LITERAL, 5)),
+                         Keyword(u'除以'),
+                         LiteralExpr(Token(TK_IDENTIFIER, u'老王')))
+                     )
+    self.assertEqual(ParseExprFromStr(u'五除以老王乘老刘')[0],
+                     ArithmeticExpr(
+                         ArithmeticExpr(
+                             LiteralExpr(Token(TK_INTEGER_LITERAL, 5)),
+                             Keyword(u'除以'),
+                             LiteralExpr(Token(TK_IDENTIFIER, u'老王'))),
+                         Keyword(u'乘'),
+                         LiteralExpr(Token(TK_IDENTIFIER, u'老刘'))
+                     ))
 
 class DongbeiTest(unittest.TestCase):
   def testRunEmptyProgram(self):

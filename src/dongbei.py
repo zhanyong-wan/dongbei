@@ -452,7 +452,7 @@ def ParseExprToken(tokens, allow_close_paren):
 #   ExprList ::= Expr |
 #                Expr，ExprList
 
-def NewParseExpr(tokens):
+def ParseAtomicExpr(tokens):
   """Returns (expr, remaining tokens)."""
 
   # Do we see an integer literal?
@@ -473,6 +473,43 @@ def NewParseExpr(tokens):
     return ParenExpr(expr), tokens
 
   return None, tokens
+
+def ParseTermExpr(tokens):
+  return ParseAtomicExpr(tokens)
+
+def ParseArithmeticExpr(tokens):
+  term, tokens = ParseTermExpr(tokens)
+  if not term:
+    return None, tokens
+
+  terms = [term]  # All terms of the expression.
+  operators = []  # Operators between the terms. The len of this is len(terms) - 1.
+
+  while True:
+    pre_operator_tokens = tokens
+    operator, tokens = TryConsumeToken(Keyword(KW_TIMES), tokens)
+    if not operator:
+      operator, tokens = TryConsumeToken(Keyword(KW_DIVIDE_BY), tokens)
+    if not operator:
+      break
+
+    term, tokens = ParseTermExpr(tokens)
+    if term:
+      operators.append(operator)
+      terms.append(term)
+    else:
+      # We have a trailing operator without a term to follow it.
+      tokens = pre_operator_tokens
+      break
+
+  assert len(terms) == len(operators) + 1
+  expr = terms[0]
+  for i, operator in enumerate(operators):
+    expr = ArithmeticExpr(expr, operator, terms[i + 1])
+  return expr, tokens
+  
+def NewParseExpr(tokens):
+  return ParseArithmeticExpr(tokens)
 
 def ParseExprFromStr(str):
   return NewParseExpr(list(Tokenize(str)))
