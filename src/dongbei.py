@@ -479,7 +479,7 @@ def ParseExprToken(tokens, allow_close_paren):
 #   AtomicExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr
 #   ParenExpr ::= （ Expr ）
 #   CallExpr ::= 整 Identifier |
-#                整 Identifier（ExprList） # TODO: support list
+#                整 Identifier（ExprList）
 #   ExprList ::= Expr |
 #                Expr，ExprList
 
@@ -530,15 +530,12 @@ def ParseAtomicExpr(tokens):
   return None, tokens
 
 def ParseTermExpr(tokens):
-  return ParseAtomicExpr(tokens)
-
-def ParseArithmeticExpr(tokens):
-  term, tokens = ParseTermExpr(tokens)
-  if not term:
+  factor, tokens = ParseAtomicExpr(tokens)
+  if not factor:
     return None, tokens
 
-  terms = [term]  # All terms of the expression.
-  operators = []  # Operators between the terms. The len of this is len(terms) - 1.
+  factors = [factor]  # All factors of the term.
+  operators = []  # Operators between the factors. The len of this is len(factors) - 1.
 
   while True:
     pre_operator_tokens = tokens
@@ -548,21 +545,24 @@ def ParseArithmeticExpr(tokens):
     if not operator:
       break
 
-    term, tokens = ParseTermExpr(tokens)
-    if term:
+    factor, tokens = ParseAtomicExpr(tokens)
+    if factor:
       operators.append(operator)
-      terms.append(term)
+      factors.append(factor)
     else:
-      # We have a trailing operator without a term to follow it.
+      # We have a trailing operator without a factor to follow it.
       tokens = pre_operator_tokens
       break
 
-  assert len(terms) == len(operators) + 1
-  expr = terms[0]
+  assert len(factors) == len(operators) + 1
+  expr = factors[0]
   for i, operator in enumerate(operators):
-    expr = ArithmeticExpr(expr, operator, terms[i + 1])
+    expr = ArithmeticExpr(expr, operator, factors[i + 1])
   return expr, tokens
-  
+
+def ParseArithmeticExpr(tokens):
+  return ParseTermExpr(tokens)
+
 def NewParseExpr(tokens):
   return ParseArithmeticExpr(tokens)
 
