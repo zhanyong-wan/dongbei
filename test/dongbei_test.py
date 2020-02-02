@@ -36,6 +36,7 @@ from src.dongbei import TK_INTEGER_LITERAL
 from src.dongbei import TK_STRING_LITERAL
 from src.dongbei import Token
 from src.dongbei import Tokenize
+from src.dongbei import VariableExpr
 
 class DongbeiParseExprTest(unittest.TestCase):
   def testParseInteger(self):
@@ -46,17 +47,17 @@ class DongbeiParseExprTest(unittest.TestCase):
     
   def testParseIdentifier(self):
     self.assertEqual(ParseExprFromStr(u'老王')[0],
-                     LiteralExpr(Token(TK_IDENTIFIER, u'老王')))
+                     VariableExpr(Token(TK_IDENTIFIER, u'老王')))
 
   def testParseParens(self):
     # Wide parens.
     self.assertEqual(ParseExprFromStr(u'（老王）')[0],
                      ParenExpr(
-                         LiteralExpr(Token(TK_IDENTIFIER, u'老王'))))
+                         VariableExpr(Token(TK_IDENTIFIER, u'老王'))))
     # Narrow parens.
     self.assertEqual(ParseExprFromStr(u'(老王)')[0],
                      ParenExpr(
-                         LiteralExpr(Token(TK_IDENTIFIER, u'老王'))))
+                         VariableExpr(Token(TK_IDENTIFIER, u'老王'))))
 
   def testParseCallExpr(self):
     self.assertEqual(ParseExprFromStr(u'整老王')[0],
@@ -71,7 +72,7 @@ class DongbeiParseExprTest(unittest.TestCase):
   def testParseTermExpr(self):
     self.assertEqual(ParseExprFromStr(u'老王乘五')[0],
                      ArithmeticExpr(
-                         LiteralExpr(Token(TK_IDENTIFIER, u'老王')),
+                         VariableExpr(Token(TK_IDENTIFIER, u'老王')),
                          Keyword(u'乘'),
                          LiteralExpr(Token(TK_INTEGER_LITERAL, 5)))
                      )
@@ -79,16 +80,16 @@ class DongbeiParseExprTest(unittest.TestCase):
                      ArithmeticExpr(
                          LiteralExpr(Token(TK_INTEGER_LITERAL, 5)),
                          Keyword(u'除以'),
-                         LiteralExpr(Token(TK_IDENTIFIER, u'老王')))
+                         VariableExpr(Token(TK_IDENTIFIER, u'老王')))
                      )
     self.assertEqual(ParseExprFromStr(u'五除以老王乘老刘')[0],
                      ArithmeticExpr(
                          ArithmeticExpr(
                              LiteralExpr(Token(TK_INTEGER_LITERAL, 5)),
                              Keyword(u'除以'),
-                             LiteralExpr(Token(TK_IDENTIFIER, u'老王'))),
+                             VariableExpr(Token(TK_IDENTIFIER, u'老王'))),
                          Keyword(u'乘'),
-                         LiteralExpr(Token(TK_IDENTIFIER, u'老刘'))
+                         VariableExpr(Token(TK_IDENTIFIER, u'老刘'))
                      ))
 
 class DongbeiTest(unittest.TestCase):

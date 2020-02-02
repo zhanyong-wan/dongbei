@@ -183,6 +183,16 @@ class LiteralExpr(NewExpr):
   def Equals(self, other):
     return self.token == other.token
 
+class VariableExpr(NewExpr):
+  def __init__(self, var):
+    self.var = var
+
+  def __str__(self):
+    return 'VARIABLE_EXPR<%s>' % (self.var,)
+
+  def Equals(self, other):
+    return self.var == other.var
+
 class ParenExpr(NewExpr):
   def __init__(self, expr):
     self.expr = expr
@@ -448,6 +458,8 @@ def ParseExprToken(tokens, allow_close_paren):
 # Expression grammar:
 #
 #   Expr ::= ComparisonExpr | ArithmeticExpr
+#            # TODO: ComparisonExpr
+#            # TODO: ConcatExpr
 #   ComparisonExpr ::= ArithmeticExpr 比 ArithmeticExpr 大 |
 #                      ArithmeticExpr 比 ArithmeticExpr 小 |
 #                      ArithmeticExpr 跟 ArithmeticExpr 一样一样的 |
@@ -455,13 +467,15 @@ def ParseExprToken(tokens, allow_close_paren):
 #   ArithmeticExpr ::= TermExpr |
 #                      ArithmeticExpr 加 TermExpr |
 #                      ArithmeticExpr 减 TermExpr
+#            # TODO: 加减
 #   TermExpr ::= AtomicExpr |
 #                TermExpr 乘 AtomicExpr |
 #                TermExpr 除以 AtomicExpr
-#   AtomicExpr ::= LiteralExpr | ParenExpr | CallExpr
+#   AtomicExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr
+#                # TODO: string literal
 #   ParenExpr ::= （ Expr ）
 #   CallExpr ::= 整 Identifier |
-#                整 Identifier（ExprList）
+#                整 Identifier（ExprList） # TODO: support list
 #   ExprList ::= Expr |
 #                Expr，ExprList
 
@@ -476,7 +490,7 @@ def ParseAtomicExpr(tokens):
   # Do we see an identifier?
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if id:
-    return LiteralExpr(id), tokens
+    return VariableExpr(id), tokens
 
   # Do we see a parenthesis?
   open_paren, tokens = TryConsumeToken(Keyword(KW_OPEN_PAREN), tokens)
