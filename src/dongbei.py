@@ -487,6 +487,13 @@ def ParseAtomicExpr(tokens):
   if num:
     return LiteralExpr(num), tokens
 
+  # Do we see a string literal?
+  open_quote, tokens = TryConsumeToken(Keyword(KW_OPEN_QUOTE), tokens)
+  if open_quote:
+    str, tokens = ConsumeTokenType(TK_STRING_LITERAL, tokens)
+    _, tokens = ConsumeToken(Keyword(KW_CLOSE_QUOTE), tokens)
+    return LiteralExpr(str), tokens
+
   # Do we see an identifier?
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if id:

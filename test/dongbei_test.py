@@ -45,6 +45,10 @@ class DongbeiParseExprTest(unittest.TestCase):
     self.assertEqual(ParseExprFromStr(u'九')[0],
                      LiteralExpr(Token(TK_INTEGER_LITERAL, 9)))
     
+  def testParseStringLiteral(self):
+    self.assertEqual(ParseExprFromStr(u'“ 哈  哈   ”')[0],
+                     LiteralExpr(Token(TK_STRING_LITERAL, u' 哈  哈   ')))
+
   def testParseIdentifier(self):
     self.assertEqual(ParseExprFromStr(u'老王')[0],
                      VariableExpr(Token(TK_IDENTIFIER, u'老王')))
