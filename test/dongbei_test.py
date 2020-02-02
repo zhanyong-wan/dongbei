@@ -595,7 +595,20 @@ class DongbeiTest(unittest.TestCase):
         Run(u'【加一】（几）咋整：滚犊子吧几加一。整完了。\n'
                     u'唠唠：整【加一】（二）。'),
         u'3\n')
-    
+
+  def testRecursiveFunc(self):
+    self.assertEqual(
+        Run(u'''
+【阶乘】（几）咋整：
+瞅瞅：几比一小吗？
+要行咧就滚犊子吧一。
+滚犊子吧几乘整【阶乘】（几减一）。
+整完了。
+
+唠唠：整【阶乘】（五）。
+        '''),
+        u'120\n')
+
   def testNormalizingBang(self):
     self.assertEqual(
         Run(u'【加一】（几）咋整：唠唠：几加一！整完了！\n'

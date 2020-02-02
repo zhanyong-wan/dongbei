@@ -169,6 +169,8 @@ class Expr:
 
 def _dongbei_str(value):
   """Converts a value to its dongbei string."""
+  if value is None:
+    return '啥也不是'
   if type(value) == bool:
     return '对' if value else '错'
   return str(value)
@@ -931,7 +933,10 @@ def Run(code):
   print('%s' % (py_code,))
   global _db_output
   _db_output = ''
-  exec(py_code)
+  # See https://stackoverflow.com/questions/871887/using-exec-with-recursive-functions
+  # Use the same dictionary for local and global definitions.
+  # Needed for defining recursive dongbei functions.
+  exec(py_code, globals(), globals())
   print('运行结果：')
   print('%s' % (_db_output,))
   return _db_output
