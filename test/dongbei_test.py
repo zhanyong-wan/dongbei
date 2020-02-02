@@ -15,7 +15,6 @@ from src.dongbei import BasicTokenize
 from src.dongbei import CallExpr
 from src.dongbei import ComparisonExpr
 from src.dongbei import ConcatExpr
-from src.dongbei import Expr
 from src.dongbei import Keyword
 from src.dongbei import ParenExpr
 from src.dongbei import ParseChars
@@ -385,13 +384,13 @@ class DongbeiTest(unittest.TestCase):
         [Statement(
             STMT_INC_BY,
             (Token(TK_IDENTIFIER, u'老王'),
-             Expr([Token(TK_INTEGER_LITERAL, 1)])))])
+             LiteralExpr(Token(TK_INTEGER_LITERAL, 1))))])
     self.assertEqual(
         ParseToAst(u'老王走两步。'),
         [Statement(
             STMT_INC_BY,
             (Token(TK_IDENTIFIER, u'老王'),
-             Expr([Token(TK_INTEGER_LITERAL, 2)])))])
+             LiteralExpr(Token(TK_INTEGER_LITERAL, 2))))])
 
   def testParsingDecrements(self):
     self.assertEqual(
@@ -399,40 +398,22 @@ class DongbeiTest(unittest.TestCase):
         [Statement(
             STMT_DEC_BY,
             (Token(TK_IDENTIFIER, u'老王'),
-             Expr([Token(TK_INTEGER_LITERAL, 1)])))])
+             LiteralExpr(Token(TK_INTEGER_LITERAL, 1))))])
     self.assertEqual(
         ParseToAst(u'老王退三步。'),
         [Statement(
             STMT_DEC_BY,
             (Token(TK_IDENTIFIER, u'老王'),
-             Expr([Token(TK_INTEGER_LITERAL, 3)])))])
+             LiteralExpr(Token(TK_INTEGER_LITERAL, 3))))])
 
-  def testParsingArithmetic(self):
-    self.assertEqual(
-        ParseToAst(u'老王装250加13减二乘五除以六。'),
-        [Statement(
-            STMT_ASSIGN,
-            (Token(TK_IDENTIFIER, u'老王'),
-             Expr([
-                 Token(TK_INTEGER_LITERAL, 250),
-                 Keyword(u'加'),
-                 Token(TK_INTEGER_LITERAL, 13),
-                 Keyword(u'减'),
-                 Token(TK_INTEGER_LITERAL, 2),
-                 Keyword(u'乘'),
-                 Token(TK_INTEGER_LITERAL, 5),
-                 Keyword(u'除以'),
-                 Token(TK_INTEGER_LITERAL, 6),
-             ])))])
-    
   def testParsingLoop(self):
     self.assertEqual(
         ParseToAst(u'老王从1到9磨叽：磨叽完了。'),
         [Statement(
             STMT_LOOP,
             (Token(TK_IDENTIFIER, u'老王'),
-             Expr([Token(TK_INTEGER_LITERAL, 1)]),
-             Expr([Token(TK_INTEGER_LITERAL, 9)]),
+             LiteralExpr(Token(TK_INTEGER_LITERAL, 1)),
+             LiteralExpr(Token(TK_INTEGER_LITERAL, 9)),
              []))])
 
   def DisabledTestParsingComparison(self):
@@ -458,8 +439,8 @@ class DongbeiTest(unittest.TestCase):
                     [],  # Formal parameters.
                     # Function body.
                     [Statement(STMT_SAY,
-                               Expr([Token(
-                                   TK_INTEGER_LITERAL, 1)]))]
+                               LiteralExpr(Token(
+                                   TK_INTEGER_LITERAL, 1)))]
                    ))])
     
   def testParsingFuncDefWithParam(self):
@@ -476,7 +457,7 @@ class DongbeiTest(unittest.TestCase):
         ParseToAst(u'整【阶乘】（五）。'),
         [Statement(STMT_CALL,
                    (Token(TK_IDENTIFIER, u'阶乘'),
-                    [Expr([Token(TK_INTEGER_LITERAL, 5)])]))])
+                    [LiteralExpr(Token(TK_INTEGER_LITERAL, 5))]))])
 
   def testVarAssignmentFromVar(self):
     self.assertEqual(

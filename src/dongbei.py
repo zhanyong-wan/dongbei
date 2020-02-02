@@ -138,24 +138,6 @@ class Token:
   def __ne__(self, other):
     return not (self == other)
 
-class Expr:
-  def __init__(self, tokens):
-    self.tokens = tokens
-
-  def __str__(self):
-    tokens_str = ', '.join(str(token) for token in self.tokens)
-    return u'EXPR [%s]' % (tokens_str,)
-
-  def __repr__(self):
-    return self.__str__()
-
-  def __eq__(self, other):
-    return (type(other) == Expr and
-            self.tokens == other.tokens)
-
-  def __ne__(self, other):
-    return not (self == other)
-
 class NewExpr:
   def __init__(self):
     pass
@@ -168,10 +150,14 @@ class NewExpr:
 
   def Equals(self, other):
     """Returns true if self and other (which is guaranteed to have the same type) are equal."""
-    raise Exception('A subclass of NewExpr must implement Equals().')
+    raise Exception('%s must implement Equals().' % (type(self),))
 
   def __ne__(self, other):
     return not (self == other)
+
+  def ToPython(self):
+    """Translates this expression to Python."""
+    raise Exception('%s must implement ToPython().' % (type(self),))
 
 class ConcatExpr(NewExpr):
   def __init__(self, exprs):
@@ -182,6 +168,16 @@ class ConcatExpr(NewExpr):
 
   def Equals(self, other):
     return self.exprs == other.exprs
+
+  def ToPython(self):
+    return ' + '.join('str(%s)' % (expr.ToPython(),) for expr in self.exprs)
+
+ARITHMETIC_OPERATION_TO_PYTHON = {
+    u'加': '+',
+    u'减': '-',
+    u'乘': '*',
+    u'除以': '/',
+    }
 
 class ArithmeticExpr(NewExpr):
   def __init__(self, op1, operation, op2):
@@ -198,6 +194,12 @@ class ArithmeticExpr(NewExpr):
             self.operation == other.operation and
             self.op2 == other.op2)
 
+  def ToPython(self):
+    return '%s %s %s' % (self.op1.ToPython(),
+                         ARITHMETIC_OPERATION_TO_PYTHON[
+                             self.operation.value],
+                         self.op2.ToPython())
+
 class LiteralExpr(NewExpr):
   def __init__(self, token):
     self.token = token
@@ -208,6 +210,13 @@ class LiteralExpr(NewExpr):
   def Equals(self, other):
     return self.token == other.token
 
+  def ToPython(self):
+    if self.token.kind == TK_INTEGER_LITERAL:
+      return str(self.token.value)
+    if self.token.kind == TK_STRING_LITERAL:
+      return 'u"%s"' % (self.token.value,)
+    raise Exception('Unexpected token kind %s' % (self.token.kind,))
+
 class VariableExpr(NewExpr):
   def __init__(self, var):
     self.var = var
@@ -217,6 +226,9 @@ class VariableExpr(NewExpr):
 
   def Equals(self, other):
     return self.var == other.var
+
+  def ToPython(self):
+    return GetPythonVarName(self.var.value)
 
 class ParenExpr(NewExpr):
   def __init__(self, expr):
@@ -240,6 +252,11 @@ class CallExpr(NewExpr):
   def Equals(self, other):
     return (self.func == other.func and
             self.args == other.args)
+
+  def ToPython(self):
+    return '%s(%s)' % (
+        GetPythonVarName(self.func.value),
+        ', '.join(arg.ToPython() for arg in self.args))
 
 class ComparisonExpr(NewExpr):
   def __init__(self, op1, relation, op2):
@@ -436,50 +453,6 @@ def ConsumeToken(token, tokens):
              (token, tokens[0]))
   return token, tokens[1:]
 
-def ParseExprToken(tokens, allow_close_paren):
-  # TODO: make this return a token list instead of one token.
-  """Returns (token, remaining tokens)."""
-
-  orig_tokens = tokens
-
-  # Do we see an integer literal?
-  integer, tokens = TryConsumeTokenType(TK_INTEGER_LITERAL, tokens)
-  if integer is not None:
-    return integer, tokens
-
-  # Do we see a variable?
-  var, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
-  if var is not None:
-    return var, tokens
-
-  # Do we see a string literal?
-  open_quote, tokens = TryConsumeToken(
-      Keyword(KW_OPEN_QUOTE), tokens)
-  if open_quote:
-    str_token, tokens = TryConsumeTokenType(TK_STRING_LITERAL, tokens)
-    _, tokens = ConsumeToken(Keyword(KW_CLOSE_QUOTE), tokens)
-    return str_token, tokens
-
-  # Do we see a function call?
-  call, tokens = TryConsumeToken(Keyword(KW_CALL), tokens)
-  if call:
-    return call, tokens
-    
-  # Do we see an operator or a parenthesis?
-  token = tokens[0]
-  if token in (Keyword(KW_PLUS),
-               Keyword(KW_MINUS),
-               Keyword(KW_TIMES),
-               Keyword(KW_DIVIDE_BY),
-               Keyword(KW_CONCAT),
-               Keyword(KW_OPEN_PAREN),
-  ):
-    return token, tokens[1:]
-  if allow_close_paren and token == Keyword(KW_CLOSE_PAREN):
-    return token, tokens[1:]
-
-  return None, orig_tokens
-
 # Expression grammar:
 #
 #   Expr ::= NonConcatExpr |
@@ -662,22 +635,7 @@ def ParseExprFromStr(str):
   return NewParseExpr(list(Tokenize(str)))
 
 def ParseExpr(tokens):
-  """Returns (expr, remaining tokens)."""
-
-  expr_tokens = []
-  paren_level = 0  # How many level are we in parentheses?
-  while True:
-    token, tokens = ParseExprToken(
-        tokens, allow_close_paren = paren_level > 0)
-    if token:
-      expr_tokens.append(token)
-      if token == Keyword(KW_OPEN_PAREN):
-        paren_level += 1
-      elif token == Keyword(KW_CLOSE_PAREN):
-        paren_level -= 1
-    else:
-      break
-  return Expr(expr_tokens), tokens
+  return NewParseExpr(tokens)
 
 def TranslateToOneStatement(tokens):
   """Returns (statement, remainding_tokens, error)."""
@@ -730,7 +688,7 @@ def TranslateToOneStatement(tokens):
   if inc:
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_INC_BY,
-                      (id, Expr([Token(TK_INTEGER_LITERAL, 1)]))),
+                      (id, LiteralExpr(Token(TK_INTEGER_LITERAL, 1)))),
             tokens)
 
   inc, tokens = TryConsumeToken(
@@ -745,7 +703,7 @@ def TranslateToOneStatement(tokens):
   if dec:
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_DEC_BY,
-                      (id, Expr([Token(TK_INTEGER_LITERAL, 1)]))),
+                      (id, LiteralExpr(Token(TK_INTEGER_LITERAL, 1)))),
             tokens)
 
   dec, tokens = TryConsumeToken(
@@ -799,6 +757,7 @@ def TranslateToStatements(tokens):
       return stmts, tokens
     stmts.append(stmt)
 
+# TODO: remove.
 def TranslateExprTokensToPython(tokens):
   """Returns the Python code for the given dongbei expression."""
 
@@ -840,12 +799,6 @@ def TranslateExprTokensToPython(tokens):
 
   return python_code
 
-def TranslateExprToPython(expr):
-  python_code = TranslateExprTokensToPython(expr.tokens)
-  if Keyword(KW_CONCAT) not in expr.tokens:
-    return python_code
-  return 'str(%s)' % (python_code,)
-
 def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_VAR_DECL:
     var_token = stmt.value
@@ -854,25 +807,25 @@ def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_ASSIGN:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
-    return indent + '%s = %s' % (var, TranslateExprToPython(expr))
+    return indent + '%s = %s' % (var, expr.ToPython())
   if stmt.kind == STMT_SAY:
     expr = stmt.value
     return indent + '_db_append_output("%%s\\n" %% (%s,))' % (
-        TranslateExprToPython(expr),)
+        expr.ToPython(),)
   if stmt.kind == STMT_INC_BY:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
-    return indent + '%s += %s' % (var, TranslateExprToPython(expr))
+    return indent + '%s += %s' % (var, expr.ToPython())
   if stmt.kind == STMT_DEC_BY:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
-    return indent + '%s -= %s' % (var, TranslateExprToPython(expr))
+    return indent + '%s -= %s' % (var, expr.ToPython())
   if stmt.kind == STMT_LOOP:
     var_token, from_val, to_val, stmts = stmt.value
     var = GetPythonVarName(var_token.value)
     loop = indent + 'for %s in range(%s, %s + 1):' % (
-        var, TranslateExprToPython(from_val),
-        TranslateExprToPython(to_val))
+        var, from_val.ToPython(),
+        to_val.ToPython())
     for s in stmts:
       loop += '\n' + TranslateStatementToPython(s, indent + '  ')
     if not stmts:
@@ -891,12 +844,12 @@ def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_CALL:
     func_token, args = stmt.value
     func_name = GetPythonVarName(func_token.value)
-    args_code = map(TranslateExprToPython, args)
-    code = indent + '%s(%s)' % (func_name, ', '.join(args_code))
+    code = indent + '%s(%s)' % (func_name,
+                                ', '.join(arg.ToPython() for arg in args))
     return code
   if stmt.kind == STMT_RETURN:
     expr = stmt.value
-    expr_code = TranslateExprToPython(expr)
+    expr_code = expr.ToPython()
     return indent + 'return ' + expr_code
   sys.exit(u'我不懂 %s 语句。' % (stmt.kind))
   
