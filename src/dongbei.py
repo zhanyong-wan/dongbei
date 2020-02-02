@@ -193,6 +193,19 @@ class ParenExpr(NewExpr):
   def Equals(self, other):
     return self.expr == other.expr
 
+class CallExpr(NewExpr):
+  def __init__(self, func, args):
+    self.func = func
+    self.args = args
+
+  def __str__(self):
+    return 'CALL_EXPR<%s>(%s)' % (
+        self.func, ', '.join(str(arg) for arg in self.args))
+
+  def Equals(self, other):
+    return (self.func == other.func and
+            self.args == other.args)
+
 class ComparisonExpr(NewExpr):
   def __init__(self, op1, relation, op2):
     self.op1 = op1
@@ -432,7 +445,7 @@ def ParseExprToken(tokens, allow_close_paren):
 
   return None, orig_tokens
 
-# Expression grammer:
+# Expression grammar:
 #
 #   Expr ::= ComparisonExpr | ArithmeticExpr
 #   ComparisonExpr ::= ArithmeticExpr 比 ArithmeticExpr 大 |
@@ -472,6 +485,19 @@ def ParseAtomicExpr(tokens):
     _, tokens = ConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
     return ParenExpr(expr), tokens
 
+  # Do we see a function call?
+  call, tokens = TryConsumeToken(Keyword(KW_CALL), tokens)
+  if call:
+    func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+    open_paren, tokens = TryConsumeToken(Keyword(KW_OPEN_PAREN), tokens)
+    if open_paren:
+      expr, tokens = NewParseExpr(tokens)
+      _, tokens = ConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
+      args = [expr]
+    else:
+      args = []
+    return CallExpr(func, args), tokens
+      
   return None, tokens
 
 def ParseTermExpr(tokens):

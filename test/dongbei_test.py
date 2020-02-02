@@ -12,6 +12,7 @@ from src import dongbei
 from src.dongbei import ArithmeticExpr
 from src.dongbei import LiteralExpr
 from src.dongbei import BasicTokenize
+from src.dongbei import CallExpr
 from src.dongbei import ComparisonExpr
 from src.dongbei import Expr
 from src.dongbei import Keyword
@@ -56,6 +57,16 @@ class DongbeiParseExprTest(unittest.TestCase):
     self.assertEqual(ParseExprFromStr(u'(老王)')[0],
                      ParenExpr(
                          LiteralExpr(Token(TK_IDENTIFIER, u'老王'))))
+
+  def testParseCallExpr(self):
+    self.assertEqual(ParseExprFromStr(u'整老王')[0],
+                     CallExpr(Token(TK_IDENTIFIER, u'老王'), []))
+    self.assertEqual(ParseExprFromStr(u'整老王（5）')[0],
+                     CallExpr(Token(TK_IDENTIFIER, u'老王'),
+                              [LiteralExpr(Token(TK_INTEGER_LITERAL, 5))]))
+    self.assertEqual(ParseExprFromStr(u'整老王(6)')[0],
+                     CallExpr(Token(TK_IDENTIFIER, u'老王'),
+                              [LiteralExpr(Token(TK_INTEGER_LITERAL, 6))]))
 
   def testParseTermExpr(self):
     self.assertEqual(ParseExprFromStr(u'老王乘五')[0],
