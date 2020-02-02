@@ -165,7 +165,7 @@ class Expr:
     """Translates this expression to Python."""
     raise Exception('%s must implement ToPython().' % (type(self),))
 
-def DongbeiStr(value):
+def _dongbei_str(value):
   """Converts a value to its dongbei string."""
   if type(value) == bool:
     return '对' if value else '错'
@@ -182,7 +182,7 @@ class ConcatExpr(Expr):
     return self.exprs == other.exprs
 
   def ToPython(self):
-    return ' + '.join('DongbeiStr(%s)' % (
+    return ' + '.join('_dongbei_str(%s)' % (
         expr.ToPython(),) for expr in self.exprs)
 
 ARITHMETIC_OPERATION_TO_PYTHON = {
@@ -830,7 +830,7 @@ def TranslateStatementToPython(stmt, indent = ''):
 
   if stmt.kind == STMT_SAY:
     expr = stmt.value
-    return indent + '_db_append_output("%%s\\n" %% (DongbeiStr(%s),))' % (
+    return indent + '_db_append_output("%%s\\n" %% (_dongbei_str(%s),))' % (
         expr.ToPython(),)
 
   if stmt.kind == STMT_INC_BY:
