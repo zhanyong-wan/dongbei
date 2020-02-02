@@ -14,6 +14,7 @@ from src.dongbei import LiteralExpr
 from src.dongbei import BasicTokenize
 from src.dongbei import CallExpr
 from src.dongbei import ComparisonExpr
+from src.dongbei import ConcatExpr
 from src.dongbei import Expr
 from src.dongbei import Keyword
 from src.dongbei import ParenExpr
@@ -167,6 +168,23 @@ class DongbeiParseExprTest(unittest.TestCase):
                          Keyword(u'不是一样一样的'),
                          LiteralExpr(Token(TK_INTEGER_LITERAL, 6))
                      ))
+
+  def testParseConcatExpr(self):
+    self.assertEqual(ParseExprFromStr(u'老王、2')[0],
+                     ConcatExpr([
+                         VariableExpr(Token(TK_IDENTIFIER, u'老王')),
+                         LiteralExpr(Token(TK_INTEGER_LITERAL, 2))
+                     ]))
+  def testParseConcatExpr(self):
+    self.assertEqual(ParseExprFromStr(u'老王加油、2、“哈”')[0],
+                     ConcatExpr([
+                         ArithmeticExpr(
+                             VariableExpr(Token(TK_IDENTIFIER, u'老王')),
+                             Keyword(u'加'),
+                             VariableExpr(Token(TK_IDENTIFIER, u'油'))),
+                         LiteralExpr(Token(TK_INTEGER_LITERAL, 2)),
+                         LiteralExpr(Token(TK_STRING_LITERAL, u'哈'))
+                     ]))
     
 class DongbeiTest(unittest.TestCase):
   def testRunEmptyProgram(self):

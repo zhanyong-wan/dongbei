@@ -173,6 +173,16 @@ class NewExpr:
   def __ne__(self, other):
     return not (self == other)
 
+class ConcatExpr(NewExpr):
+  def __init__(self, exprs):
+    self.exprs = exprs
+
+  def __str__(self):
+    return 'CONCAT_EXPR<%s>' % (self.exprs,)
+
+  def Equals(self, other):
+    return self.exprs == other.exprs
+
 class ArithmeticExpr(NewExpr):
   def __init__(self, op1, operation, op2):
     self.op1 = op1
@@ -474,7 +484,6 @@ def ParseExprToken(tokens, allow_close_paren):
 #
 #   Expr ::= NonConcatExpr |
 #            Expr、NonConcatExpr
-#            # TODO: 、
 #   NonConcatExpr ::= ComparisonExpr | ArithmeticExpr
 #   ComparisonExpr ::= ArithmeticExpr 比 ArithmeticExpr 大 |
 #                      ArithmeticExpr 比 ArithmeticExpr 小 |
@@ -625,7 +634,29 @@ def ParseNonConcatExpr(tokens):
   return arith, tokens
 
 def NewParseExpr(tokens):
-  return ParseNonConcatExpr(tokens)
+  nc_expr, tokens = ParseNonConcatExpr(tokens)
+  if not nc_expr:
+    return None, tokens
+
+  nc_exprs = [nc_expr]
+  while True:
+    pre_operator_tokens = tokens
+    concat, tokens = TryConsumeToken(Keyword(KW_CONCAT), tokens)
+    if not concat:
+      break
+
+    nc_expr, tokens = ParseNonConcatExpr(tokens)
+    if nc_expr:
+      nc_exprs.append(nc_expr)
+    else:
+      # We have a trailing concat operator without an expression to follow it.
+      tokens = pre_operator_tokens
+      break
+
+  if len(nc_exprs) == 1:
+    return nc_exprs[0], tokens
+
+  return ConcatExpr(nc_exprs), tokens
   
 def ParseExprFromStr(str):
   return NewParseExpr(list(Tokenize(str)))
