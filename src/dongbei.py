@@ -15,6 +15,7 @@ KW_BANG = u'！'
 KW_BECOME = u'装'
 KW_BEGIN = u'开整了：'
 KW_CALL = u'整'
+KW_CHECK = u'瞅瞅：'
 KW_CLOSE_PAREN = u'）'
 KW_CLOSE_PAREN_NARROW = ')'
 KW_CLOSE_QUOTE = u'”'
@@ -48,6 +49,7 @@ KW_PLUS = u'加'
 KW_RETURN = u'滚犊子吧'
 KW_SAY = u'唠唠'
 KW_STEP = u'步'
+KW_THEN = u'吗？要行咧就'
 KW_TIMES = u'乘'
 KW_TO = u'到'
 
@@ -55,6 +57,7 @@ KEYWORDS = (
     KW_BANG,
     KW_BECOME,
     KW_BEGIN,
+    KW_CHECK,
     KW_CLOSE_PAREN,
     KW_CLOSE_PAREN_NARROW,
     KW_CLOSE_QUOTE,
@@ -89,6 +92,7 @@ KEYWORDS = (
     KW_RETURN,
     KW_SAY,
     KW_STEP,
+    KW_THEN,
     KW_TIMES,
     KW_TO,
     )
@@ -117,6 +121,7 @@ STMT_DEC_BY = 'DEC_BY'
 STMT_LOOP = 'LOOP'
 STMT_FUNC_DEF = 'FUNC_DEF'
 STMT_CALL = 'CALL'
+STMT_CONDITIONAL = 'CONDITIONAL'
 STMT_RETURN = 'RETURN'
 
 class Token:
@@ -655,9 +660,11 @@ def ParseExprFromStr(str):
   return ParseExpr(list(Tokenize(str)))
 
 def TranslateToOneStatement(tokens):
-  """Returns (statement, remainding_tokens, error)."""
+  """Returns (statement, remainding_tokens)."""
 
   orig_tokens = tokens
+
+  # Parse 唠唠：
   say, tokens = TryConsumeToken(Keyword(KW_SAY), tokens)
   if say:
     colon, tokens = ConsumeToken(Keyword(KW_COLON), tokens)
@@ -665,6 +672,7 @@ def TranslateToOneStatement(tokens):
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_SAY, expr), tokens)
 
+  # Parse 整
   call, tokens = TryConsumeToken(Keyword(KW_CALL), tokens)
   if call:
     func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
@@ -679,28 +687,42 @@ def TranslateToOneStatement(tokens):
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_CALL, (func, args)), tokens)
 
+  # Parse 滚犊子吧
   ret, tokens = TryConsumeToken(Keyword(KW_RETURN), tokens)
   if ret:
     expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_RETURN, expr), tokens)
-    
+
+  # Parse 瞅瞅
+  check, tokens = TryConsumeToken(Keyword(KW_CHECK), tokens)
+  if check:
+    expr, tokens = ParseExpr(tokens)
+    _, tokens = ConsumeToken(Keyword(KW_THEN), tokens)
+    then_stmt, tokens = TranslateToOneStatement(tokens)
+    return Statement(STMT_CONDITIONAL, (expr, then_stmt, None)), tokens
+
+  # Parse an identifier name.
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if not id:
-    # sys.exit(u'语句必须以“唠唠”或者标识符开始。实际是%s' % (tokens[0],))
     return (None, orig_tokens)
 
+  # Code below is for statements that start with an identifier.
+
+  # Parse 是活雷锋
   is_var, tokens = TryConsumeToken(Keyword(KW_IS_VAR), tokens)
   if is_var:
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_VAR_DECL, id), tokens)
 
+  # Parse 装
   become, tokens = TryConsumeToken(Keyword(KW_BECOME), tokens)
   if become:
     expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_ASSIGN, (id, expr)), tokens)
 
+  # Parse 走走
   inc, tokens = TryConsumeToken(Keyword(KW_INC), tokens)
   if inc:
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
@@ -708,6 +730,7 @@ def TranslateToOneStatement(tokens):
                       (id, LiteralExpr(Token(TK_INTEGER_LITERAL, 1)))),
             tokens)
 
+  # Parse 走X步
   inc, tokens = TryConsumeToken(
       Keyword(KW_INC_BY), tokens)
   if inc:
@@ -716,6 +739,7 @@ def TranslateToOneStatement(tokens):
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_INC_BY, (id, expr)), tokens)
 
+  # Parse 退退
   dec, tokens = TryConsumeToken(Keyword(KW_DEC), tokens)
   if dec:
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
@@ -723,6 +747,7 @@ def TranslateToOneStatement(tokens):
                       (id, LiteralExpr(Token(TK_INTEGER_LITERAL, 1)))),
             tokens)
 
+  # Parse 退X步
   dec, tokens = TryConsumeToken(
       Keyword(KW_DEC_BY), tokens)
   if dec:
@@ -731,6 +756,7 @@ def TranslateToOneStatement(tokens):
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_DEC_BY, (id, expr)), tokens)
 
+  # Parse 磨叽
   from_, tokens = TryConsumeToken(Keyword(KW_FROM), tokens)
   if from_:
     from_expr, tokens = ParseExpr(tokens)
@@ -742,6 +768,7 @@ def TranslateToOneStatement(tokens):
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_LOOP, (id, from_expr, to_expr, stmts)), tokens)
 
+  # Parse 咋整
   open_paren, tokens = TryConsumeToken(
       Keyword(KW_OPEN_PAREN), tokens)
   if open_paren:
@@ -764,6 +791,10 @@ def TranslateToOneStatement(tokens):
 
   return (None, orig_tokens)
 
+def ParseStmtFromStr(tokens):
+  return TranslateToOneStatement(list(Tokenize(tokens)))
+
+# TODO: rename Translate* to Parse*.
 def TranslateToStatements(tokens):
   """Returns (statement list, remaining tokens)."""
 
@@ -865,10 +896,15 @@ def TranslateStatementToPython(stmt, indent = ''):
                                 ', '.join(arg.ToPython() for arg in args))
     return code
   if stmt.kind == STMT_RETURN:
-    expr = stmt.value
-    expr_code = expr.ToPython()
-    return indent + 'return ' + expr_code
-  sys.exit(u'我不懂 %s 语句。' % (stmt.kind))
+    return indent + 'return ' + stmt.value.ToPython()
+  if stmt.kind == STMT_CONDITIONAL:
+    condition, then_stmt, else_stmt = stmt.value
+    code = indent + 'if %s:\n' % (condition.ToPython(),)
+    code += TranslateStatementToPython(then_stmt, indent + '  ')
+    # TODO: handle else_stmt.
+    return code
+    
+  sys.exit(u'我不懂 %s 语句咋执行。' % (stmt.kind))
   
 def Translate(tokens):
   statements, tokens = TranslateToStatements(tokens)

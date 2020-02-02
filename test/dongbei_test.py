@@ -20,10 +20,12 @@ from src.dongbei import ParenExpr
 from src.dongbei import ParseChars
 from src.dongbei import ParseExprFromStr
 from src.dongbei import ParseInteger
+from src.dongbei import ParseStmtFromStr
 from src.dongbei import ParseToAst
 from src.dongbei import Run
 from src.dongbei import STMT_ASSIGN
 from src.dongbei import STMT_CALL
+from src.dongbei import STMT_CONDITIONAL
 from src.dongbei import STMT_DEC_BY
 from src.dongbei import STMT_FUNC_DEF
 from src.dongbei import STMT_INC_BY
@@ -184,7 +186,23 @@ class DongbeiParseExprTest(unittest.TestCase):
                          LiteralExpr(Token(TK_INTEGER_LITERAL, 2)),
                          LiteralExpr(Token(TK_STRING_LITERAL, u'哈'))
                      ]))
-    
+
+class DongbeiParseStatementTest(unittest.TestCase):
+  def testParseConditional(self):
+    self.assertEqual(
+        ParseStmtFromStr(u'瞅瞅：老王比五大吗？要行咧就唠唠：老王。')[0],
+        Statement(STMT_CONDITIONAL,
+                  (ComparisonExpr(
+                      VariableExpr(Token(TK_IDENTIFIER, u'老王')),
+                      Keyword(u'大'),
+                      LiteralExpr(Token(TK_INTEGER_LITERAL, 5))),
+                   # then-branch
+                   Statement(STMT_SAY,
+                             VariableExpr(Token(TK_IDENTIFIER, u'老王'))),
+                   # else-branch
+                   None
+                  )))
+  
 class DongbeiTest(unittest.TestCase):
   def testRunEmptyProgram(self):
     self.assertEqual(Run(''), '')
@@ -510,6 +528,11 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         Run(u'唠唠：“老王”、665加一。'),
         u'老王666\n')
+
+  def testRunConditional(self):
+    self.assertEqual(
+        Run(u'瞅瞅：5比2大吗？要行咧就唠唠：“OK”。'),
+        u'OK\n')
 
   def testRunFunc(self):
     self.assertEqual(
