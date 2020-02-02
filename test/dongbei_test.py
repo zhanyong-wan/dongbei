@@ -340,8 +340,8 @@ class DongbeiTest(unittest.TestCase):
 
   def testTokenizeCompound(self):
     self.assertEqual(
-        list(Tokenize(u'开整了：\n  唠唠：老王。\n整完了。')),
-        [Keyword(u'开整了：'),
+        list(Tokenize(u'开整：\n  唠唠：老王。\n整完了。')),
+        [Keyword(u'开整：'),
          Keyword(u'唠唠'),
          Keyword(u'：'),
          Token(TK_IDENTIFIER, u'老王'),
@@ -529,10 +529,31 @@ class DongbeiTest(unittest.TestCase):
         Run(u'唠唠：“老王”、665加一。'),
         u'老王666\n')
 
+  def testCompound(self):
+    self.assertEqual(
+        Run(u'开整：整完了。'),
+        u'')
+    self.assertEqual(
+        Run(u'开整：唠唠：1。整完了。'),
+        u'1\n')
+    self.assertEqual(
+        Run(u'开整：唠唠：1。唠唠：2。整完了。'),
+        u'1\n2\n')
+
   def testRunConditional(self):
     self.assertEqual(
         Run(u'瞅瞅：5比2大吗？要行咧就唠唠：“OK”。'),
         u'OK\n')
+    self.assertEqual(
+        Run(u'瞅瞅：5比2大吗？要行咧就开整：\n'
+            u'整完了。'),
+        u'')
+    self.assertEqual(
+        Run(u'瞅瞅：5比2大吗？\n'
+            u'要行咧就开整：\n'
+            u'    唠唠：5。\n'
+            u'整完了。'),
+        u'5\n')
 
   def testRunFunc(self):
     self.assertEqual(

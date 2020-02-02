@@ -13,7 +13,7 @@ import sys
 
 KW_BANG = u'！'
 KW_BECOME = u'装'
-KW_BEGIN = u'开整了：'
+KW_BEGIN = u'开整：'
 KW_CALL = u'整'
 KW_CHECK = u'瞅瞅：'
 KW_CLOSE_PAREN = u'）'
@@ -121,6 +121,7 @@ STMT_DEC_BY = 'DEC_BY'
 STMT_LOOP = 'LOOP'
 STMT_FUNC_DEF = 'FUNC_DEF'
 STMT_CALL = 'CALL'
+STMT_COMPOUND = 'COMPOUND'
 STMT_CONDITIONAL = 'CONDITIONAL'
 STMT_RETURN = 'RETURN'
 
@@ -664,6 +665,16 @@ def ParseStmt(tokens):
 
   orig_tokens = tokens
 
+  # Parse 开整：
+  begin, tokens = TryConsumeToken(Keyword(KW_BEGIN), tokens)
+  if begin:
+    stmts, tokens = ParseStmts(tokens)
+    if not stmts:
+      stmts = []
+    _, tokens = ConsumeToken(Keyword(KW_END), tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    return Statement(STMT_COMPOUND, stmts), tokens
+
   # Parse 唠唠：
   say, tokens = TryConsumeToken(Keyword(KW_SAY), tokens)
   if say:
@@ -805,26 +816,33 @@ def ParseStmts(tokens):
     stmts.append(stmt)
 
 def TranslateStatementToPython(stmt, indent = ''):
+  """Translates the statements to Python code, without trailing newline."""
+  
   if stmt.kind == STMT_VAR_DECL:
     var_token = stmt.value
     var = GetPythonVarName(var_token.value)
     return indent + '%s = None' % (var,)
+
   if stmt.kind == STMT_ASSIGN:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
     return indent + '%s = %s' % (var, expr.ToPython())
+
   if stmt.kind == STMT_SAY:
     expr = stmt.value
     return indent + '_db_append_output("%%s\\n" %% (DongbeiStr(%s),))' % (
         expr.ToPython(),)
+
   if stmt.kind == STMT_INC_BY:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
     return indent + '%s += %s' % (var, expr.ToPython())
+
   if stmt.kind == STMT_DEC_BY:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
     return indent + '%s -= %s' % (var, expr.ToPython())
+
   if stmt.kind == STMT_LOOP:
     var_token, from_val, to_val, stmts = stmt.value
     var = GetPythonVarName(var_token.value)
@@ -836,6 +854,7 @@ def TranslateStatementToPython(stmt, indent = ''):
     if not stmts:
       loop += '\n' + indent + '  pass'
     return loop
+
   if stmt.kind == STMT_FUNC_DEF:
     func_token, params, stmts = stmt.value
     func_name = GetPythonVarName(func_token.value)
@@ -846,14 +865,27 @@ def TranslateStatementToPython(stmt, indent = ''):
     if not stmts:
       code += '\n' + indent + '  pass'
     return code
+
   if stmt.kind == STMT_CALL:
     func_token, args = stmt.value
     func_name = GetPythonVarName(func_token.value)
     code = indent + '%s(%s)' % (func_name,
                                 ', '.join(arg.ToPython() for arg in args))
     return code
+
   if stmt.kind == STMT_RETURN:
     return indent + 'return ' + stmt.value.ToPython()
+
+  if stmt.kind == STMT_COMPOUND:
+    code = indent + 'if True:'
+    stmts = stmt.value
+    if stmts:
+      for s in stmts:
+        code += '\n' + TranslateStatementToPython(s, indent + '  ')
+    else:
+      code += '\n' + indent + '  pass'
+    return code
+
   if stmt.kind == STMT_CONDITIONAL:
     condition, then_stmt, else_stmt = stmt.value
     code = indent + 'if %s:\n' % (condition.ToPython(),)
