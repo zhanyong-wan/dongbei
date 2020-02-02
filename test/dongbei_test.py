@@ -136,6 +136,38 @@ class DongbeiParseExprTest(unittest.TestCase):
                          VariableExpr(Token(TK_IDENTIFIER, u'老王')))
                      )
 
+  def testParseComparisonExpr(self):
+    self.assertEqual(ParseExprFromStr(u'5比6大')[0],
+                     ComparisonExpr(
+                         LiteralExpr(Token(TK_INTEGER_LITERAL, 5)),
+                         Keyword(u'大'),
+                         LiteralExpr(Token(TK_INTEGER_LITERAL, 6))
+                     ))
+    self.assertEqual(ParseExprFromStr(u'老王加5比6小')[0],
+                     ComparisonExpr(
+                         ArithmeticExpr(
+                             VariableExpr(Token(TK_IDENTIFIER, u'老王')),
+                             Keyword(u'加'),
+                             LiteralExpr(Token(TK_INTEGER_LITERAL, 5))),
+                         Keyword(u'小'),
+                         LiteralExpr(Token(TK_INTEGER_LITERAL, 6))
+                     ))
+    self.assertEqual(ParseExprFromStr(u'老王跟老刘一样一样的')[0],
+                     ComparisonExpr(
+                         VariableExpr(Token(TK_IDENTIFIER, u'老王')),
+                         Keyword(u'一样一样的'),
+                         VariableExpr(Token(TK_IDENTIFIER, u'老刘'))
+                     ))
+    self.assertEqual(ParseExprFromStr(u'老王加5跟6不是一样一样的')[0],
+                     ComparisonExpr(
+                         ArithmeticExpr(
+                             VariableExpr(Token(TK_IDENTIFIER, u'老王')),
+                             Keyword(u'加'),
+                             LiteralExpr(Token(TK_INTEGER_LITERAL, 5))),
+                         Keyword(u'不是一样一样的'),
+                         LiteralExpr(Token(TK_INTEGER_LITERAL, 6))
+                     ))
+    
 class DongbeiTest(unittest.TestCase):
   def testRunEmptyProgram(self):
     self.assertEqual(Run(''), '')

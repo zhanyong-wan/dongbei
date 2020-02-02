@@ -22,19 +22,24 @@ KW_COLON = u'：'
 KW_COMMA = u'，'
 KW_COMMA_NARROW = ','
 KW_COMPARE = u'比'
+KW_COMPARE_WITH = u'跟'
 KW_CONCAT = u'、'
 KW_DEC = u'退退'
 KW_DEC_BY = u'退'
 KW_DIVIDE_BY = u'除以'
 KW_END = u'整完了'
 KW_END_LOOP = u'磨叽完了'
+KW_EQUAL = u'一样一样的'
 KW_FROM = u'从'
 KW_FUNC_DEF = u'咋整：'
+KW_GREATER = u'大'
 KW_INC = u'走走'
 KW_INC_BY = u'走'
 KW_IS_VAR = u'是活雷锋'
+KW_LESS = u'小'
 KW_LOOP = u'磨叽：'
 KW_MINUS = u'减'
+KW_NOT_EQUAL = u'不是一样一样的'
 KW_OPEN_PAREN = u'（'
 KW_OPEN_PAREN_NARROW = '('
 KW_OPEN_QUOTE = u'“'
@@ -57,6 +62,7 @@ KEYWORDS = (
     KW_COMMA,
     KW_COMMA_NARROW,
     KW_COMPARE,
+    KW_COMPARE_WITH,
     KW_CONCAT,
     KW_DEC,
     KW_DEC_BY,
@@ -64,13 +70,17 @@ KEYWORDS = (
     KW_END,   # must match 整完了 before matching 整
     KW_CALL,  # 整
     KW_END_LOOP,
+    KW_EQUAL,
     KW_FROM,
     KW_FUNC_DEF,
+    KW_GREATER,
     KW_INC,
     KW_INC_BY,
     KW_IS_VAR,
+    KW_LESS,
     KW_LOOP,
     KW_MINUS,
+    KW_NOT_EQUAL,
     KW_OPEN_PAREN,
     KW_OPEN_PAREN_NARROW,
     KW_OPEN_QUOTE,
@@ -231,7 +241,7 @@ class ComparisonExpr(NewExpr):
     return u'COMPARISON_EXPR(%s, %s, %s)' % (
         self.op1, self.relation, self.op2)
 
-  def Equals(other):
+  def Equals(self, other):
     return (self.op1 == other.op1 and
             self.relation == other.relation and
             self.op2 == other.op2)
@@ -591,7 +601,27 @@ def ParseArithmeticExpr(tokens):
   return expr, tokens
 
 def NewParseExpr(tokens):
-  return ParseArithmeticExpr(tokens)
+  arith, tokens = ParseArithmeticExpr(tokens)
+  if not arith:
+    return None, tokens
+
+  cmp, tokens = TryConsumeToken(Keyword(KW_COMPARE), tokens)
+  if cmp:
+    arith2, tokens = ParseArithmeticExpr(tokens)
+    relation, tokens = TryConsumeToken(Keyword(KW_GREATER), tokens)
+    if not relation:
+      relation, tokens = ConsumeToken(Keyword(KW_LESS), tokens)
+    return ComparisonExpr(arith, relation, arith2), tokens
+
+  cmp, tokens = TryConsumeToken(Keyword(KW_COMPARE_WITH), tokens)
+  if cmp:
+    arith2, tokens = ParseArithmeticExpr(tokens)
+    relation, tokens = TryConsumeToken(Keyword(KW_EQUAL), tokens)
+    if not relation:
+      relation, tokens = ConsumeToken(Keyword(KW_NOT_EQUAL), tokens)
+    return ComparisonExpr(arith, relation, arith2), tokens
+
+  return arith, tokens
 
 def ParseExprFromStr(str):
   return NewParseExpr(list(Tokenize(str)))
