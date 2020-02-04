@@ -257,6 +257,9 @@ class ParenExpr(Expr):
   def Equals(self, other):
     return self.expr == other.expr
 
+  def ToPython(self):
+    return '(%s)' % (self.expr.ToPython(),)
+
 class CallExpr(Expr):
   def __init__(self, func, args):
     self.func = func
