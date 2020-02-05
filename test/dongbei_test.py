@@ -190,7 +190,7 @@ class DongbeiParseExprTest(unittest.TestCase):
 class DongbeiParseStatementTest(unittest.TestCase):
   def testParseConditional(self):
     self.assertEqual(
-        ParseStmtFromStr('瞅瞅：老王比五大吗？要行咧就唠唠：老王。')[0],
+        ParseStmtFromStr('寻思：老王比五大吗？要行咧就唠唠：老王。')[0],
         Statement(STMT_CONDITIONAL,
                   (ComparisonExpr(
                       VariableExpr(Token(TK_IDENTIFIER, '老王')),
@@ -612,24 +612,24 @@ class DongbeiTest(unittest.TestCase):
 
   def testRunConditional(self):
     self.assertEqual(
-        Run('瞅瞅：5比2大吗？要行咧就唠唠：“OK”。'),
+        Run('寻思：5比2大吗？要行咧就唠唠：“OK”。'),
         'OK\n')
     self.assertEqual(
-        Run('瞅瞅：5比2大吗？要行咧就开整：\n'
+        Run('寻思：5比2大吗？要行咧就开整：\n'
             '整完了。'),
         '')
     self.assertEqual(
-        Run('瞅瞅：5比2大吗？\n'
+        Run('寻思：5比2大吗？\n'
             '要行咧就开整：\n'
             '    唠唠：5。\n'
             '整完了。'),
         '5\n')
     self.assertEqual(
-        Run('瞅瞅：5比6大吗？要行咧就唠唠：“OK”。\n'
+        Run('寻思：5比6大吗？要行咧就唠唠：“OK”。\n'
             '要不行咧就唠唠：“不OK”。'),
         '不OK\n')
     self.assertEqual(
-        Run('瞅瞅：5比6大吗？\n'
+        Run('寻思：5比6大吗？\n'
             '要行咧就唠唠：“OK”。\n'
             '要不行咧就开整：\n'
             '  唠唠：“不OK”。\n'
@@ -639,8 +639,8 @@ class DongbeiTest(unittest.TestCase):
     # Else should match the last If.
     self.assertEqual(
         Run('''
-          瞅瞅：2比1大吗？   # condition 1: True
-          要行咧就瞅瞅：2比3大吗？  # condition 2: False
+          寻思：2比1大吗？   # condition 1: True
+          要行咧就寻思：2比3大吗？  # condition 2: False
               要行咧就唠唠：“A”。  # for condition 2
               要不行咧就唠唠：“B”。# for condition 2
           '''),
@@ -670,7 +670,7 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         Run('''
 【阶乘】（几）咋整：
-瞅瞅：几比一小吗？
+寻思：几比一小吗？
 要行咧就滚犊子吧一。
 滚犊子吧几乘整【阶乘】（几减一）。
 整完了。

@@ -15,7 +15,7 @@ KW_BANG = '！'
 KW_BECOME = '装'
 KW_BEGIN = '开整：'
 KW_CALL = '整'
-KW_CHECK = '瞅瞅：'
+KW_CHECK = '寻思：'
 KW_CLOSE_PAREN = '）'
 KW_CLOSE_PAREN_NARROW = ')'
 KW_CLOSE_QUOTE = '”'
@@ -713,7 +713,7 @@ def ParseStmt(tokens):
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_RETURN, expr), tokens)
 
-  # Parse 瞅瞅
+  # Parse 寻思
   check, tokens = TryConsumeToken(Keyword(KW_CHECK), tokens)
   if check:
     expr, tokens = ParseExpr(tokens)
