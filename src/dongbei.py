@@ -52,7 +52,7 @@ KW_PLUS = '加'
 KW_RETURN = '滚犊子吧'
 KW_SAY = '唠唠'
 KW_STEP = '步'
-KW_THEN = '吗？要行咧就'
+KW_THEN = '？要行咧就'
 KW_TIMES = '乘'
 KW_TO = '到'
 
