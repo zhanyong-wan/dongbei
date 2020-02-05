@@ -521,6 +521,50 @@ class DongbeiTest(unittest.TestCase):
         Run(u'唠唠：五比二大、五比二小、一跟2一样一样的、1跟二不是一样一样的。'),
         u'对错错对\n')
 
+  def testIntegerLiteral(self):
+    self.assertEqual(
+      Run(u'唠唠：零。'),
+      u'0\n')
+    self.assertEqual(
+      Run(u'唠唠：一。'),
+      u'1\n')
+    self.assertEqual(
+      Run(u'唠唠：二。'),
+      u'2\n')
+    self.assertEqual(
+      Run(u'唠唠：两。'),
+      u'2\n')
+    self.assertEqual(
+      Run(u'唠唠：俩。'),
+      u'2\n')
+    self.assertEqual(
+      Run(u'唠唠：三。'),
+      u'3\n')
+    self.assertEqual(
+      Run(u'唠唠：仨。'),
+      u'3\n')
+    self.assertEqual(
+      Run(u'唠唠：四。'),
+      u'4\n')
+    self.assertEqual(
+      Run(u'唠唠：五。'),
+      u'5\n')
+    self.assertEqual(
+      Run(u'唠唠：六。'),
+      u'6\n')
+    self.assertEqual(
+      Run(u'唠唠：七。'),
+      u'7\n')
+    self.assertEqual(
+      Run(u'唠唠：八。'),
+      u'8\n')
+    self.assertEqual(
+      Run(u'唠唠：九。'),
+      u'9\n')
+    self.assertEqual(
+      Run(u'唠唠：十。'),
+      u'10\n')
+
   def testArithmetic(self):
     self.assertEqual(
       Run(u'唠唠：五加二。'),
