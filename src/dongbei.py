@@ -37,6 +37,7 @@ KW_FUNC_DEF = '咋整：'
 KW_GREATER = '大'
 KW_INC = '走走'
 KW_INC_BY = '走'
+KW_IS_NONE = '啥也不是'
 KW_IS_VAR = '是活雷锋'
 KW_LESS = '小'
 KW_LOOP = '磨叽：'
@@ -81,6 +82,7 @@ KEYWORDS = (
     KW_GREATER,
     KW_INC,
     KW_INC_BY,
+    KW_IS_NONE,
     KW_IS_VAR,
     KW_LESS,
     KW_LOOP,
@@ -302,6 +304,8 @@ class ComparisonExpr(Expr):
             self.op2 == other.op2)
 
   def ToPython(self):
+    if self.relation.value == KW_IS_NONE:
+      return f'({self.op1.ToPython()}) is None'
     return '%s %s %s' % (self.op1.ToPython(),
                          COMPARISON_KEYWORD_TO_PYTHON[self.relation.value],
                          self.op2.ToPython())
@@ -646,6 +650,10 @@ def ParseNonConcatExpr(tokens):
     if not relation:
       relation, tokens = ConsumeToken(Keyword(KW_NOT_EQUAL), tokens)
     return ComparisonExpr(arith, relation, arith2), tokens
+
+  cmp, tokens = TryConsumeToken(Keyword(KW_IS_NONE), tokens)
+  if cmp:
+    return ComparisonExpr(arith, Keyword(KW_IS_NONE), None), tokens
 
   return arith, tokens
 

@@ -434,13 +434,15 @@ class DongbeiTest(unittest.TestCase):
              LiteralExpr(Token(TK_INTEGER_LITERAL, 9)),
              []))])
 
-  def DisabledTestParsingComparison(self):
+  def testParsingComparison(self):
     self.assertEquals(
         ParseToAst('唠唠：2比5大。'),
         [Statement(
             STMT_SAY,
-            ComparisonExpr(2, 'GT', 5)
-        )])
+            ComparisonExpr(LiteralExpr(Token(TK_INTEGER_LITERAL, 2)),
+                           Keyword('大'),
+                           LiteralExpr(Token(TK_INTEGER_LITERAL, 5))
+            ))])
 
   def testParsingFuncDef(self):
     self.assertEqual(
@@ -514,6 +516,9 @@ class DongbeiTest(unittest.TestCase):
         '1\n2\n2\n3\n')
 
   def testPrintBool(self):
+    self.assertEqual(
+        Run('老王是活雷锋。唠唠：老王。唠唠：老王啥也不是。'),
+        '啥也不是\n对\n')
     self.assertEqual(
         Run('唠唠：五比二大。'),
         '对\n')
