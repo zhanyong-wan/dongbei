@@ -706,6 +706,7 @@ def ParseStmt(tokens):
   # Parse 削：
   delete, tokens = TryConsumeToken(Keyword(KW_DELETE), tokens)
   if delete:
+    var, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return Statement(STMT_DELETE, var), tokens
 
