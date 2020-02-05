@@ -233,10 +233,11 @@ class DongbeiTest(unittest.TestCase):
         list(BasicTokenize('【 阶  乘   】')),
         [Token(TK_IDENTIFIER, '阶乘'),])
     self.assertEqual(
-        list(BasicTokenize('【阶乘】（几）')),
+        list(BasicTokenize('【阶乘】（那啥）')),
         [Token(TK_IDENTIFIER, '阶乘'),
          Keyword('（'),
-         Token(TK_CHAR, '几'),
+         Token(TK_CHAR, '那'),
+         Token(TK_CHAR, '啥'),
          Keyword('）'),])
     self.assertEqual(
         list(BasicTokenize('“ ”')),
@@ -465,10 +466,10 @@ class DongbeiTest(unittest.TestCase):
     
   def testParsingFuncDefWithParam(self):
     self.assertEqual(
-        ParseToAst('【阶乘】（几）咋整：整完了。'),
+        ParseToAst('【阶乘】（那啥）咋整：整完了。'),
         [Statement(STMT_FUNC_DEF,
                    (Token(TK_IDENTIFIER, '阶乘'),
-                    [Token(TK_IDENTIFIER, '几')],  # Formal parameters.
+                    [Token(TK_IDENTIFIER, '那啥')],  # Formal parameters.
                     []  # Function body.
                    ))])
     
@@ -666,23 +667,23 @@ class DongbeiTest(unittest.TestCase):
 
   def testFuncCallWithParam(self):
     self.assertEqual(
-        Run('【加一】（几）咋整：唠唠：几加一。整完了。\n'
+        Run('【加一】（那啥）咋整：唠唠：那啥加一。整完了。\n'
                     '整【加一】（五）。'),
         '6\n')
 
   def testFuncWithReturnValue(self):
     self.assertEqual(
-        Run('【加一】（几）咋整：滚犊子吧几加一。整完了。\n'
+        Run('【加一】（那啥）咋整：滚犊子吧那啥加一。整完了。\n'
                     '唠唠：整【加一】（二）。'),
         '3\n')
 
   def testRecursiveFunc(self):
     self.assertEqual(
         Run('''
-【阶乘】（几）咋整：
-寻思：几比一小？
+【阶乘】（那啥）咋整：
+寻思：那啥比一小？
 要行咧就滚犊子吧一。
-滚犊子吧几乘整【阶乘】（几减一）。
+滚犊子吧那啥乘整【阶乘】（那啥减一）。
 整完了。
 
 唠唠：整【阶乘】（五）。
@@ -711,7 +712,7 @@ class DongbeiTest(unittest.TestCase):
 
   def testNormalizingBang(self):
     self.assertEqual(
-        Run('【加一】（几）咋整：唠唠：几加一！整完了！\n'
+        Run('【加一】（那啥）咋整：唠唠：那啥加一！整完了！\n'
                     '整【加一】（五）！'),
         '6\n')
     
