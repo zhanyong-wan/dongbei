@@ -526,6 +526,11 @@ class DongbeiTest(unittest.TestCase):
         Run('唠唠：五比二大、五比二小、一跟2一样一样的、1跟二不是一样一样的。'),
         '对错错对\n')
 
+  def testDelete(self):
+    self.assertEqual(
+      Run('老王是活雷锋。老王装二。削老王！唠唠：老王。'),
+      '啥也不是\n')
+
   def testIntegerLiteral(self):
     self.assertEqual(
       Run('唠唠：零。'),

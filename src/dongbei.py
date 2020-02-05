@@ -27,6 +27,7 @@ KW_COMPARE_WITH = '跟'
 KW_CONCAT = '、'
 KW_DEC = '退退'
 KW_DEC_BY = '退'
+KW_DELETE = '削'
 KW_DIVIDE_BY = '除以'
 KW_ELSE = '要不行咧就'
 KW_END = '整完了'
@@ -71,6 +72,7 @@ KEYWORDS = (
     KW_CONCAT,
     KW_DEC,
     KW_DEC_BY,
+    KW_DELETE,
     KW_DIVIDE_BY,
     KW_ELSE,
     KW_END,   # must match 整完了 before matching 整
@@ -117,17 +119,18 @@ TK_INTEGER_LITERAL = 'INTEGER'
 TK_CHAR = 'CHAR'
 
 # Statements.
-STMT_SAY = 'SAY'
-STMT_VAR_DECL = 'VAR_DECL'
 STMT_ASSIGN = 'ASSIGN'
-STMT_INC_BY = 'INC_BY'
-STMT_DEC_BY = 'DEC_BY'
-STMT_LOOP = 'LOOP'
-STMT_FUNC_DEF = 'FUNC_DEF'
 STMT_CALL = 'CALL'
 STMT_COMPOUND = 'COMPOUND'
 STMT_CONDITIONAL = 'CONDITIONAL'
+STMT_DEC_BY = 'DEC_BY'
+STMT_DELETE = 'DELETE'
+STMT_FUNC_DEF = 'FUNC_DEF'
+STMT_INC_BY = 'INC_BY'
+STMT_LOOP = 'LOOP'
 STMT_RETURN = 'RETURN'
+STMT_SAY = 'SAY'
+STMT_VAR_DECL = 'VAR_DECL'
 
 class Token:
   def __init__(self, kind, value):
@@ -700,6 +703,12 @@ def ParseStmt(tokens):
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return Statement(STMT_COMPOUND, stmts), tokens
 
+  # Parse 削：
+  delete, tokens = TryConsumeToken(Keyword(KW_DELETE), tokens)
+  if delete:
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    return Statement(STMT_DELETE, var), tokens
+
   # Parse 唠唠：
   say, tokens = TryConsumeToken(Keyword(KW_SAY), tokens)
   if say:
@@ -924,6 +933,9 @@ def TranslateStatementToPython(stmt, indent = ''):
       code += '\n' + indent + 'else:\n'
       code += TranslateStatementToPython(else_stmt, indent + '  ')
     return code
+
+  if stmt.kind == STMT_DELETE:
+    return indent + GetPythonVarName(stmt.value.value) + ' = None'
     
   sys.exit('我不懂 %s 语句咋执行。' % (stmt.kind))
   
