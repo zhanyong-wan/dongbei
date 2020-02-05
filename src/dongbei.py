@@ -133,7 +133,7 @@ class Token:
     self.value = value
 
   def __str__(self):
-    return '%s <%s>' % (self.kind, self.value)
+    return f'{self.kind} <{self.value}>'
 
   def __repr__(self):
     return self.__str__()
@@ -857,7 +857,7 @@ def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_INC_BY:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
-    return indent + '%s += %s' % (var, expr.ToPython())
+    return indent + f'{var} += {expr.ToPython()}'
 
   if stmt.kind == STMT_DEC_BY:
     var_token, expr = stmt.value
