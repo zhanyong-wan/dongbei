@@ -4,55 +4,55 @@
 """dongbei语言执行器
 
 用法：
-    dongbei.py 源程序文件名...XS
+    dongbei.py 源程序文件名...
 """
 
 import io
 import re
 import sys
 
-KW_BANG = u'！'
-KW_BECOME = u'装'
-KW_BEGIN = u'开整：'
-KW_CALL = u'整'
-KW_CHECK = u'瞅瞅：'
-KW_CLOSE_PAREN = u'）'
+KW_BANG = '！'
+KW_BECOME = '装'
+KW_BEGIN = '开整：'
+KW_CALL = '整'
+KW_CHECK = '瞅瞅：'
+KW_CLOSE_PAREN = '）'
 KW_CLOSE_PAREN_NARROW = ')'
-KW_CLOSE_QUOTE = u'”'
-KW_COLON = u'：'
-KW_COMMA = u'，'
+KW_CLOSE_QUOTE = '”'
+KW_COLON = '：'
+KW_COMMA = '，'
 KW_COMMA_NARROW = ','
-KW_COMPARE = u'比'
-KW_COMPARE_WITH = u'跟'
-KW_CONCAT = u'、'
-KW_DEC = u'退退'
-KW_DEC_BY = u'退'
-KW_DIVIDE_BY = u'除以'
-KW_ELSE = u'要不行咧就'
-KW_END = u'整完了'
-KW_END_LOOP = u'磨叽完了'
-KW_EQUAL = u'一样一样的'
-KW_FROM = u'从'
-KW_FUNC_DEF = u'咋整：'
-KW_GREATER = u'大'
-KW_INC = u'走走'
-KW_INC_BY = u'走'
-KW_IS_VAR = u'是活雷锋'
-KW_LESS = u'小'
-KW_LOOP = u'磨叽：'
-KW_MINUS = u'减'
-KW_NOT_EQUAL = u'不是一样一样的'
-KW_OPEN_PAREN = u'（'
+KW_COMPARE = '比'
+KW_COMPARE_WITH = '跟'
+KW_CONCAT = '、'
+KW_DEC = '退退'
+KW_DEC_BY = '退'
+KW_DIVIDE_BY = '除以'
+KW_ELSE = '要不行咧就'
+KW_END = '整完了'
+KW_END_LOOP = '磨叽完了'
+KW_EQUAL = '一样一样的'
+KW_FROM = '从'
+KW_FUNC_DEF = '咋整：'
+KW_GREATER = '大'
+KW_INC = '走走'
+KW_INC_BY = '走'
+KW_IS_VAR = '是活雷锋'
+KW_LESS = '小'
+KW_LOOP = '磨叽：'
+KW_MINUS = '减'
+KW_NOT_EQUAL = '不是一样一样的'
+KW_OPEN_PAREN = '（'
 KW_OPEN_PAREN_NARROW = '('
-KW_OPEN_QUOTE = u'“'
-KW_PERIOD = u'。'
-KW_PLUS = u'加'
-KW_RETURN = u'滚犊子吧'
-KW_SAY = u'唠唠'
-KW_STEP = u'步'
-KW_THEN = u'吗？要行咧就'
-KW_TIMES = u'乘'
-KW_TO = u'到'
+KW_OPEN_QUOTE = '“'
+KW_PERIOD = '。'
+KW_PLUS = '加'
+KW_RETURN = '滚犊子吧'
+KW_SAY = '唠唠'
+KW_STEP = '步'
+KW_THEN = '吗？要行咧就'
+KW_TIMES = '乘'
+KW_TO = '到'
 
 KEYWORDS = (
     KW_BANG,
@@ -133,7 +133,7 @@ class Token:
     self.value = value
 
   def __str__(self):
-    return u'%s <%s>' % (self.kind, self.value)
+    return '%s <%s>' % (self.kind, self.value)
 
   def __repr__(self):
     return self.__str__()
@@ -190,10 +190,10 @@ class ConcatExpr(Expr):
         expr.ToPython(),) for expr in self.exprs)
 
 ARITHMETIC_OPERATION_TO_PYTHON = {
-    u'加': '+',
-    u'减': '-',
-    u'乘': '*',
-    u'除以': '/',
+    '加': '+',
+    '减': '-',
+    '乘': '*',
+    '除以': '/',
     }
 
 class ArithmeticExpr(Expr):
@@ -293,7 +293,7 @@ class ComparisonExpr(Expr):
     self.op2 = op2
 
   def __str__(self):
-    return u'COMPARISON_EXPR(%s, %s, %s)' % (
+    return 'COMPARISON_EXPR(%s, %s, %s)' % (
         self.op1, self.relation, self.op2)
 
   def Equals(self, other):
@@ -313,7 +313,7 @@ class Statement:
 
   def __str__(self):
     value_str = str(self.value)
-    return u'%s <%s>' % (self.kind, value_str)
+    return '%s <%s>' % (self.kind, value_str)
 
   def __repr__(self):
     return self.__str__()
@@ -366,7 +366,7 @@ def BasicTokenize(code):
     return
 
   # Parse 【标识符】.
-  m = re.match(u'^(【(.*?)】)', code)
+  m = re.match('^(【(.*?)】)', code)
   if m:
     id = re.sub(r'\s+', '', m.group(2))  # Ignore whitespace.
     yield Token(TK_IDENTIFIER, id)
@@ -395,20 +395,20 @@ def BasicTokenize(code):
   
 
 CHINESE_DIGITS = {
-    u'零': 0,
-    u'一': 1,
-    u'二': 2,
-    u'俩': 2,
-    u'两': 2,
-    u'三': 3,
-    u'仨': 3,
-    u'四': 4,
-    u'五': 5,
-    u'六': 6,
-    u'七': 7,
-    u'八': 8,
-    u'九': 9,
-    u'十': 10,
+    '零': 0,
+    '一': 1,
+    '二': 2,
+    '俩': 2,
+    '两': 2,
+    '三': 3,
+    '仨': 3,
+    '四': 4,
+    '五': 5,
+    '六': 6,
+    '七': 7,
+    '八': 8,
+    '九': 9,
+    '十': 10,
     }
 
 def ParseInteger(str):
@@ -470,7 +470,7 @@ def TryConsumeTokenType(tk_type, tokens):
 def ConsumeTokenType(tk_type, tokens):
   tk, tokens = TryConsumeTokenType(tk_type, tokens)
   if tk is None:
-    sys.exit(u'期望 %s，实际是 %s' % (tk_type, tokens[0]))
+    sys.exit('期望 %s，实际是 %s' % (tk_type, tokens[0]))
   return tk, tokens
     
 def TryConsumeToken(token, tokens):
@@ -482,9 +482,9 @@ def TryConsumeToken(token, tokens):
 
 def ConsumeToken(token, tokens):
   if not tokens:
-    sys.exit(u'语句结束太早。')
+    sys.exit('语句结束太早。')
   if token != tokens[0]:
-    sys.exit(u'期望符号 %s，实际却是 %s。' %
+    sys.exit('期望符号 %s，实际却是 %s。' %
              (token, tokens[0]))
   return token, tokens[1:]
 
@@ -917,7 +917,7 @@ def TranslateStatementToPython(stmt, indent = ''):
       code += TranslateStatementToPython(else_stmt, indent + '  ')
     return code
     
-  sys.exit(u'我不懂 %s 语句咋执行。' % (stmt.kind))
+  sys.exit('我不懂 %s 语句咋执行。' % (stmt.kind))
   
 def TranslateTokensToPython(tokens):
   statements, tokens = ParseStmts(tokens)
