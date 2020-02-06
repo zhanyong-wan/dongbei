@@ -3,4 +3,6 @@
 # This file can be validated on:
 # http://lint.travis-ci.org/
 
-language: python
+language: python 3.6
+
+script: ./test/dongbei_test.py
