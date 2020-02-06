@@ -66,9 +66,6 @@ dongbei 语言是基于 Python 3 二次开发的。
 像 Mac OS 啦、Windows 啦、Linux 啦，等等等等，都成！
 
 ## 安装
-
-甭麻烦了！直接跑 src/dongbei.py 就成。
-
 不过，要是你的系统没有python3呢，那得先装一个，免费！
 
 比如，你要是用 Mac 的话，就按 https://docs.python-guide.org/starting/install3/osx/ 做。
@@ -77,13 +74,14 @@ dongbei 语言是基于 Python 3 二次开发的。
 
 没事跑跑
 ```
+cd dongbei
 test/dongbei_test.py
 ```
 身体更健康。
 
 ## 你好，世界
 
-创建一个名字叫 hello-world.dongbei 的文本文件，内容如下：
+在项目目录`dongbei`下，创建一个名字叫 hello-world.dongbei 的文本文件，内容如下：
 
 ```
 唠唠：“唉呀，这嘎哒真他妈那啥！”。
