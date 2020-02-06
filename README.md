@@ -5,7 +5,7 @@
 [![体格咋地](https://api.travis-ci.com/zhanyong-wan/dongbei.svg?branch=master)](https://travis-ci.com/zhanyong-wan/dongbei)
 
 扫码关注原作者微信公众号“老万故事会”
-<img src="doc/lwgsh.webp" height="100">
+<img src="doc/lwgsh.jpg" height="129">
 
 * [引言](#引言)
 * [系统要求](#系统要求)
