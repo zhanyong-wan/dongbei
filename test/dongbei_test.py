@@ -365,13 +365,13 @@ class DongbeiTest(unittest.TestCase):
 
   def testTokenizingDecrements(self):
     self.assertEqual(
-        list(Tokenize('老王退退')),
+        list(Tokenize('老王稍稍')),
         [Token(TK_IDENTIFIER, '老王'),
-         Keyword('退退'),])
+         Keyword('稍稍'),])
     self.assertEqual(
-        list(Tokenize('老王退三步')),
+        list(Tokenize('老王稍三步')),
         [Token(TK_IDENTIFIER, '老王'),
-         Keyword('退'),
+         Keyword('稍'),
          Token(TK_INTEGER_LITERAL, 3),
          Keyword('步'),
         ])
@@ -413,13 +413,13 @@ class DongbeiTest(unittest.TestCase):
 
   def testParsingDecrements(self):
     self.assertEqual(
-        ParseToAst('老王退退。'),
+        ParseToAst('老王稍稍。'),
         [Statement(
             STMT_DEC_BY,
             (Token(TK_IDENTIFIER, '老王'),
              LiteralExpr(Token(TK_INTEGER_LITERAL, 1))))])
     self.assertEqual(
-        ParseToAst('老王退三步。'),
+        ParseToAst('老王稍三步。'),
         [Statement(
             STMT_DEC_BY,
             (Token(TK_IDENTIFIER, '老王'),
@@ -495,10 +495,10 @@ class DongbeiTest(unittest.TestCase):
 
   def testDecrements(self):
     self.assertEqual(
-        Run('老张是活雷锋。老张装二。老张退退。唠唠：老张。'),
+        Run('老张是活雷锋。老张装二。老张稍稍。唠唠：老张。'),
         '1\n')
     self.assertEqual(
-        Run('老张是活雷锋。老张装三。老张退五步。唠唠：老张。'),
+        Run('老张是活雷锋。老张装三。老张稍五步。唠唠：老张。'),
         '-2\n')
 
   def testLoop(self):

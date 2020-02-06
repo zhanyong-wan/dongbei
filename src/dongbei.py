@@ -25,8 +25,8 @@ KW_COMMA_NARROW = ','
 KW_COMPARE = '比'
 KW_COMPARE_WITH = '跟'
 KW_CONCAT = '、'
-KW_DEC = '退退'
-KW_DEC_BY = '退'
+KW_DEC = '稍稍'
+KW_DEC_BY = '稍'
 KW_DELETE = '削'
 KW_DIVIDE_BY = '除以'
 KW_ELSE = '要不行咧就'
@@ -782,7 +782,7 @@ def ParseStmt(tokens):
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
     return (Statement(STMT_INC_BY, (id, expr)), tokens)
 
-  # Parse 退退
+  # Parse 稍稍
   dec, tokens = TryConsumeToken(Keyword(KW_DEC), tokens)
   if dec:
     _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
@@ -790,7 +790,7 @@ def ParseStmt(tokens):
                       (id, LiteralExpr(Token(TK_INTEGER_LITERAL, 1)))),
             tokens)
 
-  # Parse 退X步
+  # Parse 稍X步
   dec, tokens = TryConsumeToken(
       Keyword(KW_DEC_BY), tokens)
   if dec:
