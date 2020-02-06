@@ -1,5 +1,9 @@
 # dongbei - 东北方言编程语言
 
+#### 体格咋地
+
+[![体格咋地](https://api.travis-ci.com/zhanyong-wan/dongbei.svg?branch=master)](https://travis-ci.com/zhanyong-wan/dongbei)
+
 * [引言](#引言)
 * [系统要求](#系统要求)
 * [安装](#安装)
