@@ -715,6 +715,15 @@ class DongbeiTest(unittest.TestCase):
         Run('【加一】（那啥）咋整：唠唠：那啥加一！整完了！\n'
                     '整【加一】（五）！'),
         '6\n')
-    
+
+  def testImport(self):
+    self.assertEqual(
+      Run('''
+      翠花，上 re。
+      寻思：整re.match（“a.*”，“abc”）？
+      要行咧就唠唠：“OK”。
+      '''),
+      'OK\n')
+
 if __name__ == '__main__':
   unittest.main()

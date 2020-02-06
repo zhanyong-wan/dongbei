@@ -36,6 +36,7 @@ KW_EQUAL = '一样一样的'
 KW_FROM = '从'
 KW_FUNC_DEF = '咋整：'
 KW_GREATER = '大'
+KW_IMPORT = '翠花，上'
 KW_INC = '走走'
 KW_INC_BY = '走'
 KW_IS_NONE = '啥也不是'
@@ -82,6 +83,7 @@ KEYWORDS = (
     KW_FROM,
     KW_FUNC_DEF,
     KW_GREATER,
+    KW_IMPORT,
     KW_INC,
     KW_INC_BY,
     KW_IS_NONE,
@@ -126,6 +128,7 @@ STMT_CONDITIONAL = 'CONDITIONAL'
 STMT_DEC_BY = 'DEC_BY'
 STMT_DELETE = 'DELETE'
 STMT_FUNC_DEF = 'FUNC_DEF'
+STMT_IMPORT = 'IMPORT'
 STMT_INC_BY = 'INC_BY'
 STMT_LOOP = 'LOOP'
 STMT_RETURN = 'RETURN'
@@ -460,6 +463,12 @@ def Tokenize(code):
     
 vars = {}  # Maps Chinese identifier to generated identifier.
 def GetPythonVarName(var):
+  if re.match(r'[_a-zA-Z]', var):
+    # var starts with a letter or _.  Don't translate it.
+    return var
+
+  # var is a Chinese identifier.
+
   if var in vars:
     return vars[var]
 
@@ -692,6 +701,13 @@ def ParseStmt(tokens):
   """Returns (statement, remainding_tokens)."""
 
   orig_tokens = tokens
+
+  # Parse 翠花，上
+  imp, tokens = TryConsumeToken(Keyword(KW_IMPORT), tokens)
+  if imp:
+    module, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    return Statement(STMT_IMPORT, module), tokens
 
   # Parse 开整：
   begin, tokens = TryConsumeToken(Keyword(KW_BEGIN), tokens)
@@ -937,7 +953,10 @@ def TranslateStatementToPython(stmt, indent = ''):
 
   if stmt.kind == STMT_DELETE:
     return indent + GetPythonVarName(stmt.value.value) + ' = None'
-    
+
+  if stmt.kind == STMT_IMPORT:
+    return indent + f'import {stmt.value.value}'
+
   sys.exit('我不懂 %s 语句咋执行。' % (stmt.kind))
   
 def TranslateTokensToPython(tokens):
