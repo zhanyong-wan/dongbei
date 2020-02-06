@@ -3,7 +3,7 @@
 
 import os
 import sys
-import unittest
+import unit test
 
 # Add the repo root to the Python module path.
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
