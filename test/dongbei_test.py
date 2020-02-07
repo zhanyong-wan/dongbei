@@ -593,6 +593,9 @@ class DongbeiTest(unittest.TestCase):
       Run('唠唠：十除以二。'),
       '5.0\n')
     self.assertEqual(
+      Run('唠唠：十齐整整地除以三。'),
+      '3\n')
+    self.assertEqual(
       Run('唠唠：五加七乘二。'),
       '19\n')
     self.assertEqual(
