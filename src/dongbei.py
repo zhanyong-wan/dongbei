@@ -39,6 +39,7 @@ KW_GREATER = '大'
 KW_IMPORT = '翠花，上'
 KW_INC = '走走'
 KW_INC_BY = '走'
+KW_INTEGER_DIVIDE_BY = '刨去一堆'
 KW_IS_NONE = '啥也不是'
 KW_IS_VAR = '是活雷锋'
 KW_LESS = '小'
@@ -86,6 +87,7 @@ KEYWORDS = (
     KW_IMPORT,
     KW_INC,
     KW_INC_BY,
+    KW_INTEGER_DIVIDE_BY,
     KW_IS_NONE,
     KW_IS_VAR,
     KW_LESS,
@@ -202,6 +204,7 @@ ARITHMETIC_OPERATION_TO_PYTHON = {
     '减': '-',
     '乘': '*',
     '除以': '/',
+    '刨去一堆': '//'
     }
 
 class ArithmeticExpr(Expr):
@@ -518,13 +521,14 @@ def ConsumeToken(token, tokens):
 #                      ArithmeticExpr 减 TermExpr
 #   TermExpr ::= AtomicExpr |
 #                TermExpr 乘 AtomicExpr |
-#                TermExpr 除以 AtomicExpr
+#                TermExpr 除以 AtomicExpr |
+#                TermExpr 刨去一堆 AtomicExpr
 #   AtomicExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr
 #   ParenExpr ::= （ Expr ）
 #   CallExpr ::= 整 Identifier |
 #                整 Identifier（ExprList）
 #   ExprList ::= Expr |
-#                Expr，ExprList
+#                Expr，ExprListKW_DiVIDE_BY
 
 def ParseCallExpr(tokens):
   """Returns (call_expr, remaining tokens)."""
@@ -593,6 +597,8 @@ def ParseTermExpr(tokens):
     operator, tokens = TryConsumeToken(Keyword(KW_TIMES), tokens)
     if not operator:
       operator, tokens = TryConsumeToken(Keyword(KW_DIVIDE_BY), tokens)
+    if not operator:
+      operator, tokens = TryConsumeToken(Keyword(KW_INTEGER_DIVIDE_BY), tokens)
     if not operator:
       break
 
