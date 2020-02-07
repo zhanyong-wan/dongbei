@@ -11,6 +11,7 @@ import io
 import re
 import sys
 
+KW_APPEND = '来了一个'
 KW_BANG = '！'
 KW_BECOME = '装'
 KW_BEGIN = '开整：'
@@ -39,9 +40,12 @@ KW_GREATER = '大'
 KW_IMPORT = '翠花，上'
 KW_INC = '走走'
 KW_INC_BY = '走'
+KW_INDEX = '的老'
 KW_INTEGER_DIVIDE_BY = '齐整整地除以'
+KW_IS_LIST = '都是活雷锋'
 KW_IS_NONE = '啥也不是'
 KW_IS_VAR = '是活雷锋'
+KW_LAST = '幺'
 KW_LESS = '小'
 KW_LOOP = '磨叽：'
 KW_MINUS = '减'
@@ -59,6 +63,7 @@ KW_TIMES = '乘'
 KW_TO = '到'
 
 KEYWORDS = (
+    KW_APPEND,
     KW_BANG,
     KW_BECOME,
     KW_BEGIN,
@@ -87,9 +92,12 @@ KEYWORDS = (
     KW_IMPORT,
     KW_INC,
     KW_INC_BY,
+    KW_INDEX,
     KW_INTEGER_DIVIDE_BY,
+    KW_IS_LIST,
     KW_IS_NONE,
     KW_IS_VAR,
+    KW_LAST,
     KW_LESS,
     KW_LOOP,
     KW_MINUS,
@@ -123,6 +131,7 @@ TK_INTEGER_LITERAL = 'INTEGER'
 TK_CHAR = 'CHAR'
 
 # Statements.
+STMT_APPEND = 'APPEND'
 STMT_ASSIGN = 'ASSIGN'
 STMT_CALL = 'CALL'
 STMT_COMPOUND = 'COMPOUND'
@@ -132,6 +141,7 @@ STMT_DELETE = 'DELETE'
 STMT_FUNC_DEF = 'FUNC_DEF'
 STMT_IMPORT = 'IMPORT'
 STMT_INC_BY = 'INC_BY'
+STMT_LIST_VAR_DECL = 'LIST_VAR_DECL'
 STMT_LOOP = 'LOOP'
 STMT_RETURN = 'RETURN'
 STMT_SAY = 'SAY'
@@ -201,6 +211,20 @@ class ConcatExpr(Expr):
   def ToPython(self):
     return ' + '.join('_dongbei_str(%s)' % (
         expr.ToPython(),) for expr in self.exprs)
+
+class IndexExpr(Expr):
+  def __init__(self, list_expr, index_expr):
+    self.list_expr = list_expr
+    self.index_expr = index_expr
+
+  def __str__(self):
+    return f'INDEX_EXPR<{self.list_expr}, {self.index_expr}>'
+
+  def Equals(self, other):
+    return self.list_expr == other.list_expr and self.index_expr == other.index_expr
+
+  def ToPython(self):
+    return f'({self.list_expr.ToPython()})[({self.index_expr.ToPython()}) - 1]'
 
 ARITHMETIC_OPERATION_TO_PYTHON = {
     KW_PLUS: '+',
@@ -537,7 +561,8 @@ def ConsumeKeyword(keyword, tokens):
 #                TermExpr 乘 AtomicExpr |
 #                TermExpr 除以 AtomicExpr |
 #                TermExpr 齐整整地除以 AtomicExpr
-#   AtomicExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr
+#   AtomicExpr ::= ObjectExpr | AtomicExpr 的老 ObjectExpr
+#   ObjectExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr
 #   ParenExpr ::= （ Expr ）
 #   CallExpr ::= 整 Identifier |
 #                整 Identifier（ExprList）
@@ -563,7 +588,7 @@ def ParseCallExpr(tokens):
       _, tokens = ConsumeKeyword(KW_COMMA, tokens)
   return CallExpr(func.value, args), tokens
  
-def ParseAtomicExpr(tokens):
+def ParseObjectExpr(tokens):
   """Returns (expr, remaining tokens)."""
 
   # Do we see an integer literal?
@@ -596,6 +621,42 @@ def ParseAtomicExpr(tokens):
     return call_expr, tokens
       
   return None, tokens
+
+def ParseAtomicExpr(tokens):
+  obj, tokens = ParseObjectExpr(tokens)
+  if not obj:
+    return None, tokens
+
+  expr = obj
+  while True:
+    pre_index_tokens = tokens
+    index, tokens = TryConsumeKeyword(KW_INDEX, tokens)
+    if not index:
+      break
+
+    # Parse 大
+    greater, tokens = TryConsumeKeyword(KW_GREATER, tokens)
+    if greater:
+      # dongbei 数组是从1开始的。
+      expr = IndexExpr(expr, IntegerLiteralExpr(1))
+      continue
+
+    # Parse 幺
+    last, tokens = TryConsumeKeyword(KW_LAST, tokens)
+    if last:
+      # 0 - 1 = -1
+      expr = IndexExpr(expr, IntegerLiteralExpr(0))
+      continue
+      
+    obj, tokens = ParseObjectExpr(tokens)
+    if obj:
+      expr = IndexExpr(expr, obj)
+    else:
+      # We have a trailing 的老 without an object expression to follow it.
+      tokens = pre_index_tokens
+      break
+
+  return expr, tokens
 
 def ParseTermExpr(tokens):
   factor, tokens = ParseAtomicExpr(tokens)
@@ -793,12 +854,25 @@ def ParseStmt(tokens):
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_VAR_DECL, id), tokens)
 
+  # Parse 都是活雷锋
+  is_list, tokens = TryConsumeKeyword(KW_IS_LIST, tokens)
+  if is_list:
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return (Statement(STMT_LIST_VAR_DECL, id), tokens)
+
   # Parse 装
   become, tokens = TryConsumeKeyword(KW_BECOME, tokens)
   if become:
     expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_ASSIGN, (id, expr)), tokens)
+
+  # Parse 来了一个
+  append, tokens = TryConsumeKeyword(KW_APPEND, tokens)
+  if append:
+    expr, tokens = ParseExpr(tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return (Statement(STMT_APPEND, (id, expr)), tokens)
 
   # Parse 走走
   inc, tokens = TryConsumeKeyword(KW_INC, tokens)
@@ -893,10 +967,20 @@ def TranslateStatementToPython(stmt, indent = ''):
     var = GetPythonVarName(var_token.value)
     return indent + '%s = None' % (var,)
 
+  if stmt.kind == STMT_LIST_VAR_DECL:
+    var_token = stmt.value
+    var = GetPythonVarName(var_token.value)
+    return indent + '%s = []' % (var,)
+
   if stmt.kind == STMT_ASSIGN:
     var_token, expr = stmt.value
     var = GetPythonVarName(var_token.value)
     return indent + '%s = %s' % (var, expr.ToPython())
+
+  if stmt.kind == STMT_APPEND:
+    var_token, expr = stmt.value
+    var = GetPythonVarName(var_token.value)
+    return indent + '%s.append(%s)' % (var, expr.ToPython())
 
   if stmt.kind == STMT_SAY:
     expr = stmt.value
