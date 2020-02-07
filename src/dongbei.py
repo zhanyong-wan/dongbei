@@ -154,6 +154,9 @@ class Token:
   def __ne__(self, other):
     return not (self == other)
 
+def IdentifierToken(name):
+  return Token(TK_IDENTIFIER, name)
+
 class Expr:
   def __init__(self):
     pass
@@ -242,6 +245,12 @@ class LiteralExpr(Expr):
       return 'u"%s"' % (self.token.value,)
     raise Exception('Unexpected token kind %s' % (self.token.kind,))
 
+def IntegerLiteralExpr(value):
+  return LiteralExpr(Token(TK_INTEGER_LITERAL, value))
+
+def StringLiteralExpr(value):
+  return LiteralExpr(Token(TK_STRING_LITERAL, value))
+
 class VariableExpr(Expr):
   def __init__(self, var):
     self.var = var
@@ -253,7 +262,7 @@ class VariableExpr(Expr):
     return self.var == other.var
 
   def ToPython(self):
-    return GetPythonVarName(self.var.value)
+    return GetPythonVarName(self.var)
 
 class ParenExpr(Expr):
   def __init__(self, expr):
@@ -283,7 +292,7 @@ class CallExpr(Expr):
 
   def ToPython(self):
     return '%s(%s)' % (
-        GetPythonVarName(self.func.value),
+        GetPythonVarName(self.func),
         ', '.join(arg.ToPython() for arg in self.args))
 
 # Maps a dongbei comparison keyword to the Python version.
@@ -379,7 +388,7 @@ def BasicTokenize(code):
   m = re.match('^(【(.*?)】)', code)
   if m:
     id = re.sub(r'\s+', '', m.group(2))  # Ignore whitespace.
-    yield Token(TK_IDENTIFIER, id)
+    yield IdentifierToken(id)
     for tk in BasicTokenize(code[len(m.group(1)):]):
       yield tk
     return
@@ -429,14 +438,13 @@ def ParseInteger(str):
     if str.startswith(chinese_digit):
       return (value, str[len(chinese_digit):])
   return (None, str)
-
     
 def ParseChars(chars):
   integer, rest = ParseInteger(chars)
   if integer is not None:
     yield Token(TK_INTEGER_LITERAL, integer)
   if rest:
-    yield Token(TK_IDENTIFIER, rest)
+    yield IdentifierToken(rest)
 
 def Tokenize(code):
   last_token = Token(None, None)
@@ -496,6 +504,9 @@ def TryConsumeToken(token, tokens):
     return (None, tokens)
   return (token, tokens[1:])
 
+def TryConsumeKeyword(keyword, tokens):
+  return TryConsumeToken(Keyword(keyword), tokens)
+
 def ConsumeToken(token, tokens):
   if not tokens:
     sys.exit('语句结束太早。')
@@ -503,6 +514,9 @@ def ConsumeToken(token, tokens):
     sys.exit('期望符号 %s，实际却是 %s。' %
              (token, tokens[0]))
   return token, tokens[1:]
+
+def ConsumeKeyword(keyword, tokens):
+  return ConsumeToken(Keyword(keyword), tokens)
 
 # Expression grammar:
 #
@@ -528,23 +542,22 @@ def ConsumeToken(token, tokens):
 
 def ParseCallExpr(tokens):
   """Returns (call_expr, remaining tokens)."""
-  call, tokens = TryConsumeToken(Keyword(KW_CALL), tokens)
+  call, tokens = TryConsumeKeyword(KW_CALL, tokens)
   if not call:
     return None, tokens
 
   func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-  open_paren, tokens = TryConsumeToken(Keyword(KW_OPEN_PAREN), tokens)
+  open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
   args = []
   if open_paren:
     while True:
       expr, tokens = ParseExpr(tokens)
       args.append(expr)
-      close_paren, tokens = TryConsumeToken(
-          Keyword(KW_CLOSE_PAREN), tokens)
+      close_paren, tokens = TryConsumeKeyword(KW_CLOSE_PAREN, tokens)
       if close_paren:
         break
-      _, tokens = ConsumeToken(Keyword(KW_COMMA), tokens)
-  return CallExpr(func, args), tokens
+      _, tokens = ConsumeKeyword(KW_COMMA, tokens)
+  return CallExpr(func.value, args), tokens
  
 def ParseAtomicExpr(tokens):
   """Returns (expr, remaining tokens)."""
@@ -555,22 +568,22 @@ def ParseAtomicExpr(tokens):
     return LiteralExpr(num), tokens
 
   # Do we see a string literal?
-  open_quote, tokens = TryConsumeToken(Keyword(KW_OPEN_QUOTE), tokens)
+  open_quote, tokens = TryConsumeKeyword(KW_OPEN_QUOTE, tokens)
   if open_quote:
     str, tokens = ConsumeTokenType(TK_STRING_LITERAL, tokens)
-    _, tokens = ConsumeToken(Keyword(KW_CLOSE_QUOTE), tokens)
+    _, tokens = ConsumeKeyword(KW_CLOSE_QUOTE, tokens)
     return LiteralExpr(str), tokens
 
   # Do we see an identifier?
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if id:
-    return VariableExpr(id), tokens
+    return VariableExpr(id.value), tokens
 
   # Do we see a parenthesis?
-  open_paren, tokens = TryConsumeToken(Keyword(KW_OPEN_PAREN), tokens)
+  open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
   if open_paren:
     expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
+    _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
     return ParenExpr(expr), tokens
 
   # Do we see a function call?
@@ -590,9 +603,9 @@ def ParseTermExpr(tokens):
 
   while True:
     pre_operator_tokens = tokens
-    operator, tokens = TryConsumeToken(Keyword(KW_TIMES), tokens)
+    operator, tokens = TryConsumeKeyword(KW_TIMES, tokens)
     if not operator:
-      operator, tokens = TryConsumeToken(Keyword(KW_DIVIDE_BY), tokens)
+      operator, tokens = TryConsumeKeyword(KW_DIVIDE_BY, tokens)
     if not operator:
       break
 
@@ -621,9 +634,9 @@ def ParseArithmeticExpr(tokens):
 
   while True:
     pre_operator_tokens = tokens
-    operator, tokens = TryConsumeToken(Keyword(KW_PLUS), tokens)
+    operator, tokens = TryConsumeKeyword(KW_PLUS, tokens)
     if not operator:
-      operator, tokens = TryConsumeToken(Keyword(KW_MINUS), tokens)
+      operator, tokens = TryConsumeKeyword(KW_MINUS, tokens)
     if not operator:
       break
 
@@ -647,23 +660,23 @@ def ParseNonConcatExpr(tokens):
   if not arith:
     return None, tokens
 
-  cmp, tokens = TryConsumeToken(Keyword(KW_COMPARE), tokens)
+  cmp, tokens = TryConsumeKeyword(KW_COMPARE, tokens)
   if cmp:
     arith2, tokens = ParseArithmeticExpr(tokens)
-    relation, tokens = TryConsumeToken(Keyword(KW_GREATER), tokens)
+    relation, tokens = TryConsumeKeyword(KW_GREATER, tokens)
     if not relation:
-      relation, tokens = ConsumeToken(Keyword(KW_LESS), tokens)
+      relation, tokens = ConsumeKeyword(KW_LESS, tokens)
     return ComparisonExpr(arith, relation, arith2), tokens
 
-  cmp, tokens = TryConsumeToken(Keyword(KW_COMPARE_WITH), tokens)
+  cmp, tokens = TryConsumeKeyword(KW_COMPARE_WITH, tokens)
   if cmp:
     arith2, tokens = ParseArithmeticExpr(tokens)
-    relation, tokens = TryConsumeToken(Keyword(KW_EQUAL), tokens)
+    relation, tokens = TryConsumeKeyword(KW_EQUAL, tokens)
     if not relation:
-      relation, tokens = ConsumeToken(Keyword(KW_NOT_EQUAL), tokens)
+      relation, tokens = ConsumeKeyword(KW_NOT_EQUAL, tokens)
     return ComparisonExpr(arith, relation, arith2), tokens
 
-  cmp, tokens = TryConsumeToken(Keyword(KW_IS_NONE), tokens)
+  cmp, tokens = TryConsumeKeyword(KW_IS_NONE, tokens)
   if cmp:
     return ComparisonExpr(arith, Keyword(KW_IS_NONE), None), tokens
 
@@ -677,7 +690,7 @@ def ParseExpr(tokens):
   nc_exprs = [nc_expr]
   while True:
     pre_operator_tokens = tokens
-    concat, tokens = TryConsumeToken(Keyword(KW_CONCAT), tokens)
+    concat, tokens = TryConsumeKeyword(KW_CONCAT, tokens)
     if not concat:
       break
 
@@ -703,58 +716,58 @@ def ParseStmt(tokens):
   orig_tokens = tokens
 
   # Parse 翠花，上
-  imp, tokens = TryConsumeToken(Keyword(KW_IMPORT), tokens)
+  imp, tokens = TryConsumeKeyword(KW_IMPORT, tokens)
   if imp:
     module, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return Statement(STMT_IMPORT, module), tokens
 
   # Parse 开整：
-  begin, tokens = TryConsumeToken(Keyword(KW_BEGIN), tokens)
+  begin, tokens = TryConsumeKeyword(KW_BEGIN, tokens)
   if begin:
     stmts, tokens = ParseStmts(tokens)
     if not stmts:
       stmts = []
-    _, tokens = ConsumeToken(Keyword(KW_END), tokens)
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_END, tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return Statement(STMT_COMPOUND, stmts), tokens
 
   # Parse 削：
-  delete, tokens = TryConsumeToken(Keyword(KW_DELETE), tokens)
+  delete, tokens = TryConsumeKeyword(KW_DELETE, tokens)
   if delete:
     var, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return Statement(STMT_DELETE, var), tokens
 
   # Parse 唠唠：
-  say, tokens = TryConsumeToken(Keyword(KW_SAY), tokens)
+  say, tokens = TryConsumeKeyword(KW_SAY, tokens)
   if say:
-    colon, tokens = ConsumeToken(Keyword(KW_COLON), tokens)
+    colon, tokens = ConsumeKeyword(KW_COLON, tokens)
     expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_SAY, expr), tokens)
 
   # Parse 整
   call_expr, tokens = ParseCallExpr(tokens)
   if call_expr:
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return Statement(STMT_CALL, call_expr), tokens
 
   # Parse 滚犊子吧
-  ret, tokens = TryConsumeToken(Keyword(KW_RETURN), tokens)
+  ret, tokens = TryConsumeKeyword(KW_RETURN, tokens)
   if ret:
     expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_RETURN, expr), tokens)
 
   # Parse 寻思
-  check, tokens = TryConsumeToken(Keyword(KW_CHECK), tokens)
+  check, tokens = TryConsumeKeyword(KW_CHECK, tokens)
   if check:
     expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeToken(Keyword(KW_THEN), tokens)
+    _, tokens = ConsumeKeyword(KW_THEN, tokens)
     then_stmt, tokens = ParseStmt(tokens)
     # Parse the optional else-branch.
-    kw_else, tokens = TryConsumeToken(Keyword(KW_ELSE), tokens)
+    kw_else, tokens = TryConsumeKeyword(KW_ELSE, tokens)
     if kw_else:
       else_stmt, tokens = ParseStmt(tokens)
     else:
@@ -769,90 +782,86 @@ def ParseStmt(tokens):
   # Code below is for statements that start with an identifier.
 
   # Parse 是活雷锋
-  is_var, tokens = TryConsumeToken(Keyword(KW_IS_VAR), tokens)
+  is_var, tokens = TryConsumeKeyword(KW_IS_VAR, tokens)
   if is_var:
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_VAR_DECL, id), tokens)
 
   # Parse 装
-  become, tokens = TryConsumeToken(Keyword(KW_BECOME), tokens)
+  become, tokens = TryConsumeKeyword(KW_BECOME, tokens)
   if become:
     expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_ASSIGN, (id, expr)), tokens)
 
   # Parse 走走
-  inc, tokens = TryConsumeToken(Keyword(KW_INC), tokens)
+  inc, tokens = TryConsumeKeyword(KW_INC, tokens)
   if inc:
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_INC_BY,
-                      (id, LiteralExpr(Token(TK_INTEGER_LITERAL, 1)))),
+                      (id, IntegerLiteralExpr(1))),
             tokens)
 
   # Parse 走X步
-  inc, tokens = TryConsumeToken(
-      Keyword(KW_INC_BY), tokens)
+  inc, tokens = TryConsumeKeyword(KW_INC_BY, tokens)
   if inc:
     expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeToken(Keyword(KW_STEP), tokens)
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_STEP, tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_INC_BY, (id, expr)), tokens)
 
   # Parse 稍稍
-  dec, tokens = TryConsumeToken(Keyword(KW_DEC), tokens)
+  dec, tokens = TryConsumeKeyword(KW_DEC, tokens)
   if dec:
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_DEC_BY,
-                      (id, LiteralExpr(Token(TK_INTEGER_LITERAL, 1)))),
+                      (id, IntegerLiteralExpr(1))),
             tokens)
 
   # Parse 稍X步
-  dec, tokens = TryConsumeToken(
-      Keyword(KW_DEC_BY), tokens)
+  dec, tokens = TryConsumeKeyword(KW_DEC_BY, tokens)
   if dec:
     expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeToken(Keyword(KW_STEP), tokens)
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_STEP, tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_DEC_BY, (id, expr)), tokens)
 
   # Parse 磨叽
-  from_, tokens = TryConsumeToken(Keyword(KW_FROM), tokens)
+  from_, tokens = TryConsumeKeyword(KW_FROM, tokens)
   if from_:
     from_expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeToken(Keyword(KW_TO), tokens)
+    _, tokens = ConsumeKeyword(KW_TO, tokens)
     to_expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeToken(Keyword(KW_LOOP), tokens)
+    _, tokens = ConsumeKeyword(KW_LOOP, tokens)
     stmts, tokens = ParseStmts(tokens)
-    _, tokens = ConsumeToken(Keyword(KW_END_LOOP), tokens)
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_LOOP, (id, from_expr, to_expr, stmts)), tokens)
 
   # Parse 咋整
-  open_paren, tokens = TryConsumeToken(
-      Keyword(KW_OPEN_PAREN), tokens)
+  open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
   if open_paren:
     params = []
     while True:
       param, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
       params.append(param)
-      close_paren, tokens = TryConsumeToken(Keyword(KW_CLOSE_PAREN), tokens)
+      close_paren, tokens = TryConsumeKeyword(KW_CLOSE_PAREN, tokens)
       if close_paren:
         break
-      _, tokens = ConsumeToken(Keyword(KW_COMMA), tokens)
+      _, tokens = ConsumeKeyword(KW_COMMA, tokens)
         
     func_def, tokens = ConsumeToken(
         Keyword(KW_FUNC_DEF), tokens)
     stmts, tokens = ParseStmts(tokens)
-    _, tokens = ConsumeToken(Keyword(KW_END), tokens)
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_END, tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens)
 
-  func_def, tokens = TryConsumeToken(
-      Keyword(KW_FUNC_DEF), tokens)
+  func_def, tokens = TryConsumeKeyword(KW_FUNC_DEF, tokens)
   if func_def:
     stmts, tokens = ParseStmts(tokens)
-    _, tokens = ConsumeToken(Keyword(KW_END), tokens)
-    _, tokens = ConsumeToken(Keyword(KW_PERIOD), tokens)
+    _, tokens = ConsumeKeyword(KW_END, tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_FUNC_DEF, (id, [], stmts)), tokens)
 
   return (None, orig_tokens)
@@ -922,9 +931,9 @@ def TranslateStatementToPython(stmt, indent = ''):
     return code
 
   if stmt.kind == STMT_CALL:
-    func_token = stmt.value.func
+    func = stmt.value.func
     args = stmt.value.args
-    func_name = GetPythonVarName(func_token.value)
+    func_name = GetPythonVarName(func)
     code = indent + '%s(%s)' % (func_name,
                                 ', '.join(arg.ToPython() for arg in args))
     return code
