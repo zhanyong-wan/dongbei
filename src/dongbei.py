@@ -12,6 +12,7 @@ import re
 import sys
 
 KW_APPEND = '来了个'
+KW_ASSERT = '保准'
 KW_BANG = '！'
 KW_BECOME = '装'
 KW_BEGIN = '开整：'
@@ -69,71 +70,72 @@ KW_TIMES = '乘'
 KW_TO = '到'
 
 KEYWORDS = (
-    KW_APPEND,
-    KW_BANG,
-    KW_BECOME,
-    KW_BEGIN,
-    KW_BREAK,
-    KW_CHECK,
-    KW_CLOSE_PAREN,
-    KW_CLOSE_PAREN_NARROW,
-    KW_CLOSE_QUOTE,
-    KW_COLON,
-    KW_COMMA,
-    KW_COMMA_NARROW,
-    KW_COMPARE,
-    KW_COMPARE_WITH,
-    KW_CONCAT,
-    KW_CONTINUE,
-    KW_DEC,
-    KW_DEC_BY,
-    KW_DELETE,
-    KW_DIVIDE_BY,
-    KW_ELSE,
-    KW_END,   # must match 整完了 before matching 整
-    KW_CALL,  # 整
-    KW_END_LOOP,
-    KW_EQUAL,
-    KW_1_INFINITE_LOOP,  # must match 从一而终磨叽 before 从
-    KW_FROM,
-    KW_FUNC_DEF,
-    KW_GREATER,
-    KW_IMPORT,
-    KW_1_INFINITE_LOOP_EGG,  # must match 在苹果总部磨叽 before 在
-    KW_IN,
-    KW_INC,
-    KW_INC_BY,
-    KW_INDEX,
-    KW_INTEGER_DIVIDE_BY,
-    KW_IS_LIST,
-    KW_IS_NONE,
-    KW_IS_VAR,
-    KW_LAST,
-    KW_LENGTH,
-    KW_LESS,
-    KW_LOOP,
-    KW_MINUS,
-    KW_NOT_EQUAL,
-    KW_OPEN_PAREN,
-    KW_OPEN_PAREN_NARROW,
-    KW_OPEN_QUOTE,
-    KW_PERIOD,
-    KW_PLUS,
-    KW_RETURN,
-    KW_SAY,
-    KW_STEP,
-    KW_THEN,
-    KW_TIMES,
-    KW_TO,
-    )
+  KW_APPEND,
+  KW_ASSERT,
+  KW_BANG,
+  KW_BECOME,
+  KW_BEGIN,
+  KW_BREAK,
+  KW_CHECK,
+  KW_CLOSE_PAREN,
+  KW_CLOSE_PAREN_NARROW,
+  KW_CLOSE_QUOTE,
+  KW_COLON,
+  KW_COMMA,
+  KW_COMMA_NARROW,
+  KW_COMPARE,
+  KW_COMPARE_WITH,
+  KW_CONCAT,
+  KW_CONTINUE,
+  KW_DEC,
+  KW_DEC_BY,
+  KW_DELETE,
+  KW_DIVIDE_BY,
+  KW_ELSE,
+  KW_END,   # must match 整完了 before matching 整
+  KW_CALL,  # 整
+  KW_END_LOOP,
+  KW_EQUAL,
+  KW_1_INFINITE_LOOP,  # must match 从一而终磨叽 before 从
+  KW_FROM,
+  KW_FUNC_DEF,
+  KW_GREATER,
+  KW_IMPORT,
+  KW_1_INFINITE_LOOP_EGG,  # must match 在苹果总部磨叽 before 在
+  KW_IN,
+  KW_INC,
+  KW_INC_BY,
+  KW_INDEX,
+  KW_INTEGER_DIVIDE_BY,
+  KW_IS_LIST,
+  KW_IS_NONE,
+  KW_IS_VAR,
+  KW_LAST,
+  KW_LENGTH,
+  KW_LESS,
+  KW_LOOP,
+  KW_MINUS,
+  KW_NOT_EQUAL,
+  KW_OPEN_PAREN,
+  KW_OPEN_PAREN_NARROW,
+  KW_OPEN_QUOTE,
+  KW_PERIOD,
+  KW_PLUS,
+  KW_RETURN,
+  KW_SAY,
+  KW_STEP,
+  KW_THEN,
+  KW_TIMES,
+  KW_TO,
+)
 
 # Maps a keyword to its normalized form.
 KEYWORD_TO_NORMALIZED_KEYWORD = {
-    KW_BANG: KW_PERIOD,
-    KW_OPEN_PAREN_NARROW: KW_OPEN_PAREN,
-    KW_CLOSE_PAREN_NARROW: KW_CLOSE_PAREN,
-    KW_COMMA_NARROW: KW_COMMA,
-    }
+  KW_BANG: KW_PERIOD,
+  KW_OPEN_PAREN_NARROW: KW_OPEN_PAREN,
+  KW_CLOSE_PAREN_NARROW: KW_CLOSE_PAREN,
+  KW_COMMA_NARROW: KW_COMMA,
+}
 
 # Types of tokens.
 TK_KEYWORD = 'KEYWORD'
@@ -144,6 +146,7 @@ TK_CHAR = 'CHAR'
 
 # Statements.
 STMT_APPEND = 'APPEND'
+STMT_ASSERT = 'ASSERT'
 STMT_ASSIGN = 'ASSIGN'
 STMT_BREAK = 'BREAK'
 STMT_CALL = 'CALL'
@@ -202,6 +205,10 @@ class Expr:
   def __ne__(self, other):
     return not (self == other)
 
+  def ToDongbei(self):
+    """Returns the dongbei code for this expression."""
+    raise Exception(f'{type(self)} must implement ToDongbei().')
+
   def ToPython(self):
     """Translates this expression to Python."""
     raise Exception('%s must implement ToPython().' % (type(self),))
@@ -224,6 +231,9 @@ class ConcatExpr(Expr):
   def Equals(self, other):
     return self.exprs == other.exprs
 
+  def ToDongbei(self):
+    return KW_CONCAT.join(expr.ToDongbei() for expr in self.exprs)
+
   def ToPython(self):
     return ' + '.join('_dongbei_str(%s)' % (
         expr.ToPython(),) for expr in self.exprs)
@@ -238,6 +248,9 @@ class LengthExpr(Expr):
   def Equals(self, other):
     return self.expr == other.expr
 
+  def ToDongbei(self):
+    return f'{self.expr.ToDongbei()}{KW_LENGTH}'
+  
   def ToPython(self):
     return f'len({self.expr.ToPython()})'
 
@@ -251,6 +264,11 @@ class IndexExpr(Expr):
 
   def Equals(self, other):
     return self.list_expr == other.list_expr and self.index_expr == other.index_expr
+
+  def ToDongbei(self):
+    list_expr = self.list_expr.ToDongbei()
+    index_expr = self.index_expr.ToDongbei()
+    return f'{list_expr}{KW_INDEX}{index_expr}'
 
   def ToPython(self):
     return f'({self.list_expr.ToPython()})[({self.index_expr.ToPython()}) - 1]'
@@ -278,6 +296,9 @@ class ArithmeticExpr(Expr):
             self.operation == other.operation and
             self.op2 == other.op2)
 
+  def ToDongbei(self):
+    return f'{self.op1.ToDongbei()}{self.operation.value}{self.op2.ToDongbei()}'
+
   def ToPython(self):
     return '%s %s %s' % (self.op1.ToPython(),
                          ARITHMETIC_OPERATION_TO_PYTHON[
@@ -294,11 +315,18 @@ class LiteralExpr(Expr):
   def Equals(self, other):
     return self.token == other.token
 
+  def ToDongbei(self):
+    if self.token.kind == TK_INTEGER_LITERAL:
+      return str(self.token.value)
+    if self.token.kind == TK_STRING_LITERAL:
+      return '“%s”' % (self.token.value,)
+    raise Exception('Unexpected token kind %s' % (self.token.kind,))
+
   def ToPython(self):
     if self.token.kind == TK_INTEGER_LITERAL:
       return str(self.token.value)
     if self.token.kind == TK_STRING_LITERAL:
-      return 'u"%s"' % (self.token.value,)
+      return '"%s"' % (self.token.value,)
     raise Exception('Unexpected token kind %s' % (self.token.kind,))
 
 def IntegerLiteralExpr(value):
@@ -317,6 +345,9 @@ class VariableExpr(Expr):
   def Equals(self, other):
     return self.var == other.var
 
+  def ToDongbei(self):
+    return f'【{self.var}】'
+
   def ToPython(self):
     return GetPythonVarName(self.var)
 
@@ -329,6 +360,9 @@ class ParenExpr(Expr):
 
   def Equals(self, other):
     return self.expr == other.expr
+
+  def ToDongbei(self):
+    return f'（{self.expr.ToDongbei()}）'
 
   def ToPython(self):
     return '(%s)' % (self.expr.ToPython(),)
@@ -345,6 +379,12 @@ class CallExpr(Expr):
   def Equals(self, other):
     return (self.func == other.func and
             self.args == other.args)
+
+  def ToDongbei(self):
+    code = f'{KW_CALL}{self.func}'
+    if self.args:
+      code += '（' + '，'.join(arg.ToDongbei() for arg in self.args) + '）'
+    return code
 
   def ToPython(self):
     return '%s(%s)' % (
@@ -373,6 +413,16 @@ class ComparisonExpr(Expr):
     return (self.op1 == other.op1 and
             self.relation == other.relation and
             self.op2 == other.op2)
+
+  def ToDongbei(self):
+    code = self.op1.ToDongbei()
+    if self.relation.value == KW_IS_NONE:
+      return code + KW_IS_CONE
+    if self.relation.value in (KW_GREATER, KW_LESS):
+      connector = KW_COMPARE
+    else:
+      connector = KW_COMPARE_WITH
+    return code + connector + self.op2.ToDongbei() + self.relation.value
 
   def ToPython(self):
     if self.relation.value == KW_IS_NONE:
@@ -838,6 +888,13 @@ def ParseStmt(tokens):
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return Statement(STMT_COMPOUND, stmts), tokens
 
+  # Parse 保准
+  assert_, tokens = TryConsumeKeyword(KW_ASSERT, tokens)
+  if assert_:
+    expr, tokens = ParseExpr(tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return Statement(STMT_ASSERT, expr), tokens
+
   # Parse 削：
   delete, tokens = TryConsumeKeyword(KW_DELETE, tokens)
   if delete:
@@ -1154,7 +1211,10 @@ def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_CONTINUE:
     return indent + 'continue'
 
-  sys.exit('我不懂 %s 语句咋执行。' % (stmt.kind))
+  if stmt.kind == STMT_ASSERT:
+    return indent + f'assert {stmt.value.ToPython()}, "整叉劈了：该着 {stmt.value.ToDongbei()}，咋错了咧？"'
+
+  sys.exit('俺不懂 %s 语句咋执行。' % (stmt.kind))
   
 def TranslateTokensToPython(tokens):
   statements, tokens = ParseStmts(tokens)
@@ -1189,7 +1249,10 @@ def Run(code):
   # See https://stackoverflow.com/questions/871887/using-exec-with-recursive-functions
   # Use the same dictionary for local and global definitions.
   # Needed for defining recursive dongbei functions.
-  exec(py_code, globals(), globals())
+  try:
+    exec(py_code, globals(), globals())
+  except Exception as e:
+    _db_output += f'\n{e}\n'
   print('运行结果：')
   print('%s' % (_db_output,))
   return _db_output

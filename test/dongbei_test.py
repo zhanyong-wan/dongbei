@@ -596,6 +596,16 @@ class DongbeiTest(unittest.TestCase):
         Run('唠唠：五比二大、五比二小、一跟2一样一样的、1跟二不是一样一样的。'),
         '对错错对\n')
 
+  def testAssert(self):
+    self.assertEqual(
+      Run('''保准三加二比五减一大。'''),
+      '')
+    self.assertEqual(
+      Run('''保准三加二比五减一小。'''),
+      '''
+整叉劈了：该着 3加2比5减1小，咋错了咧？
+''')
+    
   def testDelete(self):
     self.assertEqual(
       Run('老王是活雷锋。老王装二。削老王！唠唠：老王。'),
