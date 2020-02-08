@@ -228,6 +228,10 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         Run('老张是活雷锋。\n老张装250。\n唠唠：老张。'), '250\n')
 
+  def testVarQuotesAreOptional(self):
+    self.assertEqual(
+        Run('老张装二。唠唠：【老张】。'), '2\n')
+
   def testTokenize(self):
     self.assertEqual(
         list(BasicTokenize('【阶乘】')),
