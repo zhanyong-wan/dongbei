@@ -44,6 +44,7 @@ KW_IN = '在'
 KW_INC = '走走'
 KW_INC_BY = '走'
 KW_INDEX = '的老'
+KW_INFINITE_LOOP = '从一而终磨叽：'
 KW_INTEGER_DIVIDE_BY = '齐整整地除以'
 KW_IS_LIST = '都是活雷锋'
 KW_IS_NONE = '啥也不是'
@@ -92,6 +93,7 @@ KEYWORDS = (
     KW_CALL,  # 整
     KW_END_LOOP,
     KW_EQUAL,
+    KW_INFINITE_LOOP,  # must match 从一而终磨叽 before 从
     KW_FROM,
     KW_FUNC_DEF,
     KW_GREATER,
@@ -151,6 +153,7 @@ STMT_DELETE = 'DELETE'
 STMT_FUNC_DEF = 'FUNC_DEF'
 STMT_IMPORT = 'IMPORT'
 STMT_INC_BY = 'INC_BY'
+STMT_INFINITE_LOOP = 'INFINITE_LOOP'
 STMT_LIST_VAR_DECL = 'LIST_VAR_DECL'
 STMT_LOOP = 'LOOP'
 STMT_RANGE_LOOP = 'RANGE_LOOP'
@@ -974,6 +977,14 @@ def ParseStmt(tokens):
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_RANGE_LOOP, (id, range_expr, stmts)), tokens)
 
+  # Parse 从一而终磨叽
+  infinite_loop, tokens = TryConsumeKeyword(KW_INFINITE_LOOP, tokens)
+  if infinite_loop:
+    stmts, tokens = ParseStmts(tokens)
+    _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return Statement(STMT_INFINITE_LOOP, (id, stmts)), tokens
+
   # Parse 咋整
   open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
   if open_paren:
@@ -1076,6 +1087,16 @@ def TranslateStatementToPython(stmt, indent = ''):
       loop += '\n' + indent + '  pass'
     return loop
 
+  if stmt.kind == STMT_INFINITE_LOOP:
+    var_token, stmts = stmt.value
+    var = GetPythonVarName(var_token.value)
+    loop = indent + 'for %s in _db_1_infinite_loop():' % (var,)
+    for s in stmts:
+      loop += '\n' + TranslateStatementToPython(s, indent + '  ')
+    if not stmts:
+      loop += '\n' + indent + '  pass'
+    return loop
+
   if stmt.kind == STMT_FUNC_DEF:
     func_token, params, stmts = stmt.value
     func_name = GetPythonVarName(func_token.value)
@@ -1149,6 +1170,10 @@ _db_output = ''
 def _db_append_output(s):
   global _db_output
   _db_output += s
+
+def _db_1_infinite_loop():
+  while True:
+    yield 1
 
 def Run(code):
   tokens = list(Tokenize(code))

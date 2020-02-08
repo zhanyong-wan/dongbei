@@ -552,7 +552,23 @@ class DongbeiTest(unittest.TestCase):
 老张是5
 老张是6
 ''')
-    
+
+  def testInfiniteLoop(self):
+    self.assertEqual(
+      Run('''
+老王装一。
+老张从一而终磨叽：
+唠唠：老张、“和”、老王。
+老王装老王加一。
+寻思：老王比三大？
+要行咧就尥蹶子。
+磨叽完了。
+'''),
+      '''1和1
+1和2
+1和3
+''')
+
   def testPrintBool(self):
     self.assertEqual(
         Run('老王是活雷锋。唠唠：老王。唠唠：老王啥也不是。'),
