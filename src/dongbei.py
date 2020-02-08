@@ -38,6 +38,7 @@ KW_FROM = '从'
 KW_FUNC_DEF = '咋整：'
 KW_GREATER = '大'
 KW_IMPORT = '翠花，上'
+KW_IN = '在'
 KW_INC = '走走'
 KW_INC_BY = '走'
 KW_INDEX = '的老'
@@ -91,6 +92,7 @@ KEYWORDS = (
     KW_FUNC_DEF,
     KW_GREATER,
     KW_IMPORT,
+    KW_IN,
     KW_INC,
     KW_INC_BY,
     KW_INDEX,
@@ -145,6 +147,7 @@ STMT_IMPORT = 'IMPORT'
 STMT_INC_BY = 'INC_BY'
 STMT_LIST_VAR_DECL = 'LIST_VAR_DECL'
 STMT_LOOP = 'LOOP'
+STMT_RANGE_LOOP = 'RANGE_LOOP'
 STMT_RETURN = 'RETURN'
 STMT_SAY = 'SAY'
 STMT_VAR_DECL = 'VAR_DECL'
@@ -931,7 +934,7 @@ def ParseStmt(tokens):
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_DEC_BY, (id, expr)), tokens)
 
-  # Parse 磨叽
+  # Parse 从...到...磨叽
   from_, tokens = TryConsumeKeyword(KW_FROM, tokens)
   if from_:
     from_expr, tokens = ParseExpr(tokens)
@@ -942,6 +945,16 @@ def ParseStmt(tokens):
     _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_LOOP, (id, from_expr, to_expr, stmts)), tokens)
+
+  # Parse 在...磨叽
+  in_, tokens = TryConsumeKeyword(KW_IN, tokens)
+  if in_:
+    range_expr, tokens = ParseExpr(tokens)
+    _, tokens = ConsumeKeyword(KW_LOOP, tokens)
+    stmts, tokens = ParseStmts(tokens)
+    _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return (Statement(STMT_RANGE_LOOP, (id, range_expr, stmts)), tokens)
 
   # Parse 咋整
   open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
@@ -1025,9 +1038,20 @@ def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_LOOP:
     var_token, from_val, to_val, stmts = stmt.value
     var = GetPythonVarName(var_token.value)
-    loop = indent + 'for %s in range(%s, %s + 1):' % (
+    loop = indent + 'for %s in range(%s, (%s) + 1):' % (
         var, from_val.ToPython(),
         to_val.ToPython())
+    for s in stmts:
+      loop += '\n' + TranslateStatementToPython(s, indent + '  ')
+    if not stmts:
+      loop += '\n' + indent + '  pass'
+    return loop
+
+  if stmt.kind == STMT_RANGE_LOOP:
+    var_token, range_expr, stmts = stmt.value
+    var = GetPythonVarName(var_token.value)
+    loop = indent + 'for %s in %s:' % (
+        var, range_expr.ToPython())
     for s in stmts:
       loop += '\n' + TranslateStatementToPython(s, indent + '  ')
     if not stmts:

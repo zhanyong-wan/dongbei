@@ -509,6 +509,22 @@ class DongbeiTest(unittest.TestCase):
         Run('老张从1到3磨叽：唠唠：老张。磨叽完了。'),
         '1\n2\n3\n')
 
+  def testRangeLoop(self):
+    self.assertEqual(
+        Run('''
+张家庄都是活雷锋。
+张家庄来了一个二。
+张家庄来了一个五。
+张家庄来了一个一。
+老张在张家庄磨叽：
+  唠唠：老张。
+磨叽完了。
+'''),
+        '''2
+5
+1
+''')
+
   def testLoopWithNoStatement(self):
     self.assertEqual(
         Run('老张从1到2磨叽：磨叽完了。'),
