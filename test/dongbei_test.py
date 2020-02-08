@@ -232,6 +232,10 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         Run('老张装二。唠唠：【老张】。'), '2\n')
 
+  def testColonCanBeNarrow(self):
+    self.assertEqual(
+        Run('老张装二。唠唠:【老张】。'), '2\n')
+
   def testTokenize(self):
     self.assertEqual(
         list(BasicTokenize('【阶乘】')),
