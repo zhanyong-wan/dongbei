@@ -535,6 +535,24 @@ class DongbeiTest(unittest.TestCase):
         Run('老张从1到2磨叽：唠唠：老张。唠唠：老张加一。磨叽完了。'),
         '1\n2\n2\n3\n')
 
+  def testLoopWithContinueAndBreak(self):
+    self.assertEqual(
+      Run('''
+老张从一到十磨叽：
+  寻思：老张跟二一样一样的？
+  要行咧就接着磨叽。
+  唠唠：“老张是”、老张。
+  寻思：老张比五大？
+  要行咧就尥蹶子。
+磨叽完了。
+'''),
+      '''老张是1
+老张是3
+老张是4
+老张是5
+老张是6
+''')
+    
   def testPrintBool(self):
     self.assertEqual(
         Run('老王是活雷锋。唠唠：老王。唠唠：老王啥也不是。'),

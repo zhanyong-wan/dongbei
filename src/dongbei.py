@@ -15,6 +15,7 @@ KW_APPEND = '来了个'
 KW_BANG = '！'
 KW_BECOME = '装'
 KW_BEGIN = '开整：'
+KW_BREAK = '尥蹶子'
 KW_CALL = '整'
 KW_CHECK = '寻思：'
 KW_CLOSE_PAREN = '）'
@@ -26,6 +27,7 @@ KW_COMMA_NARROW = ','
 KW_COMPARE = '比'
 KW_COMPARE_WITH = '跟'
 KW_CONCAT = '、'
+KW_CONTINUE = '接着磨叽'
 KW_DEC = '稍稍'
 KW_DEC_BY = '稍'
 KW_DELETE = '削'
@@ -69,6 +71,7 @@ KEYWORDS = (
     KW_BANG,
     KW_BECOME,
     KW_BEGIN,
+    KW_BREAK,
     KW_CHECK,
     KW_CLOSE_PAREN,
     KW_CLOSE_PAREN_NARROW,
@@ -79,6 +82,7 @@ KEYWORDS = (
     KW_COMPARE,
     KW_COMPARE_WITH,
     KW_CONCAT,
+    KW_CONTINUE,
     KW_DEC,
     KW_DEC_BY,
     KW_DELETE,
@@ -137,9 +141,11 @@ TK_CHAR = 'CHAR'
 # Statements.
 STMT_APPEND = 'APPEND'
 STMT_ASSIGN = 'ASSIGN'
+STMT_BREAK = 'BREAK'
 STMT_CALL = 'CALL'
 STMT_COMPOUND = 'COMPOUND'
 STMT_CONDITIONAL = 'CONDITIONAL'
+STMT_CONTINUE = 'CONTINUE'
 STMT_DEC_BY = 'DEC_BY'
 STMT_DELETE = 'DELETE'
 STMT_FUNC_DEF = 'FUNC_DEF'
@@ -855,6 +861,18 @@ def ParseStmt(tokens):
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_RETURN, expr), tokens)
 
+  # Parse 接着磨叽
+  cont, tokens = TryConsumeKeyword(KW_CONTINUE, tokens)
+  if cont:
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return Statement(STMT_CONTINUE, None), tokens
+
+  # Parse 尥蹶子
+  break_, tokens = TryConsumeKeyword(KW_BREAK, tokens)
+  if break_:
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return Statement(STMT_BREAK, None), tokens
+
   # Parse 寻思
   check, tokens = TryConsumeKeyword(KW_CHECK, tokens)
   if check:
@@ -1104,6 +1122,12 @@ def TranslateStatementToPython(stmt, indent = ''):
 
   if stmt.kind == STMT_IMPORT:
     return indent + f'import {stmt.value.value}'
+
+  if stmt.kind == STMT_BREAK:
+    return indent + 'break'
+
+  if stmt.kind == STMT_CONTINUE:
+    return indent + 'continue'
 
   sys.exit('我不懂 %s 语句咋执行。' % (stmt.kind))
   
