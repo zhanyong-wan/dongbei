@@ -46,6 +46,7 @@ KW_IS_LIST = '都是活雷锋'
 KW_IS_NONE = '啥也不是'
 KW_IS_VAR = '是活雷锋'
 KW_LAST = '幺'
+KW_LENGTH = '有几个坑'
 KW_LESS = '小'
 KW_LOOP = '磨叽：'
 KW_MINUS = '减'
@@ -98,6 +99,7 @@ KEYWORDS = (
     KW_IS_NONE,
     KW_IS_VAR,
     KW_LAST,
+    KW_LENGTH,
     KW_LESS,
     KW_LOOP,
     KW_MINUS,
@@ -211,6 +213,19 @@ class ConcatExpr(Expr):
   def ToPython(self):
     return ' + '.join('_dongbei_str(%s)' % (
         expr.ToPython(),) for expr in self.exprs)
+
+class LengthExpr(Expr):
+  def __init__(self, expr):
+    self.expr = expr
+
+  def __str__(self):
+    return f'LENGTH<{self.expr}>'
+
+  def Equals(self, other):
+    return self.expr == other.expr
+
+  def ToPython(self):
+    return f'len({self.expr.ToPython()})'
 
 class IndexExpr(Expr):
   def __init__(self, list_expr, index_expr):
@@ -561,7 +576,7 @@ def ConsumeKeyword(keyword, tokens):
 #                TermExpr 乘 AtomicExpr |
 #                TermExpr 除以 AtomicExpr |
 #                TermExpr 齐整整地除以 AtomicExpr
-#   AtomicExpr ::= ObjectExpr | AtomicExpr 的老 ObjectExpr
+#   AtomicExpr ::= ObjectExpr | AtomicExpr 的老 ObjectExpr | AtomicExpr 有几个坑
 #   ObjectExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr
 #   ParenExpr ::= （ Expr ）
 #   CallExpr ::= 整 Identifier |
@@ -630,31 +645,41 @@ def ParseAtomicExpr(tokens):
   expr = obj
   while True:
     pre_index_tokens = tokens
+
+    # Parse 的老
     index, tokens = TryConsumeKeyword(KW_INDEX, tokens)
-    if not index:
-      break
+    if index:
+      # Parse 大
+      greater, tokens = TryConsumeKeyword(KW_GREATER, tokens)
+      if greater:
+        # dongbei 数组是从1开始的。
+        expr = IndexExpr(expr, IntegerLiteralExpr(1))
+        continue
 
-    # Parse 大
-    greater, tokens = TryConsumeKeyword(KW_GREATER, tokens)
-    if greater:
-      # dongbei 数组是从1开始的。
-      expr = IndexExpr(expr, IntegerLiteralExpr(1))
+      # Parse 幺
+      last, tokens = TryConsumeKeyword(KW_LAST, tokens)
+      if last:
+        # 0 - 1 = -1
+        expr = IndexExpr(expr, IntegerLiteralExpr(0))
+        continue
+
+      # Parse an ObjectExpr.
+      obj, tokens = ParseObjectExpr(tokens)
+      if obj:
+        expr = IndexExpr(expr, obj)
+      else:
+        # We have a trailing 的老 without an object expression to follow it.
+        tokens = pre_index_tokens
+        break
+
+    # Parse 有几个坑
+    length, tokens = TryConsumeKeyword(KW_LENGTH, tokens)
+    if length:
+      expr = LengthExpr(expr)
       continue
 
-    # Parse 幺
-    last, tokens = TryConsumeKeyword(KW_LAST, tokens)
-    if last:
-      # 0 - 1 = -1
-      expr = IndexExpr(expr, IntegerLiteralExpr(0))
-      continue
-      
-    obj, tokens = ParseObjectExpr(tokens)
-    if obj:
-      expr = IndexExpr(expr, obj)
-    else:
-      # We have a trailing 的老 without an object expression to follow it.
-      tokens = pre_index_tokens
-      break
+    # Found neither 的老 or 有几个坑 after the expression.
+    break
 
   return expr, tokens
 
