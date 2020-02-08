@@ -44,7 +44,8 @@ KW_IN = '在'
 KW_INC = '走走'
 KW_INC_BY = '走'
 KW_INDEX = '的老'
-KW_INFINITE_LOOP = '从一而终磨叽：'
+KW_1_INFINITE_LOOP = '从一而终磨叽：'
+KW_1_INFINITE_LOOP_EGG = '在苹果总部磨叽：'  # 彩蛋
 KW_INTEGER_DIVIDE_BY = '齐整整地除以'
 KW_IS_LIST = '都是活雷锋'
 KW_IS_NONE = '啥也不是'
@@ -93,11 +94,12 @@ KEYWORDS = (
     KW_CALL,  # 整
     KW_END_LOOP,
     KW_EQUAL,
-    KW_INFINITE_LOOP,  # must match 从一而终磨叽 before 从
+    KW_1_INFINITE_LOOP,  # must match 从一而终磨叽 before 从
     KW_FROM,
     KW_FUNC_DEF,
     KW_GREATER,
     KW_IMPORT,
+    KW_1_INFINITE_LOOP_EGG,  # must match 在苹果总部磨叽 before 在
     KW_IN,
     KW_INC,
     KW_INC_BY,
@@ -977,8 +979,10 @@ def ParseStmt(tokens):
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_RANGE_LOOP, (id, range_expr, stmts)), tokens)
 
-  # Parse 从一而终磨叽
-  infinite_loop, tokens = TryConsumeKeyword(KW_INFINITE_LOOP, tokens)
+  # Parse 从一而终磨叽 or the '1 Infinite Loop' 彩蛋
+  infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP, tokens)
+  if not infinite_loop:
+    infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP_EGG, tokens)
   if infinite_loop:
     stmts, tokens = ParseStmts(tokens)
     _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
