@@ -11,7 +11,7 @@ import io
 import re
 import sys
 
-KW_APPEND = '来了一个'
+KW_APPEND = '来了个'
 KW_BANG = '！'
 KW_BECOME = '装'
 KW_BEGIN = '开整：'
@@ -895,7 +895,7 @@ def ParseStmt(tokens):
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return (Statement(STMT_ASSIGN, (id, expr)), tokens)
 
-  # Parse 来了一个
+  # Parse 来了个
   append, tokens = TryConsumeKeyword(KW_APPEND, tokens)
   if append:
     expr, tokens = ParseExpr(tokens)
