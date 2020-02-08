@@ -13,6 +13,7 @@ import sys
 
 KW_APPEND = '来了个'
 KW_ASSERT = '保准'
+KW_ASSERT_FALSE = '辟谣'
 KW_BANG = '！'
 KW_BECOME = '装'
 KW_BEGIN = '开整：'
@@ -73,6 +74,7 @@ KW_TO = '到'
 KEYWORDS = (
   KW_APPEND,
   KW_ASSERT,
+  KW_ASSERT_FALSE,
   KW_BANG,
   KW_BECOME,
   KW_BEGIN,
@@ -150,6 +152,7 @@ TK_CHAR = 'CHAR'
 # Statements.
 STMT_APPEND = 'APPEND'
 STMT_ASSERT = 'ASSERT'
+STMT_ASSERT_FALSE = 'ASSERT_FALSE'
 STMT_ASSIGN = 'ASSIGN'
 STMT_BREAK = 'BREAK'
 STMT_CALL = 'CALL'
@@ -898,6 +901,13 @@ def ParseStmt(tokens):
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return Statement(STMT_ASSERT, expr), tokens
 
+  # Parse 辟谣
+  assert_, tokens = TryConsumeKeyword(KW_ASSERT_FALSE, tokens)
+  if assert_:
+    expr, tokens = ParseExpr(tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return Statement(STMT_ASSERT_FALSE, expr), tokens
+
   # Parse 削：
   delete, tokens = TryConsumeKeyword(KW_DELETE, tokens)
   if delete:
@@ -1216,6 +1226,9 @@ def TranslateStatementToPython(stmt, indent = ''):
 
   if stmt.kind == STMT_ASSERT:
     return indent + f'assert {stmt.value.ToPython()}, "整叉劈了：该着 {stmt.value.ToDongbei()}，咋错了咧？"'
+
+  if stmt.kind == STMT_ASSERT_FALSE:
+    return indent + f'assert not ({stmt.value.ToPython()}), "整叉劈了：{stmt.value.ToDongbei()} 不应该啊，咋错了咧？"'
 
   sys.exit('俺不懂 %s 语句咋执行。' % (stmt.kind))
   

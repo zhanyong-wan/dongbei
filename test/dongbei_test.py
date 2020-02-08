@@ -613,6 +613,14 @@ class DongbeiTest(unittest.TestCase):
       '''
 整叉劈了：该着 3加2比5减1小，咋错了咧？
 ''')
+    self.assertEqual(
+      Run('''辟谣三加二比五减一大。'''),
+      '''
+整叉劈了：3加2比5减1大 不应该啊，咋错了咧？
+''')
+    self.assertEqual(
+      Run('''辟谣三加二比五减一小。'''),
+      '')
     
   def testDelete(self):
     self.assertEqual(
