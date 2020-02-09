@@ -413,13 +413,13 @@ class DongbeiTest(unittest.TestCase):
         ParseToAst('老王走走。'),
         [Statement(
             STMT_INC_BY,
-            (IdentifierToken('老王'),
+            (VariableExpr('老王'),
              IntegerLiteralExpr(1)))])
     self.assertEqual(
         ParseToAst('老王走两步。'),
         [Statement(
             STMT_INC_BY,
-            (IdentifierToken('老王'),
+            (VariableExpr('老王'),
              IntegerLiteralExpr(2)))])
 
   def testParsingDecrements(self):
@@ -427,13 +427,13 @@ class DongbeiTest(unittest.TestCase):
         ParseToAst('老王稍稍。'),
         [Statement(
             STMT_DEC_BY,
-            (IdentifierToken('老王'),
+            (VariableExpr('老王'),
              IntegerLiteralExpr(1)))])
     self.assertEqual(
         ParseToAst('老王稍三步。'),
         [Statement(
             STMT_DEC_BY,
-            (IdentifierToken('老王'),
+            (VariableExpr('老王'),
              IntegerLiteralExpr(3)))])
 
   def testParsingLoop(self):
@@ -494,7 +494,16 @@ class DongbeiTest(unittest.TestCase):
   def testVarAssignmentFromVar(self):
     self.assertEqual(
         Run('老张是活雷锋。\n老王是活雷锋。\n'
-                    '老张装250。\n老王装老张。\n唠唠：老王。'), '250\n')
+            '老张装250。\n老王装老张。\n唠唠：老王。'), '250\n')
+
+  def testAssignmentToArrayElement(self):
+    self.assertEqual(
+        Run('''
+张家庄都是活雷锋。
+张家庄来了个五。
+张家庄的老大 装 张家庄的老大乘二。
+唠唠：张家庄。'''),
+      '[10]\n')
 
   def testIncrements(self):
     self.assertEqual(
@@ -503,6 +512,18 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         Run('老张是活雷锋。老张装三。老张走五步。唠唠：老张。'),
         '8\n')
+    self.assertEqual(
+        Run('''
+张家庄都是活雷锋。
+张家庄来了个二。
+张家庄的老大走走。
+唠唠：张家庄的老大。
+张家庄的老大走五步。
+唠唠：张家庄的老大。
+'''),
+        '''3
+8
+''')
 
   def testDecrements(self):
     self.assertEqual(
@@ -511,6 +532,18 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         Run('老张是活雷锋。老张装三。老张稍五步。唠唠：老张。'),
         '-2\n')
+    self.assertEqual(
+        Run('''
+张家庄都是活雷锋。
+张家庄来了个二。
+张家庄的老大稍稍。
+唠唠：张家庄的老大。
+张家庄的老大稍五步。
+唠唠：张家庄的老大。
+'''),
+        '''1
+-4
+''')
 
   def testLoop(self):
     self.assertEqual(
@@ -806,6 +839,20 @@ class DongbeiTest(unittest.TestCase):
 [3, [5, '大']]
 5
 啥也不是
+''')
+
+  def testArrayAppend(self):
+    self.assertEqual(
+      Run('''
+张家庄都是活雷锋。  # []
+李家村都是活雷锋。  # []
+李家村来了个张家庄。  # [[]]
+李家村的老大来了个五。  # [[5]]
+唠唠：张家庄。
+唠唠：李家村。
+'''),
+      '''[5]
+[[5]]
 ''')
 
   def testRecursiveFunc(self):

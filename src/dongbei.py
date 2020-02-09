@@ -964,126 +964,129 @@ def ParseStmt(tokens):
 
   # Parse an identifier name.
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
-  if not id:
-    return (None, orig_tokens)
 
-  # Code below is for statements that start with an identifier.
+  if id:
+    # Code below is for statements that start with an identifier.
 
-  # Parse 是活雷锋
-  is_var, tokens = TryConsumeKeyword(KW_IS_VAR, tokens)
-  if is_var:
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_VAR_DECL, id), tokens)
+    # Parse 是活雷锋
+    is_var, tokens = TryConsumeKeyword(KW_IS_VAR, tokens)
+    if is_var:
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_VAR_DECL, id), tokens)
 
-  # Parse 都是活雷锋
-  is_list, tokens = TryConsumeKeyword(KW_IS_LIST, tokens)
-  if is_list:
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_LIST_VAR_DECL, id), tokens)
+    # Parse 都是活雷锋
+    is_list, tokens = TryConsumeKeyword(KW_IS_LIST, tokens)
+    if is_list:
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_LIST_VAR_DECL, id), tokens)
 
-  # Parse 装
-  become, tokens = TryConsumeKeyword(KW_BECOME, tokens)
-  if become:
-    expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_ASSIGN, (id, expr)), tokens)
+    # Parse 从...到...磨叽
+    from_, tokens = TryConsumeKeyword(KW_FROM, tokens)
+    if from_:
+      from_expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_TO, tokens)
+      to_expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_LOOP, tokens)
+      stmts, tokens = ParseStmts(tokens)
+      _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_LOOP, (id, from_expr, to_expr, stmts)), tokens)
 
-  # Parse 来了个
-  append, tokens = TryConsumeKeyword(KW_APPEND, tokens)
-  if append:
-    expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_APPEND, (id, expr)), tokens)
+    # Parse 在...磨叽
+    in_, tokens = TryConsumeKeyword(KW_IN, tokens)
+    if in_:
+      range_expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_LOOP, tokens)
+      stmts, tokens = ParseStmts(tokens)
+      _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_RANGE_LOOP, (id, range_expr, stmts)), tokens)
 
-  # Parse 走走
-  inc, tokens = TryConsumeKeyword(KW_INC, tokens)
-  if inc:
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_INC_BY,
-                      (id, IntegerLiteralExpr(1))),
-            tokens)
+    # Parse 从一而终磨叽 or the '1 Infinite Loop' 彩蛋
+    infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP, tokens)
+    if not infinite_loop:
+      infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP_EGG, tokens)
+    if infinite_loop:
+      stmts, tokens = ParseStmts(tokens)
+      _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_INFINITE_LOOP, (id, stmts)), tokens
 
-  # Parse 走X步
-  inc, tokens = TryConsumeKeyword(KW_INC_BY, tokens)
-  if inc:
-    expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_STEP, tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_INC_BY, (id, expr)), tokens)
-
-  # Parse 稍稍
-  dec, tokens = TryConsumeKeyword(KW_DEC, tokens)
-  if dec:
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_DEC_BY,
-                      (id, IntegerLiteralExpr(1))),
-            tokens)
-
-  # Parse 稍X步
-  dec, tokens = TryConsumeKeyword(KW_DEC_BY, tokens)
-  if dec:
-    expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_STEP, tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_DEC_BY, (id, expr)), tokens)
-
-  # Parse 从...到...磨叽
-  from_, tokens = TryConsumeKeyword(KW_FROM, tokens)
-  if from_:
-    from_expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_TO, tokens)
-    to_expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_LOOP, tokens)
-    stmts, tokens = ParseStmts(tokens)
-    _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_LOOP, (id, from_expr, to_expr, stmts)), tokens)
-
-  # Parse 在...磨叽
-  in_, tokens = TryConsumeKeyword(KW_IN, tokens)
-  if in_:
-    range_expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_LOOP, tokens)
-    stmts, tokens = ParseStmts(tokens)
-    _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_RANGE_LOOP, (id, range_expr, stmts)), tokens)
-
-  # Parse 从一而终磨叽 or the '1 Infinite Loop' 彩蛋
-  infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP, tokens)
-  if not infinite_loop:
-    infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP_EGG, tokens)
-  if infinite_loop:
-    stmts, tokens = ParseStmts(tokens)
-    _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_INFINITE_LOOP, (id, stmts)), tokens
-
-  # Parse 咋整
-  open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
-  if open_paren:
-    params = []
-    while True:
-      param, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-      params.append(param)
-      close_paren, tokens = TryConsumeKeyword(KW_CLOSE_PAREN, tokens)
-      if close_paren:
-        break
-      _, tokens = ConsumeKeyword(KW_COMMA, tokens)
+    # Parse 咋整
+    open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
+    if open_paren:
+      params = []
+      while True:
+        param, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+        params.append(param)
+        close_paren, tokens = TryConsumeKeyword(KW_CLOSE_PAREN, tokens)
+        if close_paren:
+          break
+        _, tokens = ConsumeKeyword(KW_COMMA, tokens)
         
-    func_def, tokens = ConsumeToken(
-        Keyword(KW_FUNC_DEF), tokens)
-    stmts, tokens = ParseStmts(tokens)
-    _, tokens = ConsumeKeyword(KW_END, tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens)
+      func_def, tokens = ConsumeToken(
+          Keyword(KW_FUNC_DEF), tokens)
+      stmts, tokens = ParseStmts(tokens)
+      _, tokens = ConsumeKeyword(KW_END, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens)
 
-  func_def, tokens = TryConsumeKeyword(KW_FUNC_DEF, tokens)
-  if func_def:
-    stmts, tokens = ParseStmts(tokens)
-    _, tokens = ConsumeKeyword(KW_END, tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_FUNC_DEF, (id, [], stmts)), tokens)
+    func_def, tokens = TryConsumeKeyword(KW_FUNC_DEF, tokens)
+    if func_def:
+      stmts, tokens = ParseStmts(tokens)
+      _, tokens = ConsumeKeyword(KW_END, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_FUNC_DEF, (id, [], stmts)), tokens)
+
+  expr1, tokens = ParseExpr(orig_tokens)
+  if expr1:
+    # Code below is fof statements that start with an expression.
+  
+    # Parse 装
+    become, tokens = TryConsumeKeyword(KW_BECOME, tokens)
+    if become:
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_ASSIGN, (expr1, expr)), tokens)
+
+    # Parse 来了个
+    append, tokens = TryConsumeKeyword(KW_APPEND, tokens)
+    if append:
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_APPEND, (expr1, expr)), tokens)
+
+    # Parse 走走
+    inc, tokens = TryConsumeKeyword(KW_INC, tokens)
+    if inc:
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_INC_BY,
+                        (expr1, IntegerLiteralExpr(1))),
+              tokens)
+
+    # Parse 走X步
+    inc, tokens = TryConsumeKeyword(KW_INC_BY, tokens)
+    if inc:
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_STEP, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_INC_BY, (expr1, expr)), tokens)
+
+    # Parse 稍稍
+    dec, tokens = TryConsumeKeyword(KW_DEC, tokens)
+    if dec:
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_DEC_BY,
+                        (expr1, IntegerLiteralExpr(1))),
+              tokens)
+
+    # Parse 稍X步
+    dec, tokens = TryConsumeKeyword(KW_DEC_BY, tokens)
+    if dec:
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_STEP, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_DEC_BY, (expr1, expr)), tokens)
 
   return (None, orig_tokens)
 
@@ -1114,14 +1117,14 @@ def TranslateStatementToPython(stmt, indent = ''):
     return indent + '%s = []' % (var,)
 
   if stmt.kind == STMT_ASSIGN:
-    var_token, expr = stmt.value
-    var = GetPythonVarName(var_token.value)
+    var_expr, expr = stmt.value
+    var = var_expr.ToPython()
     return indent + '%s = %s' % (var, expr.ToPython())
 
   if stmt.kind == STMT_APPEND:
-    var_token, expr = stmt.value
-    var = GetPythonVarName(var_token.value)
-    return indent + '%s.append(%s)' % (var, expr.ToPython())
+    var_expr, expr = stmt.value
+    var = var_expr.ToPython()
+    return indent + '(%s).append(%s)' % (var, expr.ToPython())
 
   if stmt.kind == STMT_SAY:
     expr = stmt.value
@@ -1129,13 +1132,13 @@ def TranslateStatementToPython(stmt, indent = ''):
         expr.ToPython(),)
 
   if stmt.kind == STMT_INC_BY:
-    var_token, expr = stmt.value
-    var = GetPythonVarName(var_token.value)
+    var_expr, expr = stmt.value
+    var = var_expr.ToPython()
     return indent + f'{var} += {expr.ToPython()}'
 
   if stmt.kind == STMT_DEC_BY:
-    var_token, expr = stmt.value
-    var = GetPythonVarName(var_token.value)
+    var_expr, expr = stmt.value
+    var = var_expr.ToPython()
     return indent + '%s -= %s' % (var, expr.ToPython())
 
   if stmt.kind == STMT_LOOP:
