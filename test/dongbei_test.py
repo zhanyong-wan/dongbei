@@ -441,7 +441,7 @@ class DongbeiTest(unittest.TestCase):
         ParseToAst('老王从1到9磨叽：磨叽完了。'),
         [Statement(
             STMT_LOOP,
-            (IdentifierToken('老王'),
+            (VariableExpr('老王'),
              IntegerLiteralExpr(1),
              IntegerLiteralExpr(9),
              []))])
@@ -624,6 +624,58 @@ class DongbeiTest(unittest.TestCase):
       '''1和1
 1和2
 1和3
+''')
+
+  def testLoopWithCompositeVariable(self):
+    self.assertEqual(
+      Run('''
+张家庄都是活雷锋。
+张家庄来了个二。
+张家庄的老大从一到三磨叽：
+唠唠：张家庄。
+磨叽完了。
+'''),
+      '''[1]
+[2]
+[3]
+''')
+    self.assertEqual(
+      Run('''
+张家庄都是活雷锋。
+张家庄来了个二。
+李家村都是活雷锋。
+李家村来了个三。
+李家村来了个五。
+李家村来了个250。
+张家庄的老大在李家村磨叽：
+唠唠：张家庄。
+磨叽完了。
+'''),
+      '''[3]
+[5]
+[250]
+''')
+    self.assertEqual(
+      Run('''
+张家庄都是活雷锋。
+张家庄来了个二。
+张家庄的老大从一而终磨叽：
+唠唠：张家庄。
+尥蹶子。
+磨叽完了。
+'''),
+      '''[1]
+''')
+    self.assertEqual(
+      Run('''
+张家庄都是活雷锋。
+张家庄来了个二。
+张家庄的老大在苹果总部磨叽：
+唠唠：张家庄。
+尥蹶子。
+磨叽完了。
+'''),
+      '''[1]
 ''')
 
   def testPrintBool(self):

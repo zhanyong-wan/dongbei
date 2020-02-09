@@ -980,38 +980,6 @@ def ParseStmt(tokens):
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return (Statement(STMT_LIST_VAR_DECL, id), tokens)
 
-    # Parse 从...到...磨叽
-    from_, tokens = TryConsumeKeyword(KW_FROM, tokens)
-    if from_:
-      from_expr, tokens = ParseExpr(tokens)
-      _, tokens = ConsumeKeyword(KW_TO, tokens)
-      to_expr, tokens = ParseExpr(tokens)
-      _, tokens = ConsumeKeyword(KW_LOOP, tokens)
-      stmts, tokens = ParseStmts(tokens)
-      _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_LOOP, (id, from_expr, to_expr, stmts)), tokens)
-
-    # Parse 在...磨叽
-    in_, tokens = TryConsumeKeyword(KW_IN, tokens)
-    if in_:
-      range_expr, tokens = ParseExpr(tokens)
-      _, tokens = ConsumeKeyword(KW_LOOP, tokens)
-      stmts, tokens = ParseStmts(tokens)
-      _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_RANGE_LOOP, (id, range_expr, stmts)), tokens)
-
-    # Parse 从一而终磨叽 or the '1 Infinite Loop' 彩蛋
-    infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP, tokens)
-    if not infinite_loop:
-      infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP_EGG, tokens)
-    if infinite_loop:
-      stmts, tokens = ParseStmts(tokens)
-      _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_INFINITE_LOOP, (id, stmts)), tokens
-
     # Parse 咋整
     open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
     if open_paren:
@@ -1042,6 +1010,38 @@ def ParseStmt(tokens):
   if expr1:
     # Code below is fof statements that start with an expression.
   
+    # Parse 从...到...磨叽
+    from_, tokens = TryConsumeKeyword(KW_FROM, tokens)
+    if from_:
+      from_expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_TO, tokens)
+      to_expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_LOOP, tokens)
+      stmts, tokens = ParseStmts(tokens)
+      _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_LOOP, (expr1, from_expr, to_expr, stmts)), tokens)
+
+    # Parse 在...磨叽
+    in_, tokens = TryConsumeKeyword(KW_IN, tokens)
+    if in_:
+      range_expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_LOOP, tokens)
+      stmts, tokens = ParseStmts(tokens)
+      _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_RANGE_LOOP, (expr1, range_expr, stmts)), tokens)
+
+    # Parse 从一而终磨叽 or the '1 Infinite Loop' 彩蛋
+    infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP, tokens)
+    if not infinite_loop:
+      infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP_EGG, tokens)
+    if infinite_loop:
+      stmts, tokens = ParseStmts(tokens)
+      _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_INFINITE_LOOP, (expr1, stmts)), tokens
+
     # Parse 装
     become, tokens = TryConsumeKeyword(KW_BECOME, tokens)
     if become:
@@ -1142,8 +1142,8 @@ def TranslateStatementToPython(stmt, indent = ''):
     return indent + '%s -= %s' % (var, expr.ToPython())
 
   if stmt.kind == STMT_LOOP:
-    var_token, from_val, to_val, stmts = stmt.value
-    var = GetPythonVarName(var_token.value)
+    var_expr, from_val, to_val, stmts = stmt.value
+    var = var_expr.ToPython()
     loop = indent + 'for %s in range(%s, (%s) + 1):' % (
         var, from_val.ToPython(),
         to_val.ToPython())
@@ -1154,8 +1154,8 @@ def TranslateStatementToPython(stmt, indent = ''):
     return loop
 
   if stmt.kind == STMT_RANGE_LOOP:
-    var_token, range_expr, stmts = stmt.value
-    var = GetPythonVarName(var_token.value)
+    var_expr, range_expr, stmts = stmt.value
+    var = var_expr.ToPython()
     loop = indent + 'for %s in %s:' % (
         var, range_expr.ToPython())
     for s in stmts:
@@ -1165,8 +1165,8 @@ def TranslateStatementToPython(stmt, indent = ''):
     return loop
 
   if stmt.kind == STMT_INFINITE_LOOP:
-    var_token, stmts = stmt.value
-    var = GetPythonVarName(var_token.value)
+    var_expr, stmts = stmt.value
+    var = var_expr.ToPython()
     loop = indent + 'for %s in _db_1_infinite_loop():' % (var,)
     for s in stmts:
       loop += '\n' + TranslateStatementToPython(s, indent + '  ')
