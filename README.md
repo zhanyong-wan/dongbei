@@ -81,7 +81,7 @@ dongbei 语言是基于 Python 3 二次开发的。
 pip install dongbei-lang
 
 # 使用
-dongbei  <xxx>.dongbei
+dongbei <xxx>.dongbei
 ```
 
 当然你也可以直接跑 src/dongbei.py 。
