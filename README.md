@@ -74,11 +74,21 @@ dongbei 语言是基于 Python 3 二次开发的。
 
 ## 安装
 
-甭麻烦了！直接跑 src/dongbei.py 就成。
+用pip直接就能整上dongbei 。
 
-不过，要是你的系统没有python3呢，那得先装一个，免费！
+```
+# 安装
+pip install dongbei-lang
 
-比如，你要是用 Mac 的话，就按 https://docs.python-guide.org/starting/install3/osx/ 做。
+# 使用
+dongbei  <xxx>.dongbei
+```
+
+当然你也可以直接跑 src/dongbei.py 。
+
+要是你的系统没有python3呢，那得先装一个，免费！
+
+比如，你要是用 Mac 的话，就按 [Mac Python3 安装指南](https://docs.python-guide.org/starting/install3/osx/) 做。
 
 ## 测试
 
@@ -110,7 +120,7 @@ test/dongbei_test.py
 然后在命令行窗口运行：
 
 ```
-src/dongbei.py hello-world.dongbei
+dongbei hello-world.dongbei
 ```
 
 你应该看到执行结果：
