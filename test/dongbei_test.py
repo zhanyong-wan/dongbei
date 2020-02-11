@@ -5,8 +5,10 @@ import os
 import sys
 import unittest
 
-# Add the repo root to the Python module path.
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+# Add the repo root to the beginning of the Python module path.
+# Even if the user has installed dongbei locally, the version
+# next to the test file will be used.
+sys.path = [os.path.join(os.path.dirname(__file__), '..')] + sys.path
 
 from src import dongbei
 from src.dongbei import ArithmeticExpr
@@ -706,7 +708,19 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
       Run('''辟谣三加二比五减一小。'''),
       '')
-    
+
+  def testRaise(self):
+    self.assertEqual(
+      Run('''整叉劈了：“小朋友请回避！”。'''),
+     '''
+整叉劈了：小朋友请回避！
+''')
+    self.assertEqual(
+      Run('''【小王】装2。整叉劈了：【小王】、“小朋友请回避！”。'''),
+     '''
+整叉劈了：2小朋友请回避！
+''')
+
   def testDelete(self):
     self.assertEqual(
       Run('老王是活雷锋。老王装二。削老王！唠唠：老王。'),

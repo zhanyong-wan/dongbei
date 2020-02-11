@@ -68,6 +68,7 @@ KW_OPEN_PAREN_NARROW = '('
 KW_OPEN_QUOTE = '“'
 KW_PERIOD = '。'
 KW_PLUS = '加'
+KW_RAISE = '整叉劈了：' 
 KW_RETURN = '滚犊子吧'
 KW_SAY = '唠唠'
 KW_STEP = '步'
@@ -101,6 +102,7 @@ KEYWORDS = (
   KW_DIVIDE_BY,
   KW_ELSE,
   KW_END,   # must match 整完了 before matching 整
+  KW_RAISE,  # must match 整劈叉了 before matching 整
   KW_CALL,  # 整
   KW_END_LOOP,
   KW_EQUAL,
@@ -171,10 +173,17 @@ STMT_INC_BY = 'INC_BY'
 STMT_INFINITE_LOOP = 'INFINITE_LOOP'
 STMT_LIST_VAR_DECL = 'LIST_VAR_DECL'
 STMT_LOOP = 'LOOP'
+STMT_RAISE = 'RAISE'
 STMT_RANGE_LOOP = 'RANGE_LOOP'
 STMT_RETURN = 'RETURN'
 STMT_SAY = 'SAY'
 STMT_VAR_DECL = 'VAR_DECL'
+
+class DongbeiError(Exception):
+  """An error in a dongbei program."""
+
+  def __init__(self, message):
+    self.message = message
 
 class Token:
   def __init__(self, kind, value):
@@ -912,6 +921,15 @@ def ParseStmt(tokens):
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return Statement(STMT_ASSERT_FALSE, expr), tokens
 
+  # Parse 整叉劈了
+  raise_, tokens = TryConsumeKeyword(KW_RAISE, tokens)
+  if raise_:
+    print(tokens)
+    expr, tokens = ParseExpr(tokens)
+    print(tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return Statement(STMT_RAISE, expr), tokens
+
   # Parse 削：
   delete, tokens = TryConsumeKeyword(KW_DELETE, tokens)
   if delete:
@@ -1232,10 +1250,13 @@ def TranslateStatementToPython(stmt, indent = ''):
     return indent + 'continue'
 
   if stmt.kind == STMT_ASSERT:
-    return indent + f'assert {stmt.value.ToPython()}, "整叉劈了：该着 {stmt.value.ToDongbei()}，咋错了咧？"'
+    return indent + f'assert {stmt.value.ToPython()}, "该着 {stmt.value.ToDongbei()}，咋错了咧？"'
 
   if stmt.kind == STMT_ASSERT_FALSE:
-    return indent + f'assert not ({stmt.value.ToPython()}), "整叉劈了：{stmt.value.ToDongbei()} 不应该啊，咋错了咧？"'
+    return indent + f'assert not ({stmt.value.ToPython()}), "{stmt.value.ToDongbei()} 不应该啊，咋错了咧？"'
+
+  if stmt.kind == STMT_RAISE:
+    return indent + f'raise DongbeiError({stmt.value.ToPython()})'
 
   sys.exit('俺不懂 %s 语句咋执行。' % (stmt.kind))
   
@@ -1276,7 +1297,7 @@ def Run(code, jiwai=False):
   try:
     exec(py_code, globals(), globals())
   except Exception as e:
-    _db_output += f'\n{e}\n'
+    _db_output += f'\n整叉劈了：{e}\n'
   if jiwai:
     print('运行结果：')
   print('%s' % (_db_output,))
