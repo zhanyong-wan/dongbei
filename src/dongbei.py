@@ -4,16 +4,16 @@
 """dongbei语言执行器
 
 用法：
-    dongbei.py [--verbose] 源程序文件名...
+    dongbei.py [--jiwai] 源程序文件名...
 
-要是命令行包含 --verbose，在执行前先打印对应的 Python 代码。
+要是命令行包含 --jiwai（叽歪），在执行前先打印对应的 Python 代码。
 """
 
 import io
 import re
 import sys
 
-VERBOSE_FLAG = '--verbose'
+JIWAI_FLAG = '--jiwai'
 
 KW_APPEND = '来了个'
 KW_ASSERT = '保准'
@@ -1262,10 +1262,10 @@ def _db_1_infinite_loop():
   while True:
     yield 1
 
-def Run(code, verbose=False):
+def Run(code, jiwai=False):
   tokens = list(Tokenize(code))
   py_code = TranslateTokensToPython(tokens)
-  if verbose:
+  if jiwai:
     print('Python 代码：')
     print('%s' % (py_code,))
   global _db_output
@@ -1277,7 +1277,7 @@ def Run(code, verbose=False):
     exec(py_code, globals(), globals())
   except Exception as e:
     _db_output += f'\n{e}\n'
-  if verbose:
+  if jiwai:
     print('运行结果：')
   print('%s' % (_db_output,))
   return _db_output
@@ -1287,13 +1287,13 @@ if __name__ == '__main__':
   if len(sys.argv) == 1:
     sys.exit(__doc__)
 
-  verbose = False
-  if VERBOSE_FLAG in sys.argv:
-    verbose = True
-    sys.argv.remove(VERBOSE_FLAG)
+  jiwai = False
+  if JIWAI_FLAG in sys.argv:
+    jiwai = True
+    sys.argv.remove(JIWAI_FLAG)
   
   for filepath in sys.argv[1:]:
     with io.open(filepath, 'r', encoding='utf-8') as src_file:
-      if verbose:
+      if jiwai:
         print(f'执行 {filepath} ...')
-      Run(src_file.read(), verbose=verbose)
+      Run(src_file.read(), jiwai=jiwai)

@@ -896,5 +896,5 @@ OK！
 2. 要是已经安装了 dongbei-lang，可以用 `dongbei 程序文件` 命令。
 3. 要是已经安装了 dongbei-lang，也可以在一个 dongbei 程序文件的开头插入一行 `#!/usr/bin/env dongbei` 再把文件改成可执行的（比如在 Linux / Mac OS 上跑 `chmod +x 程序文件`）。然后，就可以直接用 `程序文件` 命令来跑码了。
 
-用前两种方法的时候，可以在命令行加上 `--verbose` 让系统打印和 dongbei 程序对应的 Python 代码。
+用前两种方法的时候，可以在命令行加上 `--jiwai`（叽歪）让系统打印和 dongbei 程序对应的 Python 代码。
 这在开发和学习 dongbei 的时候大有裨益。
