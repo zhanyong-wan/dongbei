@@ -4,12 +4,16 @@
 """dongbei语言执行器
 
 用法：
-    dongbei.py 源程序文件名...
+    dongbei.py [--verbose] 源程序文件名...
+
+要是命令行包含 --verbose，在执行前先打印对应的 Python 代码。
 """
 
 import io
 import re
 import sys
+
+VERBOSE_FLAG = '--verbose'
 
 KW_APPEND = '来了个'
 KW_ASSERT = '保准'
@@ -1258,11 +1262,12 @@ def _db_1_infinite_loop():
   while True:
     yield 1
 
-def Run(code):
+def Run(code, verbose=False):
   tokens = list(Tokenize(code))
   py_code = TranslateTokensToPython(tokens)
-  print('Python 代码：')
-  print('%s' % (py_code,))
+  if verbose:
+    print('Python 代码：')
+    print('%s' % (py_code,))
   global _db_output
   _db_output = ''
   # See https://stackoverflow.com/questions/871887/using-exec-with-recursive-functions
@@ -1272,7 +1277,8 @@ def Run(code):
     exec(py_code, globals(), globals())
   except Exception as e:
     _db_output += f'\n{e}\n'
-  print('运行结果：')
+  if verbose:
+    print('运行结果：')
   print('%s' % (_db_output,))
   return _db_output
 
@@ -1281,7 +1287,13 @@ if __name__ == '__main__':
   if len(sys.argv) == 1:
     sys.exit(__doc__)
 
+  verbose = False
+  if VERBOSE_FLAG in sys.argv:
+    verbose = True
+    sys.argv.remove(VERBOSE_FLAG)
+  
   for filepath in sys.argv[1:]:
     with io.open(filepath, 'r', encoding='utf-8') as src_file:
-      print('执行 %s ...' % (filepath,))
-      Run(src_file.read())
+      if verbose:
+        print(f'执行 {filepath} ...')
+      Run(src_file.read(), verbose=verbose)
