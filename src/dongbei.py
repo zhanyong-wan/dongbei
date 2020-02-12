@@ -62,6 +62,7 @@ KW_LENGTH = '有几个坑'
 KW_LESS = '小'
 KW_LOOP = '磨叽：'
 KW_MINUS = '减'
+KW_MODULO = '刨掉一堆堆'
 KW_NOT_EQUAL = '不是一样一样的'
 KW_OPEN_PAREN = '（'
 KW_OPEN_PAREN_NARROW = '('
@@ -125,6 +126,7 @@ KEYWORDS = (
   KW_LESS,
   KW_LOOP,
   KW_MINUS,
+  KW_MODULO,
   KW_NOT_EQUAL,
   KW_OPEN_PAREN,
   KW_OPEN_PAREN_NARROW,
@@ -297,7 +299,8 @@ ARITHMETIC_OPERATION_TO_PYTHON = {
     KW_MINUS: '-',
     KW_TIMES: '*',
     KW_DIVIDE_BY: '/',
-    KW_INTEGER_DIVIDE_BY: '//'
+    KW_INTEGER_DIVIDE_BY: '//',
+    KW_MODULO: '%',
     }
 
 class ArithmeticExpr(Expr):
@@ -781,6 +784,8 @@ def ParseTermExpr(tokens):
       operator, tokens = TryConsumeKeyword(KW_DIVIDE_BY, tokens)
     if not operator:
       operator, tokens = TryConsumeKeyword(KW_INTEGER_DIVIDE_BY, tokens)
+    if not operator:
+      operator, tokens = TryConsumeKeyword(KW_MODULO, tokens)
     if not operator:
       break
 
