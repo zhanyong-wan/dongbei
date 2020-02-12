@@ -4,16 +4,16 @@
 """dongbei语言执行器
 
 用法：
-    dongbei.py [--jiwai] 源程序文件名...
+    dongbei.py [--xudao] 源程序文件名...
 
-要是命令行包含 --jiwai（叽歪），在执行前先打印对应的 Python 代码。
+要是命令行包含 --xudao（絮叨），在执行前先打印对应的 Python 代码。
 """
 
 import io
 import re
 import sys
 
-JIWAI_FLAG = '--jiwai'
+XUDAO_FLAG = '--xudao'
 
 KW_APPEND = '来了个'
 KW_ASSERT = '保准'
@@ -1283,10 +1283,10 @@ def _db_1_infinite_loop():
   while True:
     yield 1
 
-def Run(code, jiwai=False):
+def Run(code, xudao=False):
   tokens = list(Tokenize(code))
   py_code = TranslateTokensToPython(tokens)
-  if jiwai:
+  if xudao:
     print('Python 代码：')
     print('%s' % (py_code,))
   global _db_output
@@ -1298,7 +1298,7 @@ def Run(code, jiwai=False):
     exec(py_code, globals(), globals())
   except Exception as e:
     _db_output += f'\n整叉劈了：{e}\n'
-  if jiwai:
+  if xudao:
     print('运行结果：')
   print('%s' % (_db_output,))
   return _db_output
@@ -1308,13 +1308,13 @@ if __name__ == '__main__':
   if len(sys.argv) == 1:
     sys.exit(__doc__)
 
-  jiwai = False
-  if JIWAI_FLAG in sys.argv:
-    jiwai = True
-    sys.argv.remove(JIWAI_FLAG)
+  xudao = False
+  if XUDAO_FLAG in sys.argv:
+    xudao = True
+    sys.argv.remove(XUDAO_FLAG)
   
   for filepath in sys.argv[1:]:
     with io.open(filepath, 'r', encoding='utf-8') as src_file:
-      if jiwai:
+      if xudao:
         print(f'执行 {filepath} ...')
-      Run(src_file.read(), jiwai=jiwai)
+      Run(src_file.read(), xudao=xudao)
