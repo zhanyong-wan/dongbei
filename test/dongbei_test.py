@@ -731,6 +731,12 @@ class DongbeiTest(unittest.TestCase):
       Run('唠唠：零。'),
       '0\n')
     self.assertEqual(
+      Run('唠唠：鸭蛋。'),
+      '0\n')
+    self.assertEqual(
+      Run('唠唠：大鸭蛋。'),
+      '0\n')
+    self.assertEqual(
       Run('唠唠：一。'),
       '1\n')
     self.assertEqual(
