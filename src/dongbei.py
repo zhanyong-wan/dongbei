@@ -597,7 +597,11 @@ def Tokenize(code):
   for tk in ParseChars(chars):
     yield tk
     
-vars = {}  # Maps Chinese identifier to generated identifier.
+# Maps Chinese identifier to generated identifier.
+_db_vars = {
+  '最高指示': 'sys.argv',
+}
+
 def GetPythonVarName(var):
   if re.match(r'[_a-zA-Z]', var):
     # var starts with a letter or _.  Don't translate it.
@@ -605,11 +609,11 @@ def GetPythonVarName(var):
 
   # var is a Chinese identifier.
 
-  if var in vars:
-    return vars[var]
+  if var in _db_vars:
+    return _db_vars[var]
 
-  generated_var = '_db_var%d' % (len(vars),)
-  vars[var] = generated_var
+  generated_var = '_db_var%d' % (len(_db_vars),)
+  _db_vars[var] = generated_var
   return generated_var
 
 def TryConsumeTokenType(tk_type, tokens):
@@ -1317,8 +1321,15 @@ if __name__ == '__main__':
   if XUDAO_FLAG in sys.argv:
     xudao = True
     sys.argv.remove(XUDAO_FLAG)
+
+  program = sys.argv[0]
+  if program.endswith('.py') or program.endswith('/dongbei') or program == 'dongbei':
+    # Running the program by explicitly invoking the interpreter.
+    # Remove the interpreter name s.t. the dongbei program only sees the
+    # name of itself as the program name.
+    del sys.argv[0]
   
-  for filepath in sys.argv[1:]:
+  for filepath in sys.argv:
     with io.open(filepath, 'r', encoding='utf-8') as src_file:
       if xudao:
         print(f'执行 {filepath} ...')

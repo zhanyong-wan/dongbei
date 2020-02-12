@@ -998,5 +998,10 @@ class DongbeiTest(unittest.TestCase):
       '''),
       'OK\n')
 
+  def testCommandLine(self):
+    self.assertTrue(
+      'dongbei_test.py' in
+      Run('''唠唠：最高指示。'''))
+
 if __name__ == '__main__':
   unittest.main()
