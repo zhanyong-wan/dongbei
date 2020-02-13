@@ -6,8 +6,9 @@
 language: python 3.6
 cache: pip
 
+# First run the test. Then run all demos one-by-one.
 script:
-  - ./test/dongbei_test.py && ./src/dongbei.py demo/*.dongbei
+  - ./test/dongbei_test.py && ls demo/*.dongbei | xargs -L 1 ./src/dongbei.py --xudao
 
 deploy:
   provider: pypi

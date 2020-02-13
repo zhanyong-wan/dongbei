@@ -1329,9 +1329,9 @@ if __name__ == '__main__':
     # Remove the interpreter name s.t. the dongbei program only sees the
     # name of itself as the program name.
     del sys.argv[0]
+    program = sys.argv[0]
   
-  for filepath in sys.argv:
-    with io.open(filepath, 'r', encoding='utf-8') as src_file:
-      if xudao:
-        print(f'执行 {filepath} ...')
-      Run(src_file.read(), xudao=xudao)
+  with io.open(program, 'r', encoding='utf-8') as src_file:
+    if xudao:
+      print(f'执行 {program} ...')
+    Run(src_file.read(), xudao=xudao)
