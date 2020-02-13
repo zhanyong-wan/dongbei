@@ -3,7 +3,9 @@
 ## 日常开发
 
 dongbei 配了 CI（连续集成系统），确保项目体健貌端。
-提请 PR 前请先确定 CI 测试全部通过。
+最新体检结果：[![体检结果](https://api.travis-ci.com/zhanyong-wan/dongbei.svg?branch=master)](https://travis-ci.com/zhanyong-wan/dongbei)。
+
+提请 PR 前记得确定 CI 测试全部通过哦。
 把测试搞坏了是要包赔的！
 
 dongbei 采用业界领先的 TDD (TreeNewBee-Driven Development，学雷锋树新蜂) 方法开发。
