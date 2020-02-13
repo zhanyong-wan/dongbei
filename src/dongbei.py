@@ -1313,8 +1313,7 @@ def Run(code, xudao=False):
   print('%s' % (_db_output,))
   return _db_output
 
-
-if __name__ == '__main__':
+def main():
   if len(sys.argv) == 1:
     sys.exit(__doc__)
 
@@ -1335,3 +1334,7 @@ if __name__ == '__main__':
     if xudao:
       print(f'执行 {program} ...')
     Run(src_file.read(), xudao=xudao)
+
+if __name__ == '__main__':
+  main()
+
