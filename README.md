@@ -80,8 +80,14 @@ dongbei 语言是基于 Python 3 二次开发的。
 用pip直接就能整上dongbei 。dongbei是Python3写的 ，建议使用pip3 。
 
 ```
-# 安装
+# 给这台电脑的所有用户安装
 pip3 install dongbei-lang
+
+# 只给自己安装
+pip3 install dongbei-lang --user
+
+# 更新到最新的 dongbei 版本。要是只给当前用户更新，加 --user
+pip3 install dongbei-lang --upgrade
 
 # 使用
 dongbei <xxx>.dongbei
