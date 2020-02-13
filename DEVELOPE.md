@@ -23,4 +23,4 @@ CD 步骤都整好了！
 1. 把根目录下 `setup.cfg` 文件里 `metadata` 项目内的 `version` 改成 `x.y.z`。
 2. `git commit`
 3. `git tag -a x.y.z` 把最新的 commit 标记成 `x.y.z`。
-4. `git push --tag origin master` 把 commit 连同 tag 一起 push 到 GitHub repo；剩下的事交给 CD 就对了！
+4. `git push --tags origin master` 把 commit 连同 tag 一起 push 到 GitHub repo；剩下的事交给 CD 就对了！
