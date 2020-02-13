@@ -542,6 +542,7 @@ def BasicTokenize(code):
   
 
 CHINESE_DIGITS = {
+    '鸭蛋': 0,
     '零': 0,
     '一': 1,
     '二': 2,
