@@ -149,6 +149,10 @@ dongbei hello-world.dongbei
 
 要是你习惯以听歌的方式学习，请下载 dongbei 语言官方宣传歌曲[《Dongbei Style》](doc/Dongbei%20Style.mp3)（[歌词](doc/dongbei-style.md)）。
 
+这里还有一些精选的示范程序供大家参考：
+
+*  [快速排序](demo/快速排序.dongbei)
+
 ## 语言定义
 
 学习一门语言，先得了解它的**词法**（怎么从一串串的字符组成词），然后是**语法**（怎么把词组成句子）和**语义**（这些句子都啥意思啊？）。
