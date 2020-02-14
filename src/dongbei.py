@@ -69,7 +69,9 @@ KW_OPEN_PAREN_NARROW = '('
 KW_OPEN_QUOTE = '“'
 KW_PERIOD = '。'
 KW_PLUS = '加'
-KW_RAISE = '整叉劈了：' 
+KW_RAISE = '整叉劈了：'
+KW_REMOVE_HEAD = '掐头'
+KW_REMOVE_TAIL = '去尾'
 KW_RETURN = '滚犊子吧'
 KW_SAY = '唠唠'
 KW_STEP = '步'
@@ -133,6 +135,8 @@ KEYWORDS = (
   KW_OPEN_QUOTE,
   KW_PERIOD,
   KW_PLUS,
+  KW_REMOVE_HEAD,
+  KW_REMOVE_TAIL,
   KW_RETURN,
   KW_SAY,
   KW_STEP,
@@ -274,6 +278,33 @@ class LengthExpr(Expr):
   
   def ToPython(self):
     return f'len({self.expr.ToPython()})'
+
+class SubListExpr(Expr):
+  def __init__(self, list, remove_at_head, remove_at_tail):
+    self.list = list
+    self.remove_at_head = remove_at_head
+    self.remove_at_tail = remove_at_tail
+
+  def __str__(self):
+    return f'SUBLIST<{self.list}, {self.remove_at_head}, {self.remove_at_tail}>'
+
+  def Equals(self, other):
+    return (self.list == other.list and
+            self.remove_at_head == other.remove_at_head and
+            self.remove_at_tail == other.remove_at_tail)
+
+  def ToDongbei(self):
+    code = self.list.ToDongbei()
+    if self.remove_at_head:
+      code += KW_REMOVE_AT_HEAD
+    if self.remove_at_tail:
+      code += KW_REMOVE_AT_TAIL
+    return code
+  
+  def ToPython(self):
+    start_index = 1 if self.remove_at_head else 0
+    end_index = -1 if self.remove_at_tail else None
+    return f'({self.list.ToPython()})[{start_index} : {end_index}]'
 
 class IndexExpr(Expr):
   def __init__(self, list_expr, index_expr):
@@ -667,7 +698,8 @@ def ConsumeKeyword(keyword, tokens):
 #                TermExpr 乘 AtomicExpr |
 #                TermExpr 除以 AtomicExpr |
 #                TermExpr 齐整整地除以 AtomicExpr
-#   AtomicExpr ::= ObjectExpr | AtomicExpr 的老 ObjectExpr | AtomicExpr 有几个坑
+#   AtomicExpr ::= ObjectExpr | AtomicExpr 的老 ObjectExpr | AtomicExpr 有几个坑 |
+#                  AtomicExpr 掐头 | AtomicExpr 去尾
 #   ObjectExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr
 #   ParenExpr ::= （ Expr ）
 #   CallExpr ::= 整 Identifier |
@@ -769,6 +801,18 @@ def ParseAtomicExpr(tokens):
       expr = LengthExpr(expr)
       continue
 
+    # Parse 掐头
+    remove_head, tokens = TryConsumeKeyword(KW_REMOVE_HEAD, tokens)
+    if remove_head:
+      expr = SubListExpr(expr, 1, None)
+      continue
+
+    # Parse 去尾
+    remove_tail, tokens = TryConsumeKeyword(KW_REMOVE_TAIL, tokens)
+    if remove_head:
+      expr = SubListExpr(expr, None, 1)
+      continue
+    
     # Found neither 的老 or 有几个坑 after the expression.
     break
 
