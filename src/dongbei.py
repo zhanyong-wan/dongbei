@@ -809,7 +809,7 @@ def ParseAtomicExpr(tokens):
 
     # Parse 去尾
     remove_tail, tokens = TryConsumeKeyword(KW_REMOVE_TAIL, tokens)
-    if remove_head:
+    if remove_tail:
       expr = SubListExpr(expr, None, 1)
       continue
     

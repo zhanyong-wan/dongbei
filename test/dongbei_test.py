@@ -939,6 +939,22 @@ class DongbeiTest(unittest.TestCase):
 啥也不是
 ''')
 
+  def testSubList(self):
+    self.assertEqual(
+      Run('''
+张家庄都是活雷锋。
+张家庄来了个三。
+张家庄来了个五。
+张家庄来了个六。
+唠唠：张家庄掐头。
+唠唠：张家庄去尾。
+唠唠：张家庄。
+'''),
+          '''[5, 6]
+[3, 5]
+[3, 5, 6]
+''')
+
   def testArrayAppend(self):
     self.assertEqual(
       Run('''
