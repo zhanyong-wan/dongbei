@@ -80,8 +80,14 @@ dongbei 语言是基于 Python 3 二次开发的。
 用pip直接就能整上dongbei 。dongbei是Python3写的 ，建议使用pip3 。
 
 ```
-# 安装
+# 给这台电脑的所有用户安装
 pip3 install dongbei-lang
+
+# 只给自己安装
+pip3 install dongbei-lang --user
+
+# 更新到最新的 dongbei 版本。要是只给当前用户更新，加 --user
+pip3 install dongbei-lang --upgrade
 
 # 使用
 dongbei <xxx>.dongbei
@@ -142,6 +148,10 @@ dongbei hello-world.dongbei
 要是你以前有 dongbei 语言基础，或者不耐烦看文档，可以直扑 [dongbei 语言考试小抄](doc/cheatsheet.md)。
 
 要是你习惯以听歌的方式学习，请下载 dongbei 语言官方宣传歌曲[《Dongbei Style》](doc/Dongbei%20Style.mp3)（[歌词](doc/dongbei-style.md)）。
+
+这里还有一些精选的示范程序供大家参考：
+
+*  [快速排序](demo/快速排序.dongbei)
 
 ## 语言定义
 
