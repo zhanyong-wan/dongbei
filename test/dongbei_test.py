@@ -939,6 +939,15 @@ class DongbeiTest(unittest.TestCase):
 啥也不是
 ''')
 
+  def testArrayLiteral(self):
+    self.assertEqual(
+        Run('''
+张家庄这嘎瘩有 一，两，仨。 # 张家庄是个群众变量。初始值是[1, 2, 3]。
+唠唠：张家庄。
+'''),
+        '''[1, 2, 3]
+''')
+
   def testSubList(self):
     self.assertEqual(
       Run('''

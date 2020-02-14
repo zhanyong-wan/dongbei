@@ -20,6 +20,7 @@ KW_ASSERT = '保准'
 KW_ASSERT_FALSE = '辟谣'
 KW_BANG = '！'
 KW_BECOME = '装'
+KW_BECOME_LIST = '这嘎瘩有'
 KW_BEGIN = '开整：'
 KW_BREAK = '尥蹶子'
 KW_CALL = '整'
@@ -85,6 +86,7 @@ KEYWORDS = (
   KW_ASSERT_FALSE,
   KW_BANG,
   KW_BECOME,
+  KW_BECOME_LIST,
   KW_BEGIN,
   KW_BREAK,
   KW_CHECK,
@@ -1125,6 +1127,19 @@ def ParseStmt(tokens):
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return (Statement(STMT_ASSIGN, (expr1, expr)), tokens)
 
+    # Parse 这嘎瘩有
+    become_list, tokens = TryConsumeKeyword(KW_BECOME_LIST, tokens)
+    if become_list:
+      stmts = [Statement(STMT_LIST_VAR_DECL, id)]
+      while True:
+        expr, tokens = ParseExpr(tokens)
+        stmts.append(Statement(STMT_APPEND, (expr1, expr)))
+        try:
+          _, tokens = ConsumeKeyword(KW_COMMA, tokens)
+        except:
+          _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+          return (stmts, tokens)
+
     # Parse 来了个
     append, tokens = TryConsumeKeyword(KW_APPEND, tokens)
     if append:
@@ -1177,7 +1192,10 @@ def ParseStmts(tokens):
     stmt, tokens = ParseStmt(tokens)
     if not stmt:
       return stmts, tokens
-    stmts.append(stmt)
+    if type(stmt) is list:
+      stmts.extend(stmt)
+    else:
+      stmts.append(stmt)
 
 def TranslateStatementToPython(stmt, indent = ''):
   """Translates the statements to Python code, without trailing newline."""
