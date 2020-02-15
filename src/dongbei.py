@@ -20,7 +20,6 @@ KW_ASSERT = '保准'
 KW_ASSERT_FALSE = '辟谣'
 KW_BANG = '！'
 KW_BECOME = '装'
-KW_BECOME_LIST = '这嘎瘩有'
 KW_BEGIN = '开整：'
 KW_BREAK = '尥蹶子'
 KW_CALL = '整'
@@ -63,6 +62,7 @@ KW_IS_VAR = '是活雷锋'
 KW_LAST = '幺'
 KW_LENGTH = '有几个坑'
 KW_LESS = '小'
+KW_LIST = '群众'
 KW_LOOP = '磨叽：'
 KW_MINUS = '减'
 KW_MODULO = '刨掉一堆堆'
@@ -88,7 +88,6 @@ KEYWORDS = (
   KW_ASSERT_FALSE,
   KW_BANG,
   KW_BECOME,
-  KW_BECOME_LIST,
   KW_BEGIN,
   KW_BREAK,
   KW_CHECK,
@@ -132,6 +131,7 @@ KEYWORDS = (
   KW_LAST,
   KW_LENGTH,
   KW_LESS,
+  KW_LIST,
   KW_LOOP,
   KW_MINUS,
   KW_MODULO,
@@ -419,6 +419,20 @@ class VariableExpr(Expr):
 
   def ToPython(self):
     return GetPythonVarName(self.var)
+
+class ListExpr(Expr):
+  def __init__(self, exprs):
+    self.exprs = exprs
+
+  def __str__(self):
+    return 'LIST_EXPR<%s>' % (self.exprs,)
+
+  def ToDongbei(self):
+    return ' '.join(['群众'] + list(expr.ToDongbei() for expr in self.exprs))
+
+  def ToPython(self):
+    exprs_str = ', '.join(expr.ToPython() for expr in self.exprs)
+    return f'[{exprs_str}]'
 
 class ParenExpr(Expr):
   def __init__(self, expr):
@@ -928,6 +942,18 @@ def ParseNonConcatExpr(tokens):
   return arith, tokens
 
 def ParseExpr(tokens):
+  # Parse 群众
+  lst, tokens = TryConsumeKeyword(KW_LIST, tokens)
+  if lst:
+    exprs = []
+    while True:
+      expr, tokens = ParseExpr(tokens)
+      exprs.append(expr)
+      try:
+        _, tokens = ConsumeKeyword(KW_COMMA, tokens)
+      except:
+        return ListExpr(exprs), tokens
+
   nc_expr, tokens = ParseNonConcatExpr(tokens)
   if not nc_expr:
     return None, tokens
@@ -1147,19 +1173,6 @@ def ParseStmt(tokens):
       expr, tokens = ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_ASSIGN, (expr1, expr)), tokens
-
-    # Parse 这嘎瘩有
-    become_list, tokens = TryConsumeKeyword(KW_BECOME_LIST, tokens)
-    if become_list:
-      stmts = [Statement(STMT_LIST_VAR_DECL, id)]
-      while True:
-        expr, tokens = ParseExpr(tokens)
-        stmts.append(Statement(STMT_APPEND, (expr1, expr)))
-        try:
-          _, tokens = ConsumeKeyword(KW_COMMA, tokens)
-        except:
-          _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-          return (stmts, tokens)
 
     # Parse 来了个
     append, tokens = TryConsumeKeyword(KW_APPEND, tokens)
@@ -1435,4 +1448,3 @@ def main():
 
 if __name__ == '__main__':
   main()
-
