@@ -38,12 +38,14 @@ KW_CONCAT = '、'
 KW_CONTINUE = '接着磨叽'
 KW_DEC = '稍稍'
 KW_DEC_BY = '稍'
-KW_DELETE = '削'
+KW_DEL = '炮决'
+KW_SET_NONE = '削'
 KW_DIVIDE_BY = '除以'
 KW_ELSE = '要不行咧就'
 KW_END = '整完了'
 KW_END_LOOP = '磨叽完了'
 KW_EQUAL = '一样一样的'
+KW_EXTEND = '来了群'
 KW_FROM = '从'
 KW_FUNC_DEF = '咋整：'
 KW_GREATER = '大'
@@ -103,9 +105,11 @@ KEYWORDS = (
   KW_CONTINUE,
   KW_DEC,
   KW_DEC_BY,
-  KW_DELETE,
+  KW_DEL,
+  KW_SET_NONE,
   KW_DIVIDE_BY,
   KW_ELSE,
+  KW_EXTEND,
   KW_END,   # must match 整完了 before matching 整
   KW_RAISE,  # must match 整劈叉了 before matching 整
   KW_CALL,  # 整
@@ -174,7 +178,9 @@ STMT_COMPOUND = 'COMPOUND'
 STMT_CONDITIONAL = 'CONDITIONAL'
 STMT_CONTINUE = 'CONTINUE'
 STMT_DEC_BY = 'DEC_BY'
-STMT_DELETE = 'DELETE'
+STMT_DEL = 'DEL'
+STMT_SET_NONE = 'SET_NONE'
+STMT_EXTEND = 'EXTEND'
 STMT_FUNC_DEF = 'FUNC_DEF'
 STMT_IMPORT = 'IMPORT'
 STMT_INC_BY = 'INC_BY'
@@ -240,13 +246,21 @@ class Expr:
     """Translates this expression to Python."""
     raise Exception('%s must implement ToPython().' % (type(self),))
 
-def _dongbei_str(value):
-  """Converts a value to its dongbei string."""
+def _db_repr(value):
+  """Converts a value to its dongbei repr."""
   if value is None:
     return '啥也不是'
   if type(value) == bool:
     return '对' if value else '错'
-  return str(value)
+  if type(value) == list:
+    return '[' + ', '.join(map(_db_repr, value)) + ']'
+  return repr(value)
+
+def _db_str(value):
+  """Converts a value to its dongbei string."""
+  if type(value) == str:
+    return value
+  return _db_repr(value)
 
 class ConcatExpr(Expr):
   def __init__(self, exprs):
@@ -262,7 +276,7 @@ class ConcatExpr(Expr):
     return KW_CONCAT.join(expr.ToDongbei() for expr in self.exprs)
 
   def ToPython(self):
-    return ' + '.join('_dongbei_str(%s)' % (
+    return ' + '.join('_db_str(%s)' % (
         expr.ToPython(),) for expr in self.exprs)
 
 class LengthExpr(Expr):
@@ -595,11 +609,11 @@ CHINESE_DIGITS = {
 def ParseInteger(str):
   m = re.match(r'^([0-9]+)(.*)', str)
   if m:
-    return (int(m.group(1)), m.group(2))
+    return int(m.group(1)), m.group(2)
   for chinese_digit, value in CHINESE_DIGITS.items():
     if str.startswith(chinese_digit):
-      return (value, str[len(chinese_digit):])
-  return (None, str)
+      return value, str[len(chinese_digit):]
+  return None, str
     
 def ParseChars(chars):
   integer, rest = ParseInteger(chars)
@@ -652,10 +666,10 @@ def GetPythonVarName(var):
 
 def TryConsumeTokenType(tk_type, tokens):
   if not tokens:
-    return (None, tokens)
+    return None, tokens
   if tokens[0].kind == tk_type:
-    return (tokens[0], tokens[1:])
-  return (None, tokens)
+    return tokens[0], tokens[1:]
+  return None, tokens
 
 def ConsumeTokenType(tk_type, tokens):
   tk, tokens = TryConsumeTokenType(tk_type, tokens)
@@ -665,10 +679,10 @@ def ConsumeTokenType(tk_type, tokens):
     
 def TryConsumeToken(token, tokens):
   if not tokens:
-    return (None, tokens)
+    return None, tokens
   if token != tokens[0]:
-    return (None, tokens)
-  return (token, tokens[1:])
+    return None, tokens
+  return token, tokens[1:]
 
 def TryConsumeKeyword(keyword, tokens):
   return TryConsumeToken(Keyword(keyword), tokens)
@@ -987,11 +1001,18 @@ def ParseStmt(tokens):
     return Statement(STMT_RAISE, expr), tokens
 
   # Parse 削：
-  delete, tokens = TryConsumeKeyword(KW_DELETE, tokens)
-  if delete:
-    var, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+  set_none, tokens = TryConsumeKeyword(KW_SET_NONE, tokens)
+  if set_none:
+    expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_DELETE, var), tokens
+    return Statement(STMT_SET_NONE, expr), tokens
+
+  # Parse 炮决：
+  del_, tokens = TryConsumeKeyword(KW_DEL, tokens)
+  if del_:
+    expr, tokens = ParseExpr(tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return Statement(STMT_DEL, expr), tokens
 
   # Parse 唠唠：
   say, tokens = TryConsumeKeyword(KW_SAY, tokens)
@@ -999,7 +1020,7 @@ def ParseStmt(tokens):
     colon, tokens = ConsumeKeyword(KW_COLON, tokens)
     expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_SAY, expr), tokens)
+    return Statement(STMT_SAY, expr), tokens
 
   # Parse 整
   call_expr, tokens = ParseCallExpr(tokens)
@@ -1012,7 +1033,7 @@ def ParseStmt(tokens):
   if ret:
     expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_RETURN, expr), tokens)
+    return Statement(STMT_RETURN, expr), tokens
 
   # Parse 接着磨叽
   cont, tokens = TryConsumeKeyword(KW_CONTINUE, tokens)
@@ -1050,13 +1071,13 @@ def ParseStmt(tokens):
     is_var, tokens = TryConsumeKeyword(KW_IS_VAR, tokens)
     if is_var:
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_VAR_DECL, id), tokens)
+      return Statement(STMT_VAR_DECL, id), tokens
 
     # Parse 都是活雷锋
     is_list, tokens = TryConsumeKeyword(KW_IS_LIST, tokens)
     if is_list:
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_LIST_VAR_DECL, id), tokens)
+      return Statement(STMT_LIST_VAR_DECL, id), tokens
 
     # Parse 咋整
     open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
@@ -1075,14 +1096,14 @@ def ParseStmt(tokens):
       stmts, tokens = ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens)
+      return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
 
     func_def, tokens = TryConsumeKeyword(KW_FUNC_DEF, tokens)
     if func_def:
       stmts, tokens = ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_FUNC_DEF, (id, [], stmts)), tokens)
+      return Statement(STMT_FUNC_DEF, (id, [], stmts)), tokens
 
   expr1, tokens = ParseExpr(orig_tokens)
   if expr1:
@@ -1098,7 +1119,7 @@ def ParseStmt(tokens):
       stmts, tokens = ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_LOOP, (expr1, from_expr, to_expr, stmts)), tokens)
+      return Statement(STMT_LOOP, (expr1, from_expr, to_expr, stmts)), tokens
 
     # Parse 在...磨叽
     in_, tokens = TryConsumeKeyword(KW_IN, tokens)
@@ -1108,7 +1129,7 @@ def ParseStmt(tokens):
       stmts, tokens = ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_RANGE_LOOP, (expr1, range_expr, stmts)), tokens)
+      return Statement(STMT_RANGE_LOOP, (expr1, range_expr, stmts)), tokens
 
     # Parse 从一而终磨叽 or the '1 Infinite Loop' 彩蛋
     infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP, tokens)
@@ -1125,7 +1146,7 @@ def ParseStmt(tokens):
     if become:
       expr, tokens = ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_ASSIGN, (expr1, expr)), tokens)
+      return Statement(STMT_ASSIGN, (expr1, expr)), tokens
 
     # Parse 这嘎瘩有
     become_list, tokens = TryConsumeKeyword(KW_BECOME_LIST, tokens)
@@ -1145,7 +1166,14 @@ def ParseStmt(tokens):
     if append:
       expr, tokens = ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_APPEND, (expr1, expr)), tokens)
+      return Statement(STMT_APPEND, (expr1, expr)), tokens
+
+    # Parse 来了群
+    extend, tokens = TryConsumeKeyword(KW_EXTEND, tokens)
+    if extend:
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_EXTEND, (expr1, expr)), tokens
 
     # Parse 走走
     inc, tokens = TryConsumeKeyword(KW_INC, tokens)
@@ -1161,7 +1189,7 @@ def ParseStmt(tokens):
       expr, tokens = ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_STEP, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_INC_BY, (expr1, expr)), tokens)
+      return Statement(STMT_INC_BY, (expr1, expr)), tokens
 
     # Parse 稍稍
     dec, tokens = TryConsumeKeyword(KW_DEC, tokens)
@@ -1177,9 +1205,9 @@ def ParseStmt(tokens):
       expr, tokens = ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_STEP, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_DEC_BY, (expr1, expr)), tokens)
+      return Statement(STMT_DEC_BY, (expr1, expr)), tokens
 
-  return (None, orig_tokens)
+  return None, orig_tokens
 
 def ParseStmtFromStr(tokens):
   return ParseStmt(list(Tokenize(tokens)))
@@ -1220,9 +1248,14 @@ def TranslateStatementToPython(stmt, indent = ''):
     var = var_expr.ToPython()
     return indent + '(%s).append(%s)' % (var, expr.ToPython())
 
+  if stmt.kind == STMT_EXTEND:
+    var_expr, expr = stmt.value
+    var = var_expr.ToPython()
+    return indent + '(%s).extend(%s)' % (var, expr.ToPython())
+
   if stmt.kind == STMT_SAY:
     expr = stmt.value
-    return indent + '_db_append_output("%%s\\n" %% (_dongbei_str(%s),))' % (
+    return indent + '_db_append_output("%%s\\n" %% (_db_str(%s),))' % (
         expr.ToPython(),)
 
   if stmt.kind == STMT_INC_BY:
@@ -1309,8 +1342,11 @@ def TranslateStatementToPython(stmt, indent = ''):
       code += TranslateStatementToPython(else_stmt, indent + '  ')
     return code
 
-  if stmt.kind == STMT_DELETE:
-    return indent + GetPythonVarName(stmt.value.value) + ' = None'
+  if stmt.kind == STMT_SET_NONE:
+    return indent + stmt.value.ToPython() + ' = None'
+
+  if stmt.kind == STMT_DEL:
+    return indent + 'del ' + stmt.value.ToPython()
 
   if stmt.kind == STMT_IMPORT:
     return indent + f'import {stmt.value.value}'

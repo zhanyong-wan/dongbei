@@ -725,6 +725,15 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
       Run('老王是活雷锋。老王装二。削老王！唠唠：老王。'),
       '啥也不是\n')
+    self.assertEqual(
+      Run('''
+张家庄都是活雷锋。
+张家庄来了个二。
+张家庄来了个三。
+削张家庄的老大！
+唠唠：张家庄。
+'''),
+      '[啥也不是, 3]\n')
 
   def testIntegerLiteral(self):
     self.assertEqual(
@@ -976,6 +985,39 @@ class DongbeiTest(unittest.TestCase):
 '''),
       '''[5]
 [[5]]
+''')
+
+  def testArrayExtend(self):
+    self.assertEqual(
+      Run('''
+张家庄都是活雷锋。  # []
+李家村都是活雷锋。  # []
+李家村来了个二。  # [2]
+李家村来了个五。  # [2, 5]
+张家庄来了群李家村。 # [2, 5]
+张家庄来了群李家村。 # [2, 5, 2, 5]
+唠唠：张家庄。
+'''),
+      '''[2, 5, 2, 5]
+''')
+
+  def testDel(self):
+    self.assertTrue(
+      '整叉劈了' in
+      Run('''
+老王是活雷锋。
+炮决老王。
+唠唠：老王。
+'''))
+    self.assertEqual(
+      Run('''
+张家庄都是活雷锋。
+张家庄来了个五。
+张家庄来了个六。
+炮决张家庄的老大。
+唠唠：张家庄。
+'''),
+      '''[6]
 ''')
 
   def testRecursiveFunc(self):
