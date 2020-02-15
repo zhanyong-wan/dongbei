@@ -1232,10 +1232,7 @@ def ParseStmts(tokens):
     stmt, tokens = ParseStmt(tokens)
     if not stmt:
       return stmts, tokens
-    if type(stmt) is list:
-      stmts.extend(stmt)
-    else:
-      stmts.append(stmt)
+    stmts.append(stmt)
 
 def TranslateStatementToPython(stmt, indent = ''):
   """Translates the statements to Python code, without trailing newline."""
