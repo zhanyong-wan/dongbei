@@ -1000,9 +1000,9 @@ def ParseStmt(tokens):
   # Parse 炮决：
   del_, tokens = TryConsumeKeyword(KW_DEL, tokens)
   if del_:
-    var, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+    expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_DEL, var), tokens
+    return Statement(STMT_DEL, expr), tokens
 
   # Parse 唠唠：
   say, tokens = TryConsumeKeyword(KW_SAY, tokens)
@@ -1320,7 +1320,7 @@ def TranslateStatementToPython(stmt, indent = ''):
     return indent + GetPythonVarName(stmt.value.value) + ' = None'
 
   if stmt.kind == STMT_DEL:
-    return indent + 'del ' + GetPythonVarName(stmt.value.value)
+    return indent + 'del ' + stmt.value.ToPython()
 
   if stmt.kind == STMT_IMPORT:
     return indent + f'import {stmt.value.value}'

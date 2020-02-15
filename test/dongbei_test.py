@@ -991,6 +991,16 @@ class DongbeiTest(unittest.TestCase):
 炮决老王。
 唠唠：老王。
 '''))
+    self.assertEqual(
+      Run('''
+张家庄都是活雷锋。
+张家庄来了个五。
+张家庄来了个六。
+炮决张家庄的老大。
+唠唠：张家庄。
+'''),
+      '''[6]
+''')
 
   def testRecursiveFunc(self):
     self.assertEqual(
