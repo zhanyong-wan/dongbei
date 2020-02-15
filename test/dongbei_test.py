@@ -725,6 +725,15 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
       Run('老王是活雷锋。老王装二。削老王！唠唠：老王。'),
       '啥也不是\n')
+    self.assertEqual(
+      Run('''
+张家庄都是活雷锋。
+张家庄来了个二。
+张家庄来了个三。
+削张家庄的老大！
+唠唠：张家庄。
+'''),
+      '[啥也不是, 3]\n')
 
   def testIntegerLiteral(self):
     self.assertEqual(

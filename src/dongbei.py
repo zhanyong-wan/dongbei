@@ -244,13 +244,21 @@ class Expr:
     """Translates this expression to Python."""
     raise Exception('%s must implement ToPython().' % (type(self),))
 
-def _dongbei_str(value):
-  """Converts a value to its dongbei string."""
+def _db_repr(value):
+  """Converts a value to its dongbei repr."""
   if value is None:
     return '啥也不是'
   if type(value) == bool:
     return '对' if value else '错'
-  return str(value)
+  if type(value) == list:
+    return '[' + ', '.join(map(_db_repr, value)) + ']'
+  return repr(value)
+
+def _db_str(value):
+  """Converts a value to its dongbei string."""
+  if type(value) == str:
+    return value
+  return _db_repr(value)
 
 class ConcatExpr(Expr):
   def __init__(self, exprs):
@@ -266,7 +274,7 @@ class ConcatExpr(Expr):
     return KW_CONCAT.join(expr.ToDongbei() for expr in self.exprs)
 
   def ToPython(self):
-    return ' + '.join('_dongbei_str(%s)' % (
+    return ' + '.join('_db_str(%s)' % (
         expr.ToPython(),) for expr in self.exprs)
 
 class LengthExpr(Expr):
@@ -993,9 +1001,9 @@ def ParseStmt(tokens):
   # Parse 削：
   set_none, tokens = TryConsumeKeyword(KW_SET_NONE, tokens)
   if set_none:
-    var, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+    expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_SET_NONE, var), tokens
+    return Statement(STMT_SET_NONE, expr), tokens
 
   # Parse 炮决：
   del_, tokens = TryConsumeKeyword(KW_DEL, tokens)
@@ -1229,7 +1237,7 @@ def TranslateStatementToPython(stmt, indent = ''):
 
   if stmt.kind == STMT_SAY:
     expr = stmt.value
-    return indent + '_db_append_output("%%s\\n" %% (_dongbei_str(%s),))' % (
+    return indent + '_db_append_output("%%s\\n" %% (_db_str(%s),))' % (
         expr.ToPython(),)
 
   if stmt.kind == STMT_INC_BY:
@@ -1317,7 +1325,7 @@ def TranslateStatementToPython(stmt, indent = ''):
     return code
 
   if stmt.kind == STMT_SET_NONE:
-    return indent + GetPythonVarName(stmt.value.value) + ' = None'
+    return indent + stmt.value.ToPython() + ' = None'
 
   if stmt.kind == STMT_DEL:
     return indent + 'del ' + stmt.value.ToPython()
