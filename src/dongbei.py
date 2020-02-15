@@ -431,8 +431,7 @@ class ListExpr(Expr):
     return ' '.join(['群众'] + list(expr.ToDongbei() for expr in self.exprs))
 
   def ToPython(self):
-    exprs_str = ', '.join(expr.ToPython() for expr in self.exprs)
-    return f'[{exprs_str}]'
+    return f"[{', '.join(expr.ToPython() for expr in self.exprs)}]"
 
 class ParenExpr(Expr):
   def __init__(self, expr):
