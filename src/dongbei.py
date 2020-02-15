@@ -43,6 +43,7 @@ KW_ELSE = '要不行咧就'
 KW_END = '整完了'
 KW_END_LOOP = '磨叽完了'
 KW_EQUAL = '一样一样的'
+KW_EXTEND = '来了群'
 KW_FROM = '从'
 KW_FUNC_DEF = '咋整：'
 KW_GREATER = '大'
@@ -104,6 +105,7 @@ KEYWORDS = (
   KW_DELETE,
   KW_DIVIDE_BY,
   KW_ELSE,
+  KW_EXTEND,
   KW_END,   # must match 整完了 before matching 整
   KW_RAISE,  # must match 整劈叉了 before matching 整
   KW_CALL,  # 整
@@ -173,6 +175,7 @@ STMT_CONDITIONAL = 'CONDITIONAL'
 STMT_CONTINUE = 'CONTINUE'
 STMT_DEC_BY = 'DEC_BY'
 STMT_DELETE = 'DELETE'
+STMT_EXTEND = 'EXTEND'
 STMT_FUNC_DEF = 'FUNC_DEF'
 STMT_IMPORT = 'IMPORT'
 STMT_INC_BY = 'INC_BY'
@@ -1132,6 +1135,13 @@ def ParseStmt(tokens):
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return (Statement(STMT_APPEND, (expr1, expr)), tokens)
 
+    # Parse 来了群
+    extend, tokens = TryConsumeKeyword(KW_EXTEND, tokens)
+    if extend:
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return (Statement(STMT_EXTEND, (expr1, expr)), tokens)
+
     # Parse 走走
     inc, tokens = TryConsumeKeyword(KW_INC, tokens)
     if inc:
@@ -1201,6 +1211,11 @@ def TranslateStatementToPython(stmt, indent = ''):
     var_expr, expr = stmt.value
     var = var_expr.ToPython()
     return indent + '(%s).append(%s)' % (var, expr.ToPython())
+
+  if stmt.kind == STMT_EXTEND:
+    var_expr, expr = stmt.value
+    var = var_expr.ToPython()
+    return indent + '(%s).extend(%s)' % (var, expr.ToPython())
 
   if stmt.kind == STMT_SAY:
     expr = stmt.value

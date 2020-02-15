@@ -969,6 +969,20 @@ class DongbeiTest(unittest.TestCase):
 [[5]]
 ''')
 
+  def testArrayExtend(self):
+    self.assertEqual(
+      Run('''
+张家庄都是活雷锋。  # []
+李家村都是活雷锋。  # []
+李家村来了个二。  # [2]
+李家村来了个五。  # [2, 5]
+张家庄来了群李家村。 # [2, 5]
+张家庄来了群李家村。 # [2, 5, 2, 5]
+唠唠：张家庄。
+'''),
+      '''[2, 5, 2, 5]
+''')
+
   def testRecursiveFunc(self):
     self.assertEqual(
         Run('''
