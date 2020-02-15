@@ -983,6 +983,15 @@ class DongbeiTest(unittest.TestCase):
       '''[2, 5, 2, 5]
 ''')
 
+  def testDel(self):
+    self.assertTrue(
+      '整叉劈了' in
+      Run('''
+老王是活雷锋。
+炮决老王。
+唠唠：老王。
+'''))
+
   def testRecursiveFunc(self):
     self.assertEqual(
         Run('''

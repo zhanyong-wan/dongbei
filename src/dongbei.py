@@ -37,7 +37,8 @@ KW_CONCAT = '、'
 KW_CONTINUE = '接着磨叽'
 KW_DEC = '稍稍'
 KW_DEC_BY = '稍'
-KW_DELETE = '削'
+KW_DEL = '炮决'
+KW_SET_NONE = '削'
 KW_DIVIDE_BY = '除以'
 KW_ELSE = '要不行咧就'
 KW_END = '整完了'
@@ -102,7 +103,8 @@ KEYWORDS = (
   KW_CONTINUE,
   KW_DEC,
   KW_DEC_BY,
-  KW_DELETE,
+  KW_DEL,
+  KW_SET_NONE,
   KW_DIVIDE_BY,
   KW_ELSE,
   KW_EXTEND,
@@ -174,7 +176,8 @@ STMT_COMPOUND = 'COMPOUND'
 STMT_CONDITIONAL = 'CONDITIONAL'
 STMT_CONTINUE = 'CONTINUE'
 STMT_DEC_BY = 'DEC_BY'
-STMT_DELETE = 'DELETE'
+STMT_DEL = 'DEL'
+STMT_SET_NONE = 'SET_NONE'
 STMT_EXTEND = 'EXTEND'
 STMT_FUNC_DEF = 'FUNC_DEF'
 STMT_IMPORT = 'IMPORT'
@@ -988,11 +991,18 @@ def ParseStmt(tokens):
     return Statement(STMT_RAISE, expr), tokens
 
   # Parse 削：
-  delete, tokens = TryConsumeKeyword(KW_DELETE, tokens)
-  if delete:
+  set_none, tokens = TryConsumeKeyword(KW_SET_NONE, tokens)
+  if set_none:
     var, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_DELETE, var), tokens
+    return Statement(STMT_SET_NONE, var), tokens
+
+  # Parse 炮决：
+  del_, tokens = TryConsumeKeyword(KW_DEL, tokens)
+  if del_:
+    var, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return Statement(STMT_DEL, var), tokens
 
   # Parse 唠唠：
   say, tokens = TryConsumeKeyword(KW_SAY, tokens)
@@ -1306,8 +1316,11 @@ def TranslateStatementToPython(stmt, indent = ''):
       code += TranslateStatementToPython(else_stmt, indent + '  ')
     return code
 
-  if stmt.kind == STMT_DELETE:
+  if stmt.kind == STMT_SET_NONE:
     return indent + GetPythonVarName(stmt.value.value) + ' = None'
+
+  if stmt.kind == STMT_DEL:
+    return indent + 'del ' + GetPythonVarName(stmt.value.value)
 
   if stmt.kind == STMT_IMPORT:
     return indent + f'import {stmt.value.value}'
