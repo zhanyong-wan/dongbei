@@ -607,11 +607,11 @@ CHINESE_DIGITS = {
 def ParseInteger(str):
   m = re.match(r'^([0-9]+)(.*)', str)
   if m:
-    return (int(m.group(1)), m.group(2))
+    return int(m.group(1)), m.group(2)
   for chinese_digit, value in CHINESE_DIGITS.items():
     if str.startswith(chinese_digit):
-      return (value, str[len(chinese_digit):])
-  return (None, str)
+      return value, str[len(chinese_digit):]
+  return None, str
     
 def ParseChars(chars):
   integer, rest = ParseInteger(chars)
@@ -664,10 +664,10 @@ def GetPythonVarName(var):
 
 def TryConsumeTokenType(tk_type, tokens):
   if not tokens:
-    return (None, tokens)
+    return None, tokens
   if tokens[0].kind == tk_type:
-    return (tokens[0], tokens[1:])
-  return (None, tokens)
+    return tokens[0], tokens[1:]
+  return None, tokens
 
 def ConsumeTokenType(tk_type, tokens):
   tk, tokens = TryConsumeTokenType(tk_type, tokens)
@@ -677,10 +677,10 @@ def ConsumeTokenType(tk_type, tokens):
     
 def TryConsumeToken(token, tokens):
   if not tokens:
-    return (None, tokens)
+    return None, tokens
   if token != tokens[0]:
-    return (None, tokens)
-  return (token, tokens[1:])
+    return None, tokens
+  return token, tokens[1:]
 
 def TryConsumeKeyword(keyword, tokens):
   return TryConsumeToken(Keyword(keyword), tokens)
@@ -1018,7 +1018,7 @@ def ParseStmt(tokens):
     colon, tokens = ConsumeKeyword(KW_COLON, tokens)
     expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_SAY, expr), tokens)
+    return Statement(STMT_SAY, expr), tokens
 
   # Parse 整
   call_expr, tokens = ParseCallExpr(tokens)
@@ -1031,7 +1031,7 @@ def ParseStmt(tokens):
   if ret:
     expr, tokens = ParseExpr(tokens)
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return (Statement(STMT_RETURN, expr), tokens)
+    return Statement(STMT_RETURN, expr), tokens
 
   # Parse 接着磨叽
   cont, tokens = TryConsumeKeyword(KW_CONTINUE, tokens)
@@ -1069,13 +1069,13 @@ def ParseStmt(tokens):
     is_var, tokens = TryConsumeKeyword(KW_IS_VAR, tokens)
     if is_var:
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_VAR_DECL, id), tokens)
+      return Statement(STMT_VAR_DECL, id), tokens
 
     # Parse 都是活雷锋
     is_list, tokens = TryConsumeKeyword(KW_IS_LIST, tokens)
     if is_list:
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_LIST_VAR_DECL, id), tokens)
+      return Statement(STMT_LIST_VAR_DECL, id), tokens
 
     # Parse 咋整
     open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
@@ -1094,14 +1094,14 @@ def ParseStmt(tokens):
       stmts, tokens = ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens)
+      return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
 
     func_def, tokens = TryConsumeKeyword(KW_FUNC_DEF, tokens)
     if func_def:
       stmts, tokens = ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_FUNC_DEF, (id, [], stmts)), tokens)
+      return Statement(STMT_FUNC_DEF, (id, [], stmts)), tokens
 
   expr1, tokens = ParseExpr(orig_tokens)
   if expr1:
@@ -1117,7 +1117,7 @@ def ParseStmt(tokens):
       stmts, tokens = ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_LOOP, (expr1, from_expr, to_expr, stmts)), tokens)
+      return Statement(STMT_LOOP, (expr1, from_expr, to_expr, stmts)), tokens
 
     # Parse 在...磨叽
     in_, tokens = TryConsumeKeyword(KW_IN, tokens)
@@ -1127,7 +1127,7 @@ def ParseStmt(tokens):
       stmts, tokens = ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_RANGE_LOOP, (expr1, range_expr, stmts)), tokens)
+      return Statement(STMT_RANGE_LOOP, (expr1, range_expr, stmts)), tokens
 
     # Parse 从一而终磨叽 or the '1 Infinite Loop' 彩蛋
     infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP, tokens)
@@ -1144,21 +1144,21 @@ def ParseStmt(tokens):
     if become:
       expr, tokens = ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_ASSIGN, (expr1, expr)), tokens)
+      return Statement(STMT_ASSIGN, (expr1, expr)), tokens
 
     # Parse 来了个
     append, tokens = TryConsumeKeyword(KW_APPEND, tokens)
     if append:
       expr, tokens = ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_APPEND, (expr1, expr)), tokens)
+      return Statement(STMT_APPEND, (expr1, expr)), tokens
 
     # Parse 来了群
     extend, tokens = TryConsumeKeyword(KW_EXTEND, tokens)
     if extend:
       expr, tokens = ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_EXTEND, (expr1, expr)), tokens)
+      return Statement(STMT_EXTEND, (expr1, expr)), tokens
 
     # Parse 走走
     inc, tokens = TryConsumeKeyword(KW_INC, tokens)
@@ -1174,7 +1174,7 @@ def ParseStmt(tokens):
       expr, tokens = ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_STEP, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_INC_BY, (expr1, expr)), tokens)
+      return Statement(STMT_INC_BY, (expr1, expr)), tokens
 
     # Parse 稍稍
     dec, tokens = TryConsumeKeyword(KW_DEC, tokens)
@@ -1190,9 +1190,9 @@ def ParseStmt(tokens):
       expr, tokens = ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_STEP, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_DEC_BY, (expr1, expr)), tokens)
+      return Statement(STMT_DEC_BY, (expr1, expr)), tokens
 
-  return (None, orig_tokens)
+  return None, orig_tokens
 
 def ParseStmtFromStr(tokens):
   return ParseStmt(list(Tokenize(tokens)))
