@@ -696,24 +696,16 @@ def Tokenize(code):
   for tk in ParseChars(chars):
     yield tk
     
-# Maps Chinese identifier to generated identifier.
+# Maps a dongbei identifier to its corresponding Python identifier.
 _db_vars = {
   '最高指示': 'sys.argv',
 }
 
 def GetPythonVarName(var):
-  if re.match(r'[_a-zA-Z]', var):
-    # var starts with a letter or _.  Don't translate it.
-    return var
-
-  # var is a Chinese identifier.
-
   if var in _db_vars:
     return _db_vars[var]
 
-  generated_var = '_db_var%d' % (len(_db_vars),)
-  _db_vars[var] = generated_var
-  return generated_var
+  return var
 
 def TryConsumeTokenType(tk_type, tokens):
   if not tokens:
