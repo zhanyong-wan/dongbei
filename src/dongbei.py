@@ -310,9 +310,9 @@ class SubListExpr(Expr):
   def ToDongbei(self):
     code = self.list.ToDongbei()
     if self.remove_at_head:
-      code += KW_REMOVE_AT_HEAD
+      code += KW_REMOVE_HEAD
     if self.remove_at_tail:
-      code += KW_REMOVE_AT_TAIL
+      code += KW_REMOVE_TAIL
     return code
   
   def ToPython(self):
@@ -484,7 +484,7 @@ class ComparisonExpr(Expr):
   def ToDongbei(self):
     code = self.op1.ToDongbei()
     if self.relation.value == KW_IS_NONE:
-      return code + KW_IS_CONE
+      return code + KW_IS_NONE
     if self.relation.value in (KW_GREATER, KW_LESS):
       connector = KW_COMPARE
     else:
