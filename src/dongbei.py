@@ -260,21 +260,21 @@ class Expr:
     """Translates this expression to Python."""
     raise Exception('%s must implement ToPython().' % (type(self),))
 
-def _db_repr(value):
+def _dongbei_repr(value):
   """Converts a value to its dongbei repr."""
   if value is None:
     return '啥也不是'
   if type(value) == bool:
     return '没毛病' if value else '有毛病'
   if type(value) == list:
-    return '「' + ', '.join(map(_db_repr, value)) + '」'
+    return '「' + ', '.join(map(_dongbei_repr, value)) + '」'
   return repr(value)
 
-def _db_str(value):
+def _dongbei_str(value):
   """Converts a value to its dongbei string."""
   if type(value) == str:
     return value
-  return _db_repr(value)
+  return _dongbei_repr(value)
 
 class ConcatExpr(Expr):
   def __init__(self, exprs):
@@ -290,7 +290,7 @@ class ConcatExpr(Expr):
     return KW_CONCAT.join(expr.ToDongbei() for expr in self.exprs)
 
   def ToPython(self):
-    return ' + '.join('_db_str(%s)' % (
+    return ' + '.join('_dongbei_str(%s)' % (
         expr.ToPython(),) for expr in self.exprs)
 
 class LengthExpr(Expr):
@@ -724,15 +724,15 @@ ID_INIT = '新对象'
 ID_SELF = '俺'
 
 # Maps a dongbei identifier to its corresponding Python identifier.
-_db_var_to_python_var = {
+_dongbei_var_to_python_var = {
   ID_ARGV: 'sys.argv',
   ID_INIT: '__init__',
   ID_SELF: 'self',
 }
 
 def GetPythonVarName(var):
-  if var in _db_var_to_python_var:
-    return _db_var_to_python_var[var]
+  if var in _dongbei_var_to_python_var:
+    return _dongbei_var_to_python_var[var]
 
   return var
 
@@ -1378,7 +1378,7 @@ def TranslateStatementToPython(stmt, indent = ''):
 
   if stmt.kind == STMT_SAY:
     expr = stmt.value
-    return indent + '_db_append_output("%%s\\n" %% (_db_str(%s),))' % (
+    return indent + '_dongbei_append_output("%%s\\n" %% (_dongbei_str(%s),))' % (
         expr.ToPython(),)
 
   if stmt.kind == STMT_INC_BY:
@@ -1417,7 +1417,7 @@ def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_INFINITE_LOOP:
     var_expr, stmts = stmt.value
     var = var_expr.ToPython()
-    loop = indent + 'for %s in _db_1_infinite_loop():' % (var,)
+    loop = indent + 'for %s in _dongbei_1_infinite_loop():' % (var,)
     for s in stmts:
       loop += '\n' + TranslateStatementToPython(s, indent + '  ')
     if not stmts:
@@ -1517,12 +1517,12 @@ def ParseToAst(code):
   assert not tokens, ('多余符号：%s' % (tokens,))
   return statements
 
-_db_output = ''
-def _db_append_output(s):
-  global _db_output
-  _db_output += s
+_dongbei_output = ''
+def _dongbei_append_output(s):
+  global _dongbei_output
+  _dongbei_output += s
 
-def _db_1_infinite_loop():
+def _dongbei_1_infinite_loop():
   while True:
     yield 1
 
@@ -1535,19 +1535,19 @@ def Run(code, xudao=False):
   if xudao:
     print('Python 代码：')
     print('%s' % (py_code,))
-  global _db_output
-  _db_output = ''
+  global _dongbei_output
+  _dongbei_output = ''
   # See https://stackoverflow.com/questions/871887/using-exec-with-recursive-functions
   # Use the same dictionary for local and global definitions.
   # Needed for defining recursive dongbei functions.
   try:
     exec(py_code, globals(), globals())
   except Exception as e:
-    _db_output += f'\n整叉劈了：{e}\n'
+    _dongbei_output += f'\n整叉劈了：{e}\n'
   if xudao:
     print('运行结果：')
-  print('%s' % (_db_output,))
-  return _db_output
+  print('%s' % (_dongbei_output,))
+  return _dongbei_output
 
 def main():
   if len(sys.argv) == 1:
