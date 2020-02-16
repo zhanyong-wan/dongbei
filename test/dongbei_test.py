@@ -1020,6 +1020,12 @@ class DongbeiTest(unittest.TestCase):
       '[]\n')
     self.assertEqual(
       Run('''
+        张家庄 装 路银「」。
+        唠唠：张家庄。
+      '''),
+      '[]\n')
+    self.assertEqual(
+      Run('''
         张家庄 装 「1，二加三，五减一」。
         唠唠：张家庄。
       '''),
@@ -1031,7 +1037,7 @@ class DongbeiTest(unittest.TestCase):
         唠唠：张家庄。
         张家庄 来了群 「」。
         唠唠：张家庄。
-        张家庄 来了群 「7，8」。
+        张家庄 来了群路银 「7，8」。
         唠唠：张家庄。
       '''),
       '''[1, 5, 4]
