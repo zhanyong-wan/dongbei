@@ -1134,5 +1134,31 @@ class DongbeiTest(unittest.TestCase):
       '''class Foo(Xyz):
   pass''')
 
+  def testCtorDef(self):
+    self.assertEqual(
+      TranslateDongbeiToPython('''
+      无产阶级的接班银有名阶级咋整：
+        新对象咋整：
+        整完了。
+      整完了。
+      '''),
+      '''class 有名:
+
+  def __init__(self):
+    pass''')
+
+    self.assertEqual(
+      TranslateDongbeiToPython('''
+      有名阶级的接班银特有名阶级咋整：
+        新对象（名字）咋整：
+          俺的名字装名字。
+        整完了。
+      整完了。
+      '''),
+      '''class 特有名(有名):
+
+  def __init__(self, 名字):
+    (self).名字 = 名字''')
+
 if __name__ == '__main__':
   unittest.main()

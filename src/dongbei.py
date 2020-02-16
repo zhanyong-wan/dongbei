@@ -40,6 +40,7 @@ KW_CONTINUE = '接着磨叽'
 KW_DEC = '稍稍'
 KW_DEC_BY = '稍'
 KW_DEL = '炮决'
+KW_DOT = '的'
 KW_SET_NONE = '削'
 KW_DERIVED = '的接班银'
 KW_DIVIDE_BY = '除以'
@@ -131,7 +132,8 @@ KEYWORDS = (
   KW_IN,
   KW_INC,
   KW_INC_BY,
-  KW_INDEX,
+  KW_INDEX,  # must match 的老 before 的
+  KW_DOT,
   KW_INTEGER_DIVIDE_BY,
   KW_IS_LIST,
   KW_IS_NONE,
@@ -370,6 +372,27 @@ class IndexExpr(Expr):
 
   def ToPython(self):
     return f'({self.list_expr.ToPython()})[({self.index_expr.ToPython()}) - 1]'
+
+class ObjectPropertyExpr(Expr):
+  def __init__(self, object, property):
+    self.object = object
+    self.property = property
+
+  def __str__(self):
+    return f'PROPERTY_EXPR<{self.object}, {self.property}>'
+
+  def Equals(self, other):
+    return self.object == other.object and self.property == other.property
+
+  def ToDongbei(self):
+    obj = self.object.ToDongbei()
+    prop = f'【{self.property.value}】'
+    return f'{obj}{KW_DOT}{prop}'
+
+  def ToPython(self):
+    obj = self.object.ToPython()
+    prop = GetPythonVarName(self.property.value)
+    return f'({obj}).{prop}'
 
 ARITHMETIC_OPERATION_TO_PYTHON = {
     KW_PLUS: '+',
@@ -695,15 +718,21 @@ def Tokenize(code):
       chars = ''
   for tk in ParseChars(chars):
     yield tk
-    
+
+ID_ARGV = '最高指示'
+ID_INIT = '新对象'
+ID_SELF = '俺'
+
 # Maps a dongbei identifier to its corresponding Python identifier.
-_db_vars = {
-  '最高指示': 'sys.argv',
+_db_var_to_python_var = {
+  ID_ARGV: 'sys.argv',
+  ID_INIT: '__init__',
+  ID_SELF: 'self',
 }
 
 def GetPythonVarName(var):
-  if var in _db_vars:
-    return _db_vars[var]
+  if var in _db_var_to_python_var:
+    return _db_var_to_python_var[var]
 
   return var
 
@@ -757,7 +786,8 @@ def ConsumeKeyword(keyword, tokens):
 #                TermExpr 乘 AtomicExpr |
 #                TermExpr 除以 AtomicExpr |
 #                TermExpr 齐整整地除以 AtomicExpr
-#   AtomicExpr ::= ObjectExpr | AtomicExpr 的老 ObjectExpr | AtomicExpr 有几个坑 |
+#   AtomicExpr ::= ObjectExpr | AtomicExpr 的老 ObjectExpr | AtomicExpr 的 Identifier |
+#                  AtomicExpr 有几个坑 |
 #                  AtomicExpr 掐头 | AtomicExpr 去尾 | NegateExpr
 #   NegateExpr ::= 拉饥荒 AtomicExpr
 #   ObjectExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr |
@@ -878,6 +908,13 @@ def ParseAtomicExpr(tokens):
         # We have a trailing 的老 without an object expression to follow it.
         tokens = pre_index_tokens
         break
+
+    # Parse 的
+    dot, tokens = TryConsumeKeyword(KW_DOT, tokens)
+    if dot:
+      property_, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+      expr = ObjectPropertyExpr(expr, property_)
+      continue
 
     # Parse 有几个坑
     length, tokens = TryConsumeKeyword(KW_LENGTH, tokens)
@@ -1024,6 +1061,49 @@ def ParseExpr(tokens):
 def ParseExprFromStr(str):
   return ParseExpr(list(Tokenize(str)))
 
+def TryParseFuncDef(tokens, is_method=False):
+  orig_tokens = tokens
+  id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
+  if not id:
+    return None, tokens
+
+  open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
+  params = [IdentifierToken(ID_SELF)] if is_method else []
+  if open_paren:
+    while True:
+      param, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+      params.append(param)
+      close_paren, tokens = TryConsumeKeyword(KW_CLOSE_PAREN, tokens)
+      if close_paren:
+        break
+      _, tokens = ConsumeKeyword(KW_COMMA, tokens)
+      
+    func_def, tokens = ConsumeToken(
+        Keyword(KW_DEF), tokens)
+    stmts, tokens = ParseStmts(tokens)
+    _, tokens = ConsumeKeyword(KW_END, tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
+
+  # not open_paren
+  func_def, tokens = TryConsumeKeyword(KW_DEF, tokens)
+  if func_def:
+    stmts, tokens = ParseStmts(tokens)
+    _, tokens = ConsumeKeyword(KW_END, tokens)
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
+
+  return None, orig_tokens
+
+def ParseMethodDefs(tokens):
+  methods = []
+  while True:
+    method, tokens = TryParseFuncDef(tokens, is_method=True)
+    if method:
+      methods.append(method)
+    else:
+      return methods, tokens
+
 def ParseStmt(tokens):
   """Returns (statement, remainding_tokens)."""
 
@@ -1130,6 +1210,10 @@ def ParseStmt(tokens):
       else_stmt = None
     return Statement(STMT_CONDITIONAL, (expr, then_stmt, else_stmt)), tokens
 
+  func_def, tokens = TryParseFuncDef(tokens)
+  if func_def:
+    return func_def, tokens
+
   # Parse an identifier name.
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
 
@@ -1155,35 +1239,10 @@ def ParseStmt(tokens):
       subclass, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
       _, tokens = ConsumeKeyword(KW_CLASS, tokens)
       _, tokens = ConsumeKeyword(KW_DEF, tokens)
+      methods, tokens = ParseMethodDefs(tokens)
       _, tokens = ConsumeKeyword(KW_END, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_CLASS_DEF, (subclass, id)), tokens
-
-    # Parse 咋整
-    open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
-    if open_paren:
-      params = []
-      while True:
-        param, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-        params.append(param)
-        close_paren, tokens = TryConsumeKeyword(KW_CLOSE_PAREN, tokens)
-        if close_paren:
-          break
-        _, tokens = ConsumeKeyword(KW_COMMA, tokens)
-        
-      func_def, tokens = ConsumeToken(
-          Keyword(KW_DEF), tokens)
-      stmts, tokens = ParseStmts(tokens)
-      _, tokens = ConsumeKeyword(KW_END, tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
-
-    func_def, tokens = TryConsumeKeyword(KW_DEF, tokens)
-    if func_def:
-      stmts, tokens = ParseStmts(tokens)
-      _, tokens = ConsumeKeyword(KW_END, tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_FUNC_DEF, (id, [], stmts)), tokens
+      return Statement(STMT_CLASS_DEF, (subclass, id, methods)), tokens
 
   expr1, tokens = ParseExpr(orig_tokens)
   if expr1:
@@ -1431,12 +1490,16 @@ def TranslateStatementToPython(stmt, indent = ''):
     return indent + f'raise DongbeiError({stmt.value.ToPython()})'
 
   if stmt.kind == STMT_CLASS_DEF:
-    subclass, baseclass = stmt.value
+    subclass, baseclass, methods = stmt.value
     baseclass_decl = ''
     if baseclass.value != '无产':
       baseclass_decl = '(' + GetPythonVarName(baseclass.value) + ')'
-    return (indent + f'class {GetPythonVarName(subclass.value)}{baseclass_decl}:\n' +
-            indent + '  pass')
+    code = indent + f'class {GetPythonVarName(subclass.value)}{baseclass_decl}:\n'
+    if not methods:
+      return code + indent + '  pass'
+    for method in methods:
+      code += '\n' + TranslateStatementToPython(method, indent + '  ')
+    return code
 
   sys.exit('俺不懂 %s 语句咋执行。' % (stmt.kind))
   
