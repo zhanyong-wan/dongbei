@@ -1126,6 +1126,13 @@ class DongbeiTest(unittest.TestCase):
       '''),
       '''class Foo:
   pass''')
+    self.assertEqual(
+      TranslateDongbeiToPython('''
+      Xyz阶级的接班银Foo阶级咋整：
+      整完了。
+      '''),
+      '''class Foo(Xyz):
+  pass''')
 
 if __name__ == '__main__':
   unittest.main()

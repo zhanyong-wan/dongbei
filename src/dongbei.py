@@ -1440,8 +1440,11 @@ def TranslateStatementToPython(stmt, indent = ''):
 
   if stmt.kind == STMT_CLASS_DEF:
     subclass, baseclass = stmt.value
-    assert baseclass.value == '无产', '目前只支持无产阶级做为领导阶级。'
-    return indent + f'class {GetPythonVarName(subclass.value)}:\n' + indent + '  pass'
+    baseclass_decl = ''
+    if baseclass.value != '无产':
+      baseclass_decl = '(' + GetPythonVarName(baseclass.value) + ')'
+    return (indent + f'class {GetPythonVarName(subclass.value)}{baseclass_decl}:\n' +
+            indent + '  pass')
 
   sys.exit('俺不懂 %s 语句咋执行。' % (stmt.kind))
   
