@@ -263,7 +263,7 @@ def _db_repr(value):
   if value is None:
     return '啥也不是'
   if type(value) == bool:
-    return '对' if value else '错'
+    return '没毛病' if value else '错'
   if type(value) == list:
     return '「' + ', '.join(map(_db_repr, value)) + '」'
   return repr(value)

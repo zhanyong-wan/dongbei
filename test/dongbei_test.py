@@ -684,13 +684,13 @@ class DongbeiTest(unittest.TestCase):
   def testPrintBool(self):
     self.assertEqual(
         Run('老王是活雷锋。唠唠：老王。唠唠：老王啥也不是。'),
-        '啥也不是\n对\n')
+        '啥也不是\n没毛病\n')
     self.assertEqual(
         Run('唠唠：五比二大。'),
-        '对\n')
+        '没毛病\n')
     self.assertEqual(
         Run('唠唠：五比二大、五比二小、一跟2一样一样的、1跟二不是一样一样的。'),
-        '对错错对\n')
+        '没毛病错错没毛病\n')
 
   def testAssert(self):
     self.assertEqual(
