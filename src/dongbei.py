@@ -24,6 +24,7 @@ KW_BEGIN = '开整：'
 KW_BREAK = '尥蹶子'
 KW_CALL = '整'
 KW_CHECK = '寻思：'
+KW_CLOSE_BRACKET = '」'
 KW_CLOSE_PAREN = '）'
 KW_CLOSE_PAREN_NARROW = ')'
 KW_CLOSE_QUOTE = '”'
@@ -67,6 +68,7 @@ KW_MINUS = '减'
 KW_MODULO = '刨掉一堆堆'
 KW_NEGATE = '拉饥荒'
 KW_NOT_EQUAL = '不是一样一样的'
+KW_OPEN_BRACKET = '「'
 KW_OPEN_PAREN = '（'
 KW_OPEN_PAREN_NARROW = '('
 KW_OPEN_QUOTE = '“'
@@ -91,6 +93,7 @@ KEYWORDS = (
   KW_BEGIN,
   KW_BREAK,
   KW_CHECK,
+  KW_CLOSE_BRACKET,
   KW_CLOSE_PAREN,
   KW_CLOSE_PAREN_NARROW,
   KW_CLOSE_QUOTE,
@@ -136,6 +139,7 @@ KEYWORDS = (
   KW_MODULO,
   KW_NEGATE,
   KW_NOT_EQUAL,
+  KW_OPEN_BRACKET,
   KW_OPEN_PAREN,
   KW_OPEN_PAREN_NARROW,
   KW_OPEN_QUOTE,
@@ -478,6 +482,27 @@ class CallExpr(Expr):
         GetPythonVarName(self.func),
         ', '.join(arg.ToPython() for arg in self.args))
 
+
+class ListExpr(Expr):
+  def __init__(self, exprs):
+    self.exprs = exprs
+
+  def __str__(self):
+    return 'LIST(%s)' % (
+        ', '.join(str(expr) for expr in self.exprs))
+
+  def Equals(self, other):
+    return self.exprs == other.exprs
+
+  def ToDongbei(self):
+    return (KW_OPEN_BRACKET +
+            '，'.join(expr.ToDongbei() for expr in self.exprs) +
+            KW_CLOSE_BRACKET)
+
+  def ToPython(self):
+    return '[%s]' % (
+        ', '.join(expr.ToPython() for expr in self.exprs))
+
 # Maps a dongbei comparison keyword to the Python version.
 COMPARISON_KEYWORD_TO_PYTHON = {
     KW_GREATER: '>',
@@ -735,12 +760,29 @@ def ConsumeKeyword(keyword, tokens):
 #   AtomicExpr ::= ObjectExpr | AtomicExpr 的老 ObjectExpr | AtomicExpr 有几个坑 |
 #                  AtomicExpr 掐头 | AtomicExpr 去尾 | NegateExpr
 #   NegateExpr ::= 拉饥荒 AtomicExpr
-#   ObjectExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr
+#   ObjectExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr |
+#                  「 ExprList 」
 #   ParenExpr ::= （ Expr ）
 #   CallExpr ::= 整 Identifier |
 #                整 Identifier（ExprList）
 #   ExprList ::= Expr |
 #                Expr，ExprList
+
+def ParseExprList(tokens):
+  """Parses a comma-separated expression list."""
+
+  exprs = []
+  tokens_after_expr_list = tokens
+  while True:
+    expr, tokens_after_expr_list = ParseExpr(tokens)
+    if expr:
+      exprs.append(expr)
+    else:
+      # Couldn't parse an expression.
+      return exprs, tokens_after_expr_list
+    comma, tokens = TryConsumeKeyword(KW_COMMA, tokens_after_expr_list)
+    if not comma:
+      return exprs, tokens_after_expr_list
 
 def ParseCallExpr(tokens):
   """Returns (call_expr, remaining tokens)."""
@@ -752,13 +794,8 @@ def ParseCallExpr(tokens):
   open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
   args = []
   if open_paren:
-    while True:
-      expr, tokens = ParseExpr(tokens)
-      args.append(expr)
-      close_paren, tokens = TryConsumeKeyword(KW_CLOSE_PAREN, tokens)
-      if close_paren:
-        break
-      _, tokens = ConsumeKeyword(KW_COMMA, tokens)
+    args, tokens = ParseExprList(tokens)
+    _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
   return CallExpr(func.value, args), tokens
  
 def ParseObjectExpr(tokens):
@@ -792,7 +829,14 @@ def ParseObjectExpr(tokens):
   call_expr, tokens = ParseCallExpr(tokens)
   if call_expr:
     return call_expr, tokens
-      
+  
+  # Do we see a list literal?
+  open_bracket, tokens = TryConsumeKeyword(KW_OPEN_BRACKET, tokens)
+  if open_bracket:
+    exprs, tokens = ParseExprList(tokens)
+    _, tokens = ConsumeKeyword(KW_CLOSE_BRACKET, tokens)
+    return ListExpr(exprs), tokens
+
   return None, tokens
 
 def ParseAtomicExpr(tokens):
@@ -952,6 +996,7 @@ def ParseNonConcatExpr(tokens):
   return arith, tokens
 
 def ParseExpr(tokens):
+  # TODO: rename this to TryParseExpr().
   nc_expr, tokens = ParseNonConcatExpr(tokens)
   if not nc_expr:
     return None, tokens

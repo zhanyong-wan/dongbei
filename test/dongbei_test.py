@@ -1011,6 +1011,34 @@ class DongbeiTest(unittest.TestCase):
       '''[2, 5, 2, 5]
 ''')
 
+  def testArrayLiteral(self):
+    self.assertEqual(
+      Run('''
+        张家庄 装 「」。
+        唠唠：张家庄。
+      '''),
+      '[]\n')
+    self.assertEqual(
+      Run('''
+        张家庄 装 「1，二加三，五减一」。
+        唠唠：张家庄。
+      '''),
+      '[1, 5, 4]\n')
+    self.assertEqual(
+      Run('''
+        张家庄 都是活雷锋。
+        张家庄 来了群 「1，二加三，五减一」。
+        唠唠：张家庄。
+        张家庄 来了群 「」。
+        唠唠：张家庄。
+        张家庄 来了群 「7，8」。
+        唠唠：张家庄。
+      '''),
+      '''[1, 5, 4]
+[1, 5, 4]
+[1, 5, 4, 7, 8]
+''')
+
   def testDel(self):
     self.assertTrue(
       '整叉劈了' in
