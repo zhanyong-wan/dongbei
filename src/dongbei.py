@@ -260,7 +260,7 @@ def _db_repr(value):
   if type(value) == bool:
     return '对' if value else '错'
   if type(value) == list:
-    return '[' + ', '.join(map(_db_repr, value)) + ']'
+    return '「' + ', '.join(map(_db_repr, value)) + '」'
   return repr(value)
 
 def _db_str(value):
