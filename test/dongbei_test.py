@@ -690,7 +690,7 @@ class DongbeiTest(unittest.TestCase):
         '没毛病\n')
     self.assertEqual(
         Run('唠唠：五比二大、五比二小、一跟2一样一样的、1跟二不是一样一样的。'),
-        '没毛病错错没毛病\n')
+        '没毛病有毛病有毛病没毛病\n')
 
   def testAssert(self):
     self.assertEqual(
@@ -699,12 +699,12 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
       Run('''保准三加二比五减一小。'''),
       '''
-整叉劈了：该着 3加2比5减1小，咋错了咧？
+整叉劈了：该着 3加2比5减1小，咋有毛病了咧？
 ''')
     self.assertEqual(
       Run('''辟谣三加二比五减一大。'''),
       '''
-整叉劈了：3加2比5减1大 不应该啊，咋错了咧？
+整叉劈了：3加2比5减1大 不应该啊，咋有毛病了咧？
 ''')
     self.assertEqual(
       Run('''辟谣三加二比五减一小。'''),

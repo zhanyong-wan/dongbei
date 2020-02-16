@@ -263,7 +263,7 @@ def _db_repr(value):
   if value is None:
     return '啥也不是'
   if type(value) == bool:
-    return '没毛病' if value else '错'
+    return '没毛病' if value else '有毛病'
   if type(value) == list:
     return '「' + ', '.join(map(_db_repr, value)) + '」'
   return repr(value)
@@ -1422,10 +1422,10 @@ def TranslateStatementToPython(stmt, indent = ''):
     return indent + 'continue'
 
   if stmt.kind == STMT_ASSERT:
-    return indent + f'assert {stmt.value.ToPython()}, "该着 {stmt.value.ToDongbei()}，咋错了咧？"'
+    return indent + f'assert {stmt.value.ToPython()}, "该着 {stmt.value.ToDongbei()}，咋有毛病了咧？"'
 
   if stmt.kind == STMT_ASSERT_FALSE:
-    return indent + f'assert not ({stmt.value.ToPython()}), "{stmt.value.ToDongbei()} 不应该啊，咋错了咧？"'
+    return indent + f'assert not ({stmt.value.ToPython()}), "{stmt.value.ToDongbei()} 不应该啊，咋有毛病了咧？"'
 
   if stmt.kind == STMT_RAISE:
     return indent + f'raise DongbeiError({stmt.value.ToPython()})'
