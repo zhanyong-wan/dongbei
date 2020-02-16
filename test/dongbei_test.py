@@ -781,6 +781,15 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
       Run('唠唠：十。'),
       '10\n')
+    self.assertEqual(
+      Run('唠唠：-10。'),
+      '-10\n')
+    self.assertEqual(
+      Run('唠唠：拉饥荒十。'),
+      '-10\n')
+    self.assertEqual(
+      Run('唠唠：拉饥荒零。'),
+      '0\n')
 
   def testArithmetic(self):
     self.assertEqual(
@@ -816,6 +825,16 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
       Run('唠唠：(五减（四减三）)乘二。'),
       '8\n')
+    self.assertEqual(
+      Run('唠唠：拉饥荒（五加二）。'),
+      '-7\n')
+    self.assertEqual(
+      Run('''
+      张家庄都是活雷锋。
+      张家庄来了个42。
+      唠唠：拉饥荒张家庄的老大。
+      '''),
+      '-42\n')
 
   def testConcat(self):
     self.assertEqual(

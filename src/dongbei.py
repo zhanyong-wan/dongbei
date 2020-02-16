@@ -65,6 +65,7 @@ KW_LESS = '小'
 KW_LOOP = '磨叽：'
 KW_MINUS = '减'
 KW_MODULO = '刨掉一堆堆'
+KW_NEGATE = '拉饥荒'
 KW_NOT_EQUAL = '不是一样一样的'
 KW_OPEN_PAREN = '（'
 KW_OPEN_PAREN_NARROW = '('
@@ -133,6 +134,7 @@ KEYWORDS = (
   KW_LOOP,
   KW_MINUS,
   KW_MODULO,
+  KW_NEGATE,
   KW_NOT_EQUAL,
   KW_OPEN_PAREN,
   KW_OPEN_PAREN_NARROW,
@@ -292,6 +294,24 @@ class LengthExpr(Expr):
   
   def ToPython(self):
     return f'len({self.expr.ToPython()})'
+
+class NegateExpr(Expr):
+  def __init__(self, expr):
+    self.expr = expr
+
+  def __str__(self):
+    return f'NEGATE<{self.expr}>'
+
+  def Equals(self, other):
+    return self.expr == other.expr
+
+  def ToDongbei(self):
+    code = self.expr.ToDongbei()
+    return f'{KW_NEGATE} {code}'
+  
+  def ToPython(self):
+    code = self.expr.ToPython()
+    return f'-({code})'
 
 class SubListExpr(Expr):
   def __init__(self, list, remove_at_head, remove_at_tail):
@@ -605,7 +625,7 @@ CHINESE_DIGITS = {
     }
 
 def ParseInteger(str):
-  m = re.match(r'^([0-9]+)(.*)', str)
+  m = re.match(r'^(-?[0-9]+)(.*)', str)
   if m:
     return int(m.group(1)), m.group(2)
   for chinese_digit, value in CHINESE_DIGITS.items():
@@ -713,7 +733,8 @@ def ConsumeKeyword(keyword, tokens):
 #                TermExpr 除以 AtomicExpr |
 #                TermExpr 齐整整地除以 AtomicExpr
 #   AtomicExpr ::= ObjectExpr | AtomicExpr 的老 ObjectExpr | AtomicExpr 有几个坑 |
-#                  AtomicExpr 掐头 | AtomicExpr 去尾
+#                  AtomicExpr 掐头 | AtomicExpr 去尾 | NegateExpr
+#   NegateExpr ::= 拉饥荒 AtomicExpr
 #   ObjectExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr
 #   ParenExpr ::= （ Expr ）
 #   CallExpr ::= 整 Identifier |
@@ -775,6 +796,11 @@ def ParseObjectExpr(tokens):
   return None, tokens
 
 def ParseAtomicExpr(tokens):
+  negate, tokens = TryConsumeKeyword(KW_NEGATE, tokens)
+  if negate:
+    expr, tokens = ParseAtomicExpr(tokens)
+    return NegateExpr(expr), tokens
+
   obj, tokens = ParseObjectExpr(tokens)
   if not obj:
     return None, tokens
