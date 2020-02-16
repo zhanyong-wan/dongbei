@@ -24,6 +24,7 @@ KW_BEGIN = '开整：'
 KW_BREAK = '尥蹶子'
 KW_CALL = '整'
 KW_CHECK = '寻思：'
+KW_CLASS = '阶级'
 KW_CLOSE_BRACKET = '」'
 KW_CLOSE_PAREN = '）'
 KW_CLOSE_PAREN_NARROW = ')'
@@ -40,6 +41,7 @@ KW_DEC = '稍稍'
 KW_DEC_BY = '稍'
 KW_DEL = '炮决'
 KW_SET_NONE = '削'
+KW_DERIVED = '的接班银'
 KW_DIVIDE_BY = '除以'
 KW_ELSE = '要不行咧就'
 KW_END = '整完了'
@@ -47,7 +49,7 @@ KW_END_LOOP = '磨叽完了'
 KW_EQUAL = '一样一样的'
 KW_EXTEND = '来了群'
 KW_FROM = '从'
-KW_FUNC_DEF = '咋整：'
+KW_DEF = '咋整：'
 KW_GREATER = '大'
 KW_IMPORT = '翠花，上'
 KW_IN = '在'
@@ -94,6 +96,7 @@ KEYWORDS = (
   KW_BEGIN,
   KW_BREAK,
   KW_CHECK,
+  KW_CLASS,
   KW_CLOSE_BRACKET,
   KW_CLOSE_PAREN,
   KW_CLOSE_PAREN_NARROW,
@@ -109,6 +112,7 @@ KEYWORDS = (
   KW_DEC,
   KW_DEC_BY,
   KW_DEL,
+  KW_DERIVED,
   KW_SET_NONE,
   KW_DIVIDE_BY,
   KW_ELSE,
@@ -120,7 +124,7 @@ KEYWORDS = (
   KW_EQUAL,
   KW_1_INFINITE_LOOP,  # must match 从一而终磨叽 before 从
   KW_FROM,
-  KW_FUNC_DEF,
+  KW_DEF,
   KW_GREATER,
   KW_IMPORT,
   KW_1_INFINITE_LOOP_EGG,  # must match 在苹果总部磨叽 before 在
@@ -181,6 +185,7 @@ STMT_ASSERT_FALSE = 'ASSERT_FALSE'
 STMT_ASSIGN = 'ASSIGN'
 STMT_BREAK = 'BREAK'
 STMT_CALL = 'CALL'
+STMT_CLASS_DEF = 'CLASS'
 STMT_COMPOUND = 'COMPOUND'
 STMT_CONDITIONAL = 'CONDITIONAL'
 STMT_CONTINUE = 'CONTINUE'
@@ -1151,6 +1156,17 @@ def ParseStmt(tokens):
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_LIST_VAR_DECL, id), tokens
 
+    # Parse 阶级
+    class_, tokens = TryConsumeKeyword(KW_CLASS, tokens)
+    if class_:
+      _, tokens = ConsumeKeyword(KW_DERIVED, tokens)
+      subclass, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+      _, tokens = ConsumeKeyword(KW_CLASS, tokens)
+      _, tokens = ConsumeKeyword(KW_DEF, tokens)
+      _, tokens = ConsumeKeyword(KW_END, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_CLASS_DEF, (subclass, id)), tokens
+
     # Parse 咋整
     open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
     if open_paren:
@@ -1164,13 +1180,13 @@ def ParseStmt(tokens):
         _, tokens = ConsumeKeyword(KW_COMMA, tokens)
         
       func_def, tokens = ConsumeToken(
-          Keyword(KW_FUNC_DEF), tokens)
+          Keyword(KW_DEF), tokens)
       stmts, tokens = ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
 
-    func_def, tokens = TryConsumeKeyword(KW_FUNC_DEF, tokens)
+    func_def, tokens = TryConsumeKeyword(KW_DEF, tokens)
     if func_def:
       stmts, tokens = ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END, tokens)
@@ -1422,6 +1438,11 @@ def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_RAISE:
     return indent + f'raise DongbeiError({stmt.value.ToPython()})'
 
+  if stmt.kind == STMT_CLASS_DEF:
+    subclass, baseclass = stmt.value
+    assert baseclass.value == '无产', '目前只支持无产阶级做为领导阶级。'
+    return indent + f'class {GetPythonVarName(subclass.value)}:\n' + indent + '  pass'
+
   sys.exit('俺不懂 %s 语句咋执行。' % (stmt.kind))
   
 def TranslateTokensToPython(tokens):
@@ -1447,9 +1468,12 @@ def _db_1_infinite_loop():
   while True:
     yield 1
 
-def Run(code, xudao=False):
+def TranslateDongbeiToPython(code):
   tokens = list(Tokenize(code))
-  py_code = TranslateTokensToPython(tokens)
+  return TranslateTokensToPython(tokens)
+
+def Run(code, xudao=False):
+  py_code = TranslateDongbeiToPython(code)
   if xudao:
     print('Python 代码：')
     print('%s' % (py_code,))

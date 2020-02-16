@@ -43,6 +43,7 @@ from src.dongbei import TK_INTEGER_LITERAL
 from src.dongbei import TK_STRING_LITERAL
 from src.dongbei import Token
 from src.dongbei import Tokenize
+from src.dongbei import TranslateDongbeiToPython
 from src.dongbei import VariableExpr
 
 class DongbeiParseExprTest(unittest.TestCase):
@@ -1116,6 +1117,15 @@ class DongbeiTest(unittest.TestCase):
     self.assertTrue(
       'dongbei_test.py' in
       Run('''唠唠：最高指示。'''))
+
+  def testClassDef(self):
+    self.assertEqual(
+      TranslateDongbeiToPython('''
+      无产阶级的接班银Foo阶级咋整：
+      整完了。
+      '''),
+      '''class Foo:
+  pass''')
 
 if __name__ == '__main__':
   unittest.main()
