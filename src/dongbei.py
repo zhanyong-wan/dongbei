@@ -70,6 +70,7 @@ KW_LOOP = '磨叽：'
 KW_MINUS = '减'
 KW_MODULO = '刨掉一堆堆'
 KW_NEGATE = '拉饥荒'
+KW_NEW_OBJECT_OF = '的新对象'
 KW_NOT_EQUAL = '不是一样一样的'
 KW_OPEN_BRACKET = '「'
 KW_OPEN_BRACKET_VERBOSE = '路银「'
@@ -133,6 +134,7 @@ KEYWORDS = (
   KW_INC,
   KW_INC_BY,
   KW_INDEX,  # must match 的老 before 的
+  KW_NEW_OBJECT_OF,  # must match 的新对象 before 的
   KW_DOT,
   KW_INTEGER_DIVIDE_BY,
   KW_IS_LIST,
@@ -513,6 +515,29 @@ class CallExpr(Expr):
         GetPythonVarName(self.func),
         ', '.join(arg.ToPython() for arg in self.args))
 
+class NewObjectExpr(Expr):
+  def __init__(self, class_id, args):
+    self.class_id = class_id
+    self.args = args
+
+  def __str__(self):
+    return 'NEW_OBJECT_EXPR<%s>(%s)' % (
+        self.class_id, ', '.join(str(arg) for arg in self.args))
+
+  def Equals(self, other):
+    return (self.class_id == other.class_id and
+            self.args == other.args)
+
+  def ToDongbei(self):
+    code = f'{self.class_id.value}{KW_NEW_OBJECT_OF}'
+    if self.args:
+      code += '（' + '，'.join(arg.ToDongbei() for arg in self.args) + '）'
+    return code
+
+  def ToPython(self):
+    return '%s(%s)' % (
+        GetPythonVarName(self.class_id.value),
+        ', '.join(arg.ToPython() for arg in self.args))
 
 class ListExpr(Expr):
   def __init__(self, exprs):
@@ -791,7 +816,8 @@ def ConsumeKeyword(keyword, tokens):
 #                  AtomicExpr 掐头 | AtomicExpr 去尾 | NegateExpr
 #   NegateExpr ::= 拉饥荒 AtomicExpr
 #   ObjectExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr |
-#                  「 ExprList 」
+#                  「 ExprList 」 |
+#                  Identifier 的新对象 | Identifier 的新对象（ExprList）
 #   ParenExpr ::= （ Expr ）
 #   CallExpr ::= 整 Identifier |
 #                整 Identifier（ExprList）
@@ -846,7 +872,15 @@ def ParseObjectExpr(tokens):
   # Do we see an identifier?
   id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
   if id:
-    return VariableExpr(id.value), tokens
+    new_obj, tokens = TryConsumeKeyword(KW_NEW_OBJECT_OF, tokens)
+    if not new_obj:
+      return VariableExpr(id.value), tokens
+    args = []
+    open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
+    if open_paren:
+      args, tokens = ParseExprList(tokens)
+      _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
+    return NewObjectExpr(id, args), tokens
 
   # Do we see a parenthesis?
   open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)

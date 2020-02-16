@@ -1159,6 +1159,34 @@ class DongbeiTest(unittest.TestCase):
 
   def __init__(self, 名字):
     (self).名字 = 名字''')
+  
+  def testCtorCall(self):
+    self.assertEqual(
+      Run('''
+      无产阶级的接班银有名阶级咋整：
+        新对象咋整：
+          俺的名字装“无名”。
+        整完了。
+      整完了。
+
+      老林 装 有名 的新对象。
+      唠唠：老林的名字。
+      '''),
+      '''无名
+''')
+    self.assertEqual(
+      Run('''
+      无产阶级的接班银有名阶级咋整：
+        新对象（名字）咋整：
+          俺的名字装名字。
+        整完了。
+      整完了。
+
+      老林 装 有名 的新对象（“林蛋大”）。
+      唠唠：老林的名字。
+      '''),
+      '''林蛋大
+''')
 
 if __name__ == '__main__':
   unittest.main()
