@@ -19,6 +19,7 @@ KW_APPEND = '来了个'
 KW_ASSERT = '保准'
 KW_ASSERT_FALSE = '辟谣'
 KW_BANG = '！'
+KW_BASE_INIT = '领导的新对象'
 KW_BECOME = '装'
 KW_BEGIN = '开整：'
 KW_BREAK = '尥蹶子'
@@ -94,6 +95,7 @@ KEYWORDS = (
   KW_ASSERT,
   KW_ASSERT_FALSE,
   KW_BANG,
+  KW_BASE_INIT,
   KW_BECOME,
   KW_BEGIN,
   KW_BREAK,
@@ -840,19 +842,25 @@ def ParseExprList(tokens):
     if not comma:
       return exprs, tokens_after_expr_list
 
-def ParseCallExpr(tokens):
+def TryParseCallExpr(tokens):
   """Returns (call_expr, remaining tokens)."""
   call, tokens = TryConsumeKeyword(KW_CALL, tokens)
   if not call:
     return None, tokens
 
-  func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+  base_init, tokens = TryConsumeKeyword(KW_BASE_INIT, tokens)
+  if base_init:
+    func_name = 'super().__init__'
+  else:
+    func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+    func_name = func.value
+
   open_paren, tokens = TryConsumeKeyword(KW_OPEN_PAREN, tokens)
   args = []
   if open_paren:
     args, tokens = ParseExprList(tokens)
     _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
-  return CallExpr(func.value, args), tokens
+  return CallExpr(func_name, args), tokens
  
 def ParseObjectExpr(tokens):
   """Returns (expr, remaining tokens)."""
@@ -890,7 +898,7 @@ def ParseObjectExpr(tokens):
     return ParenExpr(expr), tokens
 
   # Do we see a function call?
-  call_expr, tokens = ParseCallExpr(tokens)
+  call_expr, tokens = TryParseCallExpr(tokens)
   if call_expr:
     return call_expr, tokens
   
@@ -1214,7 +1222,7 @@ def ParseStmt(tokens):
     return Statement(STMT_SAY, expr), tokens
 
   # Parse 整
-  call_expr, tokens = ParseCallExpr(tokens)
+  call_expr, tokens = TryParseCallExpr(tokens)
   if call_expr:
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return Statement(STMT_CALL, call_expr), tokens
