@@ -731,7 +731,9 @@ CHINESE_DIGITS = {
     '十': 10,
     }
 
-def ParseInteger(str):
+def TryParseInteger(str):
+  """Returns (integer, remainder)."""
+
   m = re.match(r'^(-?[0-9]+)(.*)', str)
   if m:
     return int(m.group(1)), m.group(2)
@@ -740,8 +742,8 @@ def ParseInteger(str):
       return value, str[len(chinese_digit):]
   return None, str
     
-def ParseChars(chars):
-  integer, rest = ParseInteger(chars)
+def TokenizeStrContainingNoKeyword(chars):
+  integer, rest = TryParseInteger(chars)
   if integer is not None:
     yield Token(TK_INTEGER_LITERAL, integer)
   if rest:
@@ -763,11 +765,11 @@ def Tokenize(code):
     else:
       if last_last_token.kind == TK_CHAR:
         # A sequence of consecutive TK_CHARs ended.
-        for tk in ParseChars(chars):
+        for tk in TokenizeStrContainingNoKeyword(chars):
           yield tk
       yield token
       chars = ''
-  for tk in ParseChars(chars):
+  for tk in TokenizeStrContainingNoKeyword(chars):
     yield tk
 
 ID_ARGV = '最高指示'
@@ -886,7 +888,7 @@ def TryParseCallExpr(tokens):
     _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
   return CallExpr(func_name, args), tokens
  
-def ParseObjectExpr(tokens):
+def TryParseObjectExpr(tokens):
   """Returns (expr, remaining tokens)."""
 
   # Do we see an integer literal?
@@ -935,13 +937,13 @@ def ParseObjectExpr(tokens):
 
   return None, tokens
 
-def ParseAtomicExpr(tokens):
+def TryParseAtomicExpr(tokens):
   negate, tokens = TryConsumeKeyword(KW_NEGATE, tokens)
   if negate:
-    expr, tokens = ParseAtomicExpr(tokens)
+    expr, tokens = TryParseAtomicExpr(tokens)
     return NegateExpr(expr), tokens
 
-  obj, tokens = ParseObjectExpr(tokens)
+  obj, tokens = TryParseObjectExpr(tokens)
   if not obj:
     return None, tokens
 
@@ -967,7 +969,7 @@ def ParseAtomicExpr(tokens):
     index, tokens = TryConsumeKeyword(KW_INDEX, tokens)
     if index:
       # Parse an ObjectExpr.
-      obj, tokens = ParseObjectExpr(tokens)
+      obj, tokens = TryParseObjectExpr(tokens)
       if obj:
         expr = IndexExpr(expr, obj)
       else:
@@ -1011,8 +1013,8 @@ def ParseAtomicExpr(tokens):
 
   return expr, tokens
 
-def ParseTermExpr(tokens):
-  factor, tokens = ParseAtomicExpr(tokens)
+def TryParseTermExpr(tokens):
+  factor, tokens = TryParseAtomicExpr(tokens)
   if not factor:
     return None, tokens
 
@@ -1031,7 +1033,7 @@ def ParseTermExpr(tokens):
     if not operator:
       break
 
-    factor, tokens = ParseAtomicExpr(tokens)
+    factor, tokens = TryParseAtomicExpr(tokens)
     if factor:
       operators.append(operator)
       factors.append(factor)
@@ -1046,8 +1048,8 @@ def ParseTermExpr(tokens):
     expr = ArithmeticExpr(expr, operator, factors[i + 1])
   return expr, tokens
 
-def ParseArithmeticExpr(tokens):
-  term, tokens = ParseTermExpr(tokens)
+def TryParseArithmeticExpr(tokens):
+  term, tokens = TryParseTermExpr(tokens)
   if not term:
     return None, tokens
 
@@ -1062,7 +1064,7 @@ def ParseArithmeticExpr(tokens):
     if not operator:
       break
 
-    term, tokens = ParseTermExpr(tokens)
+    term, tokens = TryParseTermExpr(tokens)
     if term:
       operators.append(operator)
       terms.append(term)
@@ -1077,8 +1079,13 @@ def ParseArithmeticExpr(tokens):
     expr = ArithmeticExpr(expr, operator, terms[i + 1])
   return expr, tokens
 
-def ParseNonConcatExpr(tokens):
-  arith, tokens = ParseArithmeticExpr(tokens)
+def ParseArithmeticExpr(tokens):
+  expr, tokens = TryParseArithmeticExpr(tokens)
+  assert expr, '期望 ArithmeticExpr。落空了：%s' % (tokens[:5],)
+  return expr, tokens
+
+def TryParseNonConcatExpr(tokens):
+  arith, tokens = TryParseArithmeticExpr(tokens)
   if not arith:
     return None, tokens
 
@@ -1105,7 +1112,7 @@ def ParseNonConcatExpr(tokens):
   return arith, tokens
 
 def TryParseExpr(tokens):
-  nc_expr, tokens = ParseNonConcatExpr(tokens)
+  nc_expr, tokens = TryParseNonConcatExpr(tokens)
   if not nc_expr:
     return None, tokens
 
@@ -1116,7 +1123,7 @@ def TryParseExpr(tokens):
     if not concat:
       break
 
-    nc_expr, tokens = ParseNonConcatExpr(tokens)
+    nc_expr, tokens = TryParseNonConcatExpr(tokens)
     if nc_expr:
       nc_exprs.append(nc_expr)
     else:
@@ -1131,8 +1138,7 @@ def TryParseExpr(tokens):
 
 def ParseExpr(tokens):
   expr, tokens = TryParseExpr(tokens)
-  if not expr:
-    raise Exception('指望一个表达式，但是啥也没有；%s' % tokens[:5])
+  assert expr, '指望一个表达式，但是啥也没有；%s' % tokens[:5]
   return expr, tokens
 
 def ParseExprFromStr(str):
@@ -1184,8 +1190,7 @@ def ParseMethodDefs(tokens):
     else:
       return methods, tokens
 
-# TODO: rename to TryParseStmt.
-def ParseStmt(tokens):
+def TryParseStmt(tokens):
   """Returns (statement, remainding_tokens)."""
 
   orig_tokens = tokens
@@ -1420,6 +1425,11 @@ def ParseStmt(tokens):
 
   return None, orig_tokens
 
+def ParseStmt(tokens):
+  stmt, tokens = TryParseStmt(tokens)
+  assert stmt, '期望语句，落空了：%s' % (tokens[:5],)
+  return stmt, tokens
+
 def ParseStmtFromStr(tokens):
   return ParseStmt(list(Tokenize(tokens)))
 
@@ -1428,7 +1438,7 @@ def ParseStmts(tokens):
 
   stmts = []
   while True:
-    stmt, tokens = ParseStmt(tokens)
+    stmt, tokens = TryParseStmt(tokens)
     if not stmt:
       return stmts, tokens
     stmts.append(stmt)

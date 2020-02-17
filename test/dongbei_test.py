@@ -21,9 +21,9 @@ from src.dongbei import IdentifierToken
 from src.dongbei import IntegerLiteralExpr
 from src.dongbei import Keyword
 from src.dongbei import ParenExpr
-from src.dongbei import ParseChars
+from src.dongbei import TokenizeStrContainingNoKeyword
 from src.dongbei import ParseExprFromStr
-from src.dongbei import ParseInteger
+from src.dongbei import TryParseInteger
 from src.dongbei import ParseStmtFromStr
 from src.dongbei import ParseToAst
 from src.dongbei import Run
@@ -283,10 +283,10 @@ class DongbeiTest(unittest.TestCase):
         list(Tokenize('老张')),
         [IdentifierToken('老张')])
     self.assertEqual(
-        ParseInteger('老张'),
+        TryParseInteger('老张'),
         (None, '老张'))
     self.assertEqual(
-        list(ParseChars('老张')),
+        list(TokenizeStrContainingNoKeyword('老张')),
         [IdentifierToken('老张')])
     self.assertEqual(
         list(Tokenize('老张是活雷锋')),
