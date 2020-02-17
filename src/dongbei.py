@@ -271,7 +271,7 @@ class Expr:
 def _dongbei_repr(value):
   """Converts a value to its dongbei repr."""
   if value is None:
-    return KW_IS_NONEsf
+    return KW_IS_NONE
   if type(value) == bool:
     return ID_TRUE if value else ID_FALSE
   if type(value) == list:
@@ -852,7 +852,8 @@ def ConsumeKeyword(keyword, tokens):
 #                TermExpr 齐整整地除以 AtomicExpr
 #   AtomicExpr ::= ObjectExpr | AtomicExpr 的老 ObjectExpr | AtomicExpr 的 Identifier |
 #                  AtomicExpr CallExpr | AtomicExpr 有几个坑 |
-#                  AtomicExpr 掐头 | AtomicExpr 去尾 | NegateExpr
+#                  AtomicExpr 掐头 | AtomicExpr 去尾 |
+#                  AtomicExpr [跟 StomicExpr]... 抱团 | NegateExpr
 #   NegateExpr ::= 拉饥荒 AtomicExpr
 #   ObjectExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr |
 #                  「 ExprList 」 |
