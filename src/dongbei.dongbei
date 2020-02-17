@@ -1,0 +1,19 @@
+#!/usr/bin/env dongbei
+# -*- coding: utf-8 -*-
+
+# dongbei 语言自举大法 - 用 dongbei 语言写的 dongbei 语言解释神器
+#
+# 施工中，请戴好安全帽。。。
+#
+# 用法：
+#    dongbei.dongbei [--xudao] 源程序文件名...
+#
+# 要是命令行包含 --xudao（絮叨），在执行前先打印对应的 Python 代码。
+#
+# TODO: 支持 doc string。
+
+翠花，上io。
+翠花，上re。
+翠花，上sys。
+
+XUDAO_FLAG 装 “--xudao”。

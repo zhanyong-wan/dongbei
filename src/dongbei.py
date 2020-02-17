@@ -214,7 +214,7 @@ STMT_RETURN = 'RETURN'
 STMT_SAY = 'SAY'
 STMT_VAR_DECL = 'VAR_DECL'
 
-class DongbeiError(Exception):
+class _Dongbei_Error(Exception):
   """An error in a dongbei program."""
 
   def __init__(self, message):
@@ -1583,7 +1583,7 @@ def TranslateStatementToPython(stmt, indent = ''):
     return indent + f'assert not ({stmt.value.ToPython()}), "{stmt.value.ToDongbei()} 不应该啊，咋有毛病了咧？"'
 
   if stmt.kind == STMT_RAISE:
-    return indent + f'raise DongbeiError({stmt.value.ToPython()})'
+    return indent + f'raise _Dongbei_Error({stmt.value.ToPython()})'
 
   if stmt.kind == STMT_CLASS_DEF:
     subclass, baseclass, methods = stmt.value
