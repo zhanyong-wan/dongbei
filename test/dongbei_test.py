@@ -1232,6 +1232,7 @@ class DongbeiTest(unittest.TestCase):
 ''')
 
   def testClassMethod(self):
+    # Calling a method in an expression.
     self.assertEqual(
       Run('''
 无产 阶级的接班银 有名 阶级咋整：
@@ -1250,6 +1251,25 @@ class DongbeiTest(unittest.TestCase):
       '''),
       '''我你都不认识啊？我是那啥赵英俊！
 赵英俊
+''')
+    # Calling a method in a statement.
+    self.assertEqual(
+      Run('''
+无产 阶级的接班银 有名 阶级咋整：
+  新对象（名字）咋整：
+    俺的名字 装 名字。
+  整完了。
+
+  显呗咋整：
+    唠唠：“我你都不认识啊？我是那啥”、俺的名字、“！”。
+    滚犊子吧 俺的名字！
+  整完了。
+整完了。
+
+老赵 装 有名 的新对象（“赵英俊”）。
+老赵 整 显呗。 
+      '''),
+      '''我你都不认识啊？我是那啥赵英俊！
 ''')
 
 

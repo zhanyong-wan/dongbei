@@ -198,6 +198,7 @@ STMT_CONTINUE = 'CONTINUE'
 STMT_DEC_BY = 'DEC_BY'
 STMT_DEL = 'DEL'
 STMT_SET_NONE = 'SET_NONE'
+STMT_EXPR = 'EXPR'  # an expression statement
 STMT_EXTEND = 'EXTEND'
 STMT_FUNC_DEF = 'FUNC_DEF'
 STMT_IMPORT = 'IMPORT'
@@ -1181,6 +1182,7 @@ def ParseMethodDefs(tokens):
     else:
       return methods, tokens
 
+# TODO: rename to TryParseStmt.
 def ParseStmt(tokens):
   """Returns (statement, remainding_tokens)."""
 
@@ -1410,6 +1412,10 @@ def ParseStmt(tokens):
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_DEC_BY, (expr1, expr)), tokens
 
+    # Treat the expression as a statement.
+    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+    return Statement(STMT_EXPR, expr1), tokens
+
   return None, orig_tokens
 
 def ParseStmtFromStr(tokens):
@@ -1577,6 +1583,9 @@ def TranslateStatementToPython(stmt, indent = ''):
     for method in methods:
       code += '\n' + TranslateStatementToPython(method, indent + '  ')
     return code
+
+  if stmt.kind == STMT_EXPR:
+    return indent + stmt.value.ToPython()
 
   sys.exit('俺不懂 %s 语句咋执行。' % (stmt.kind))
   
