@@ -830,7 +830,7 @@ def ParseExprList(tokens):
   exprs = []
   tokens_after_expr_list = tokens
   while True:
-    expr, tokens_after_expr_list = ParseExpr(tokens)
+    expr, tokens_after_expr_list = TryParseExpr(tokens)
     if expr:
       exprs.append(expr)
     else:
@@ -1066,8 +1066,7 @@ def ParseNonConcatExpr(tokens):
 
   return arith, tokens
 
-def ParseExpr(tokens):
-  # TODO: rename this to TryParseExpr().
+def TryParseExpr(tokens):
   nc_expr, tokens = ParseNonConcatExpr(tokens)
   if not nc_expr:
     return None, tokens
@@ -1091,9 +1090,18 @@ def ParseExpr(tokens):
     return nc_exprs[0], tokens
 
   return ConcatExpr(nc_exprs), tokens
-  
+
+def ParseExpr(tokens):
+  expr, tokens = TryParseExpr(tokens)
+  if not expr:
+    raise Exception('指望一个表达式，但是啥也没有。')
+  return expr, tokens
+
 def ParseExprFromStr(str):
   return ParseExpr(list(Tokenize(str)))
+
+def TryParseExprFromStr(str):
+  return TryParseExpr(list(Tokenize(str)))
 
 def TryParseFuncDef(tokens, is_method=False):
   orig_tokens = tokens
@@ -1278,7 +1286,7 @@ def ParseStmt(tokens):
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_CLASS_DEF, (subclass, id, methods)), tokens
 
-  expr1, tokens = ParseExpr(orig_tokens)
+  expr1, tokens = TryParseExpr(orig_tokens)
   if expr1:
     # Code below is fof statements that start with an expression.
   
