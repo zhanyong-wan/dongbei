@@ -58,6 +58,7 @@ KW_IN = '在'
 KW_INC = '走走'
 KW_INC_BY = '走'
 KW_INDEX_1 = '的老大'
+KW_INDEX_LAST = '的老幺'
 KW_INDEX = '的老'
 KW_1_INFINITE_LOOP = '从一而终磨叽：'
 KW_1_INFINITE_LOOP_EGG = '在苹果总部磨叽：'  # 彩蛋
@@ -65,7 +66,6 @@ KW_INTEGER_DIVIDE_BY = '齐整整地除以'
 KW_IS_LIST = '都是活雷锋'
 KW_IS_NONE = '啥也不是'
 KW_IS_VAR = '是活雷锋'
-KW_LAST = '幺'
 KW_LENGTH = '有几个坑'
 KW_LESS = '还小'
 KW_LOOP = '磨叽：'
@@ -137,6 +137,7 @@ KEYWORDS = (
   KW_INC,
   KW_INC_BY,
   KW_INDEX_1,  # must match 的老大 before 的老
+  KW_INDEX_LAST,  # must match 的老幺 before 的老
   KW_INDEX,  # must match 的老 before 的
   KW_NEW_OBJECT_OF,  # must match 的新对象 before 的
   KW_DOT,
@@ -144,7 +145,6 @@ KEYWORDS = (
   KW_IS_LIST,
   KW_IS_NONE,
   KW_IS_VAR,
-  KW_LAST,
   KW_LENGTH,
   KW_LESS,
   KW_LOOP,
@@ -956,16 +956,16 @@ def ParseAtomicExpr(tokens):
       expr = IndexExpr(expr, IntegerLiteralExpr(1))
       continue
 
+    # Parse 的老幺
+    index_last, tokens = TryConsumeKeyword(KW_INDEX_LAST, tokens)
+    if index_last:
+      # 0 - 1 = -1
+      expr = IndexExpr(expr, IntegerLiteralExpr(0))
+      continue
+
     # Parse 的老
     index, tokens = TryConsumeKeyword(KW_INDEX, tokens)
     if index:
-      # Parse 幺
-      last, tokens = TryConsumeKeyword(KW_LAST, tokens)
-      if last:
-        # 0 - 1 = -1
-        expr = IndexExpr(expr, IntegerLiteralExpr(0))
-        continue
-
       # Parse an ObjectExpr.
       obj, tokens = ParseObjectExpr(tokens)
       if obj:
