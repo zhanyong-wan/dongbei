@@ -184,6 +184,7 @@ TK_KEYWORD = 'KEYWORD'
 TK_IDENTIFIER = 'IDENTIFIER'
 TK_STRING_LITERAL = 'STRING'
 TK_INTEGER_LITERAL = 'INTEGER'
+TK_NONE_LITERAL = 'NONE'
 TK_CHAR = 'CHAR'
 
 # Statements.
@@ -270,7 +271,7 @@ class Expr:
 def _dongbei_repr(value):
   """Converts a value to its dongbei repr."""
   if value is None:
-    return '啥也不是'
+    return KW_IS_NONEsf
   if type(value) == bool:
     return ID_TRUE if value else ID_FALSE
   if type(value) == list:
@@ -470,6 +471,8 @@ class LiteralExpr(Expr):
       return str(self.token.value)
     if self.token.kind == TK_STRING_LITERAL:
       return '“%s”' % (self.token.value,)
+    if self.token.kind == TK_NONE_LITERAL:
+      return KW_IS_NONE
     raise Exception('Unexpected token kind %s' % (self.token.kind,))
 
   def ToPython(self):
@@ -477,6 +480,8 @@ class LiteralExpr(Expr):
       return str(self.token.value)
     if self.token.kind == TK_STRING_LITERAL:
       return '"%s"' % (self.token.value,)
+    if self.token.kind == TK_NONE_LITERAL:
+      return 'None'
     raise Exception('Unexpected token kind %s' % (self.token.kind,))
 
 def IntegerLiteralExpr(value):
@@ -901,6 +906,11 @@ def TryParseObjectExpr(tokens):
   num, tokens = TryConsumeTokenType(TK_INTEGER_LITERAL, tokens)
   if num:
     return LiteralExpr(num), tokens
+
+  # Do we see a None literal?
+  is_none, tokens = TryConsumeKeyword(KW_IS_NONE, tokens)
+  if is_none:
+    return LiteralExpr(Token(TK_NONE_LITERAL, None)), tokens
 
   # Do we see a string literal?
   open_quote, tokens = TryConsumeKeyword(KW_OPEN_QUOTE, tokens)
