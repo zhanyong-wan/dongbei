@@ -151,13 +151,13 @@ class DongbeiParseExprTest(unittest.TestCase):
                          Keyword('大'),
                          IntegerLiteralExpr(6)
                      ))
-    self.assertEqual(ParseExprFromStr('老王加5比6小')[0],
+    self.assertEqual(ParseExprFromStr('老王加5比6还小')[0],
                      ComparisonExpr(
                          ArithmeticExpr(
                              VariableExpr('老王'),
                              Keyword('加'),
                              IntegerLiteralExpr(5)),
-                         Keyword('小'),
+                         Keyword('还小'),
                          IntegerLiteralExpr(6)
                      ))
     self.assertEqual(ParseExprFromStr('老王跟老刘一样一样的')[0],
@@ -689,7 +689,7 @@ class DongbeiTest(unittest.TestCase):
         Run('唠唠：五比二大。'),
         '没毛病\n')
     self.assertEqual(
-        Run('唠唠：五比二大、五比二小、一跟2一样一样的、1跟二不是一样一样的。'),
+        Run('唠唠：五比二大、五比二还小、一跟2一样一样的、1跟二不是一样一样的。'),
         '没毛病有毛病有毛病没毛病\n')
 
   def testAssert(self):
@@ -697,9 +697,9 @@ class DongbeiTest(unittest.TestCase):
       Run('''保准三加二比五减一大。'''),
       '')
     self.assertEqual(
-      Run('''保准三加二比五减一小。'''),
+      Run('''保准三加二比五减一还小。'''),
       '''
-整叉劈了：该着 3加2比5减1小，咋有毛病了咧？
+整叉劈了：该着 3加2比5减1还小，咋有毛病了咧？
 ''')
     self.assertEqual(
       Run('''辟谣三加二比五减一大。'''),
@@ -707,7 +707,7 @@ class DongbeiTest(unittest.TestCase):
 整叉劈了：3加2比5减1大 不应该啊，咋有毛病了咧？
 ''')
     self.assertEqual(
-      Run('''辟谣三加二比五减一小。'''),
+      Run('''辟谣三加二比五减一还小。'''),
       '')
 
   def testRaise(self):
@@ -717,7 +717,7 @@ class DongbeiTest(unittest.TestCase):
 整叉劈了：小朋友请回避！
 ''')
     self.assertEqual(
-      Run('''【小王】装2。整叉劈了：【小王】、“小朋友请回避！”。'''),
+      Run('''小王装2。整叉劈了：小王、“小朋友请回避！”。'''),
      '''
 整叉劈了：2小朋友请回避！
 ''')
@@ -1069,7 +1069,7 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
         Run('''
 【阶乘】（那啥）咋整：
-寻思：那啥比一小？
+寻思：那啥比一还小？
 要行咧就滚犊子吧一。
 滚犊子吧那啥乘整【阶乘】（那啥减一）。
 整完了。

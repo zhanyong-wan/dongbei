@@ -66,7 +66,7 @@ KW_IS_NONE = '啥也不是'
 KW_IS_VAR = '是活雷锋'
 KW_LAST = '幺'
 KW_LENGTH = '有几个坑'
-KW_LESS = '小'
+KW_LESS = '还小'
 KW_LOOP = '磨叽：'
 KW_MINUS = '减'
 KW_MODULO = '刨掉一堆堆'
@@ -825,7 +825,7 @@ def ConsumeKeyword(keyword, tokens):
 #            Expr、NonConcatExpr
 #   NonConcatExpr ::= ComparisonExpr | ArithmeticExpr
 #   ComparisonExpr ::= ArithmeticExpr 比 ArithmeticExpr 大 |
-#                      ArithmeticExpr 比 ArithmeticExpr 小 |
+#                      ArithmeticExpr 比 ArithmeticExpr 还小 |
 #                      ArithmeticExpr 跟 ArithmeticExpr 一样一样的 |
 #                      ArithmeticExpr 跟 ArithmeticExpr 不是一样一样的
 #   ArithmeticExpr ::= TermExpr |
