@@ -272,7 +272,7 @@ def _dongbei_repr(value):
   if value is None:
     return '啥也不是'
   if type(value) == bool:
-    return '没毛病' if value else '有毛病'
+    return ID_TRUE if value else ID_FALSE
   if type(value) == list:
     return '「' + ', '.join(map(_dongbei_repr, value)) + '」'
   return repr(value)
@@ -776,6 +776,8 @@ ID_ARGV = '最高指示'
 ID_INIT = '新对象'
 ID_SELF = '俺'
 ID_YOU_SAY = '你吱声'
+ID_TRUE = '没毛病'
+ID_FALSE = '有毛病'
 
 # Maps a dongbei identifier to its corresponding Python identifier.
 _dongbei_var_to_python_var = {
@@ -783,6 +785,8 @@ _dongbei_var_to_python_var = {
   ID_INIT: '__init__',
   ID_SELF: 'self',
   ID_YOU_SAY: 'input',
+  ID_TRUE: 'True',
+  ID_FALSE: 'False',
 }
 
 def GetPythonVarName(var):

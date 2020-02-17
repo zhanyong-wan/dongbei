@@ -1272,6 +1272,25 @@ class DongbeiTest(unittest.TestCase):
       '''我你都不认识啊？我是那啥赵英俊！
 ''')
 
+  def testBoolLiteral(self):
+    self.assertEqual(
+      Run('''
+      老王 装 没毛病。
+      寻思：老王？
+      要行咧就 唠唠：“老王没毛病！”。
+      '''),
+      '''老王没毛病！
+''')
+    self.assertEqual(
+      Run('''
+      老王 装 有毛病。
+      寻思：老王？
+      要行咧就 唠唠：“老王没毛病！”。
+      要不行咧就 唠唠：“老王有毛病！”。
+      '''),
+      '''老王有毛病！
+''')
+
 
 if __name__ == '__main__':
   unittest.main()
