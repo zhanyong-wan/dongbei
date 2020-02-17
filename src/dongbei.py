@@ -398,6 +398,27 @@ class ObjectPropertyExpr(Expr):
     prop = GetPythonVarName(self.property.value)
     return f'({obj}).{prop}'
 
+class MethodCallExpr(Expr):
+  def __init__(self, object, call_expr):
+    self.object = object
+    self.call_expr = call_expr
+
+  def __str__(self):
+    return f'METHOD_CALL_EXPR<{self.object}, {self.call_expr}>'
+
+  def Equals(self, other):
+    return self.object == other.object and self.call_expr == other.call_expr
+
+  def ToDongbei(self):
+    obj = self.object.ToDongbei()
+    call = self.call_expr.ToDongbei()
+    return obj + call
+
+  def ToPython(self):
+    obj = self.object.ToPython()
+    call = self.call_expr.ToPython()
+    return f'({obj}).{call}'
+
 ARITHMETIC_OPERATION_TO_PYTHON = {
     KW_PLUS: '+',
     KW_MINUS: '-',
@@ -814,7 +835,7 @@ def ConsumeKeyword(keyword, tokens):
 #                TermExpr 除以 AtomicExpr |
 #                TermExpr 齐整整地除以 AtomicExpr
 #   AtomicExpr ::= ObjectExpr | AtomicExpr 的老 ObjectExpr | AtomicExpr 的 Identifier |
-#                  AtomicExpr 有几个坑 |
+#                  AtomicExpr CallExpr | AtomicExpr 有几个坑 |
 #                  AtomicExpr 掐头 | AtomicExpr 去尾 | NegateExpr
 #   NegateExpr ::= 拉饥荒 AtomicExpr
 #   ObjectExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr |
@@ -956,6 +977,12 @@ def ParseAtomicExpr(tokens):
     if dot:
       property_, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
       expr = ObjectPropertyExpr(expr, property_)
+      continue
+
+    # Parse method call.
+    call, tokens = TryParseCallExpr(tokens)
+    if call:
+      expr = MethodCallExpr(expr, call)
       continue
 
     # Parse 有几个坑
@@ -1102,7 +1129,7 @@ def TryParseExpr(tokens):
 def ParseExpr(tokens):
   expr, tokens = TryParseExpr(tokens)
   if not expr:
-    raise Exception('指望一个表达式，但是啥也没有。')
+    raise Exception('指望一个表达式，但是啥也没有；%s' % tokens[:5])
   return expr, tokens
 
 def ParseExprFromStr(str):
