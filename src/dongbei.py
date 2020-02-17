@@ -52,11 +52,12 @@ KW_EQUAL = '一样一样的'
 KW_EXTEND = '来了群'
 KW_FROM = '从'
 KW_DEF = '咋整：'
-KW_GREATER = '大'
+KW_GREATER = '还大'
 KW_IMPORT = '翠花，上'
 KW_IN = '在'
 KW_INC = '走走'
 KW_INC_BY = '走'
+KW_INDEX_1 = '的老大'
 KW_INDEX = '的老'
 KW_1_INFINITE_LOOP = '从一而终磨叽：'
 KW_1_INFINITE_LOOP_EGG = '在苹果总部磨叽：'  # 彩蛋
@@ -135,6 +136,7 @@ KEYWORDS = (
   KW_IN,
   KW_INC,
   KW_INC_BY,
+  KW_INDEX_1,  # must match 的老大 before 的老
   KW_INDEX,  # must match 的老 before 的
   KW_NEW_OBJECT_OF,  # must match 的新对象 before 的
   KW_DOT,
@@ -824,7 +826,7 @@ def ConsumeKeyword(keyword, tokens):
 #   Expr ::= NonConcatExpr |
 #            Expr、NonConcatExpr
 #   NonConcatExpr ::= ComparisonExpr | ArithmeticExpr
-#   ComparisonExpr ::= ArithmeticExpr 比 ArithmeticExpr 大 |
+#   ComparisonExpr ::= ArithmeticExpr 比 ArithmeticExpr 还大 |
 #                      ArithmeticExpr 比 ArithmeticExpr 还小 |
 #                      ArithmeticExpr 跟 ArithmeticExpr 一样一样的 |
 #                      ArithmeticExpr 跟 ArithmeticExpr 不是一样一样的
@@ -947,16 +949,16 @@ def ParseAtomicExpr(tokens):
   while True:
     pre_index_tokens = tokens
 
+    # Parse 的老大
+    index1, tokens = TryConsumeKeyword(KW_INDEX_1, tokens)
+    if index1:
+      # dongbei 数组是从1开始的。
+      expr = IndexExpr(expr, IntegerLiteralExpr(1))
+      continue
+
     # Parse 的老
     index, tokens = TryConsumeKeyword(KW_INDEX, tokens)
     if index:
-      # Parse 大
-      greater, tokens = TryConsumeKeyword(KW_GREATER, tokens)
-      if greater:
-        # dongbei 数组是从1开始的。
-        expr = IndexExpr(expr, IntegerLiteralExpr(1))
-        continue
-
       # Parse 幺
       last, tokens = TryConsumeKeyword(KW_LAST, tokens)
       if last:

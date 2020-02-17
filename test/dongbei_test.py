@@ -145,10 +145,10 @@ class DongbeiParseExprTest(unittest.TestCase):
                      )
 
   def testParseComparisonExpr(self):
-    self.assertEqual(ParseExprFromStr('5比6大')[0],
+    self.assertEqual(ParseExprFromStr('5比6还大')[0],
                      ComparisonExpr(
                          IntegerLiteralExpr(5),
-                         Keyword('大'),
+                         Keyword('还大'),
                          IntegerLiteralExpr(6)
                      ))
     self.assertEqual(ParseExprFromStr('老王加5比6还小')[0],
@@ -196,11 +196,11 @@ class DongbeiParseExprTest(unittest.TestCase):
 class DongbeiParseStatementTest(unittest.TestCase):
   def testParseConditional(self):
     self.assertEqual(
-        ParseStmtFromStr('寻思：老王比五大？要行咧就唠唠：老王。')[0],
+        ParseStmtFromStr('寻思：老王比五还大？要行咧就唠唠：老王。')[0],
         Statement(STMT_CONDITIONAL,
                   (ComparisonExpr(
                       VariableExpr('老王'),
-                      Keyword('大'),
+                      Keyword('还大'),
                       IntegerLiteralExpr(5)),
                    # then-branch
                    Statement(STMT_SAY,
@@ -451,11 +451,11 @@ class DongbeiTest(unittest.TestCase):
 
   def testParsingComparison(self):
     self.assertEquals(
-        ParseToAst('唠唠：2比5大。'),
+        ParseToAst('唠唠：2比5还大。'),
         [Statement(
             STMT_SAY,
             ComparisonExpr(IntegerLiteralExpr(2),
-                           Keyword('大'),
+                           Keyword('还大'),
                            IntegerLiteralExpr(5)
             ))])
 
@@ -586,7 +586,7 @@ class DongbeiTest(unittest.TestCase):
   寻思：老张跟二一样一样的？
   要行咧就接着磨叽。
   唠唠：“老张是”、老张。
-  寻思：老张比五大？
+  寻思：老张比五还大？
   要行咧就尥蹶子。
 磨叽完了。
 '''),
@@ -604,7 +604,7 @@ class DongbeiTest(unittest.TestCase):
 老张从一而终磨叽：
 唠唠：老张、“和”、老王。
 老王装老王加一。
-寻思：老王比三大？
+寻思：老王比三还大？
 要行咧就尥蹶子。
 磨叽完了。
 '''),
@@ -620,7 +620,7 @@ class DongbeiTest(unittest.TestCase):
 老张在苹果总部磨叽：
 唠唠：老张、“和”、老王。
 老王装老王加一。
-寻思：老王比三大？
+寻思：老王比三还大？
 要行咧就尥蹶子。
 磨叽完了。
 '''),
@@ -686,15 +686,15 @@ class DongbeiTest(unittest.TestCase):
         Run('老王是活雷锋。唠唠：老王。唠唠：老王啥也不是。'),
         '啥也不是\n没毛病\n')
     self.assertEqual(
-        Run('唠唠：五比二大。'),
+        Run('唠唠：五比二还大。'),
         '没毛病\n')
     self.assertEqual(
-        Run('唠唠：五比二大、五比二还小、一跟2一样一样的、1跟二不是一样一样的。'),
+        Run('唠唠：五比二还大、五比二还小、一跟2一样一样的、1跟二不是一样一样的。'),
         '没毛病有毛病有毛病没毛病\n')
 
   def testAssert(self):
     self.assertEqual(
-      Run('''保准三加二比五减一大。'''),
+      Run('''保准三加二比五减一还大。'''),
       '')
     self.assertEqual(
       Run('''保准三加二比五减一还小。'''),
@@ -702,9 +702,9 @@ class DongbeiTest(unittest.TestCase):
 整叉劈了：该着 3加2比5减1还小，咋有毛病了咧？
 ''')
     self.assertEqual(
-      Run('''辟谣三加二比五减一大。'''),
+      Run('''辟谣三加二比五减一还大。'''),
       '''
-整叉劈了：3加2比5减1大 不应该啊，咋有毛病了咧？
+整叉劈了：3加2比5减1还大 不应该啊，咋有毛病了咧？
 ''')
     self.assertEqual(
       Run('''辟谣三加二比五减一还小。'''),
@@ -858,24 +858,24 @@ class DongbeiTest(unittest.TestCase):
 
   def testRunConditional(self):
     self.assertEqual(
-        Run('寻思：5比2大？要行咧就唠唠：“OK”。'),
+        Run('寻思：5比2还大？要行咧就唠唠：“OK”。'),
         'OK\n')
     self.assertEqual(
-        Run('寻思：5比2大？要行咧就开整：\n'
+        Run('寻思：5比2还大？要行咧就开整：\n'
             '整完了。'),
         '')
     self.assertEqual(
-        Run('寻思：5比2大？\n'
+        Run('寻思：5比2还大？\n'
             '要行咧就开整：\n'
             '    唠唠：5。\n'
             '整完了。'),
         '5\n')
     self.assertEqual(
-        Run('寻思：5比6大？要行咧就唠唠：“OK”。\n'
+        Run('寻思：5比6还大？要行咧就唠唠：“OK”。\n'
             '要不行咧就唠唠：“不OK”。'),
         '不OK\n')
     self.assertEqual(
-        Run('寻思：5比6大？\n'
+        Run('寻思：5比6还大？\n'
             '要行咧就唠唠：“OK”。\n'
             '要不行咧就开整：\n'
             '  唠唠：“不OK”。\n'
@@ -885,8 +885,8 @@ class DongbeiTest(unittest.TestCase):
     # Else should match the last If.
     self.assertEqual(
         Run('''
-          寻思：2比1大？   # condition 1: True
-          要行咧就寻思：2比3大？  # condition 2: False
+          寻思：2比1还大？   # condition 1: True
+          要行咧就寻思：2比3还大？  # condition 2: False
               要行咧就唠唠：“A”。  # for condition 2
               要不行咧就唠唠：“B”。# for condition 2
           '''),
