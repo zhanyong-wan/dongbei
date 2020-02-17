@@ -775,12 +775,14 @@ def Tokenize(code):
 ID_ARGV = '最高指示'
 ID_INIT = '新对象'
 ID_SELF = '俺'
+ID_YOU_SAY = '你吱声'
 
 # Maps a dongbei identifier to its corresponding Python identifier.
 _dongbei_var_to_python_var = {
   ID_ARGV: 'sys.argv',
   ID_INIT: '__init__',
   ID_SELF: 'self',
+  ID_YOU_SAY: 'input',
 }
 
 def GetPythonVarName(var):
@@ -1473,8 +1475,7 @@ def TranslateStatementToPython(stmt, indent = ''):
 
   if stmt.kind == STMT_SAY:
     expr = stmt.value
-    return indent + '_dongbei_append_output("%%s\\n" %% (_dongbei_str(%s),))' % (
-        expr.ToPython(),)
+    return indent + '_dongbei_print(%s)' % (expr.ToPython(),)
 
   if stmt.kind == STMT_INC_BY:
     var_expr, expr = stmt.value
@@ -1620,6 +1621,11 @@ def _dongbei_append_output(s):
   global _dongbei_output
   _dongbei_output += s
 
+def _dongbei_print(value):
+  s = _dongbei_str(value)
+  print(s)
+  _dongbei_append_output(s + '\n')
+
 def _dongbei_1_infinite_loop():
   while True:
     yield 1
@@ -1633,6 +1639,7 @@ def Run(code, xudao=False):
   if xudao:
     print('Python 代码：')
     print('%s' % (py_code,))
+    print('运行结果：')
   global _dongbei_output
   _dongbei_output = ''
   # See https://stackoverflow.com/questions/871887/using-exec-with-recursive-functions
@@ -1641,10 +1648,7 @@ def Run(code, xudao=False):
   try:
     exec(py_code, globals(), globals())
   except Exception as e:
-    _dongbei_output += f'\n整叉劈了：{e}\n'
-  if xudao:
-    print('运行结果：')
-  print('%s' % (_dongbei_output,))
+    _dongbei_print(f'\n整叉劈了：{e}')
   return _dongbei_output
 
 def main():
