@@ -89,6 +89,7 @@ KW_SAY = '唠唠'
 KW_STEP = '步'
 KW_THEN = '？要行咧就'
 KW_TIMES = '乘'
+KW_TUPLE = '抱团'
 KW_TO = '到'
 
 KEYWORDS = (
@@ -166,6 +167,7 @@ KEYWORDS = (
   KW_STEP,
   KW_THEN,
   KW_TIMES,
+  KW_TUPLE,
   KW_TO,
 )
 
@@ -276,6 +278,8 @@ def _dongbei_repr(value):
     return ID_TRUE if value else ID_FALSE
   if type(value) == list:
     return '「' + ', '.join(map(_dongbei_repr, value)) + '」'
+  if type(value) == tuple:
+    return f'（%s{KW_TUPLE}）' % (KW_COMPARE_WITH.join(_dongbei_repr(field) for field in value),)
   return repr(value)
 
 def _dongbei_str(value):
@@ -483,6 +487,29 @@ class LiteralExpr(Expr):
     if self.token.kind == TK_NONE_LITERAL:
       return 'None'
     raise Exception('Unexpected token kind %s' % (self.token.kind,))
+
+class TupleExpr(Expr):
+  def __init__(self, tuple):
+    self.tuple = tuple
+
+  def __str__(self):
+    return 'TUPLE_EXPR<%s>' % (self.tuple,)
+
+  def Equals(self, other):
+    return self.tuple == other.tuple
+
+  def ToDongbei(self):
+    if not self.tuple:
+      return KW_TUPLE
+
+    return (KW_COMPARE_WITH.join(field.ToDongbei() for field in self.tuple) +
+            KW_TUPLE)
+
+  def ToPython(self):
+    if len(self.tuple) == 1:
+      return f'({self.tuple[0].ToPython()},)'
+    
+    return '(%s)' % (', '.join(field.ToPython() for field in self.tuple))
 
 def IntegerLiteralExpr(value):
   return LiteralExpr(Token(TK_INTEGER_LITERAL, value))
@@ -837,8 +864,11 @@ def ConsumeKeyword(keyword, tokens):
 # Expression grammar:
 #
 #   Expr ::= NonConcatExpr |
-#            Expr、NonConcatExpr
-#   NonConcatExpr ::= ComparisonExpr | ArithmeticExpr
+#            Expr 、 NonConcatExpr
+#   NonConcatExpr ::= TupleExpr | CompOrArithExpr
+#   CompOrArithExpr ::= ComparisonExpr | ArithmeticExpr
+#   TupleExpr ::= CompOrArithExpr 抱团 |
+#                 CompOrArithExpr 跟 TupleExpr
 #   ComparisonExpr ::= ArithmeticExpr 比 ArithmeticExpr 还大 |
 #                      ArithmeticExpr 比 ArithmeticExpr 还小 |
 #                      ArithmeticExpr 跟 ArithmeticExpr 一样一样的 |
@@ -852,10 +882,9 @@ def ConsumeKeyword(keyword, tokens):
 #                TermExpr 齐整整地除以 AtomicExpr
 #   AtomicExpr ::= ObjectExpr | AtomicExpr 的老 ObjectExpr | AtomicExpr 的 Identifier |
 #                  AtomicExpr CallExpr | AtomicExpr 有几个坑 |
-#                  AtomicExpr 掐头 | AtomicExpr 去尾 |
-#                  AtomicExpr [跟 StomicExpr]... 抱团 | NegateExpr
+#                  AtomicExpr 掐头 | AtomicExpr 去尾 | NegateExpr
 #   NegateExpr ::= 拉饥荒 AtomicExpr
-#   ObjectExpr ::= LiteralExpr | VariableExpr | ParenExpr | CallExpr |
+#   ObjectExpr ::= 抱团 | LiteralExpr | VariableExpr | ParenExpr | CallExpr |
 #                  「 ExprList 」 |
 #                  Identifier 的新对象 | Identifier 的新对象（ExprList）
 #   ParenExpr ::= （ Expr ）
@@ -903,6 +932,11 @@ def TryParseCallExpr(tokens):
 def TryParseObjectExpr(tokens):
   """Returns (expr, remaining tokens)."""
 
+  # Do we see 抱团？
+  tuple, tokens = TryConsumeKeyword(KW_TUPLE, tokens)
+  if tuple:
+    return TupleExpr(()), tokens
+  
   # Do we see an integer literal?
   num, tokens = TryConsumeTokenType(TK_INTEGER_LITERAL, tokens)
   if num:
@@ -1101,10 +1135,11 @@ def ParseArithmeticExpr(tokens):
   assert expr, '期望 ArithmeticExpr。落空了：%s' % (tokens[:5],)
   return expr, tokens
 
-def TryParseNonConcatExpr(tokens):
+def TryParseCompOrArithExpr(tokens):
   arith, tokens = TryParseArithmeticExpr(tokens)
   if not arith:
     return None, tokens
+  post_arith_tokens = tokens
 
   cmp, tokens = TryConsumeKeyword(KW_COMPARE, tokens)
   if cmp:
@@ -1116,10 +1151,14 @@ def TryParseNonConcatExpr(tokens):
 
   cmp, tokens = TryConsumeKeyword(KW_COMPARE_WITH, tokens)
   if cmp:
-    arith2, tokens = ParseArithmeticExpr(tokens)
+    arith2, tokens = TryParseArithmeticExpr(tokens)
+    if not arith2:
+      return arith, post_arith_tokens
     relation, tokens = TryConsumeKeyword(KW_EQUAL, tokens)
     if not relation:
-      relation, tokens = ConsumeKeyword(KW_NOT_EQUAL, tokens)
+      relation, tokens = TryConsumeKeyword(KW_NOT_EQUAL, tokens)
+      if not relation:
+        return arith, post_arith_tokens
     return ComparisonExpr(arith, relation, arith2), tokens
 
   cmp, tokens = TryConsumeKeyword(KW_IS_NONE, tokens)
@@ -1127,6 +1166,32 @@ def TryParseNonConcatExpr(tokens):
     return ComparisonExpr(arith, Keyword(KW_IS_NONE), None), tokens
 
   return arith, tokens
+
+def TryParseTupleExpr(tokens):
+  orig_tokens = tokens
+  expr, tokens = TryParseCompOrArithExpr(tokens)
+  if not expr:
+    return None, orig_tokens
+
+  # Do we see 抱团?
+  tuple, tokens = TryConsumeKeyword(KW_TUPLE, tokens)
+  if tuple:
+    return TupleExpr((expr,)), tokens
+
+  # Do we see 跟？
+  and_, tokens = TryConsumeKeyword(KW_COMPARE_WITH, tokens)
+  if and_:
+    rest_of_tuple, tokens = TryParseTupleExpr(tokens)
+    if rest_of_tuple:
+      return TupleExpr((expr,) + rest_of_tuple.tuple), tokens
+
+  return None, orig_tokens
+
+def TryParseNonConcatExpr(tokens):
+  tuple, tokens = TryParseTupleExpr(tokens)
+  if tuple:
+    return tuple, tokens
+  return TryParseCompOrArithExpr(tokens)
 
 def TryParseExpr(tokens):
   nc_expr, tokens = TryParseNonConcatExpr(tokens)
