@@ -47,6 +47,8 @@
   * [帮衬](#帮衬)
   * [特殊名字](#特殊名字)
 * [跑程序](#跑程序)
+* [参与开发](#参与开发)
+* [周边](#周边)
   
 ## 引言
 
@@ -1131,3 +1133,16 @@ src/dongbei.py a.dongbei 今天 风大
 
 用前两种方法的时候，可以在命令行加上 `--xudao`（絮叨）让系统打印和 dongbei 程序对应的 Python 代码。
 这在开发和学习 dongbei 的时候大有裨益。
+
+## 参与开发
+
+dongbei 欢迎大伙儿帮衬。
+要是您有意相助，请看[dongbei 开发人间指南](DEVELOPE.md)。
+
+## 周边
+
+一个好汉三个帮。
+dongbei的老铁们开发了这些个周边项目，让你在用dongbei编程的时候如虎添翼，如鱼得水，如痴如醉，如胶似漆：
+
+* VS Code 的 dongbei 语法高亮度插件：https://github.com/mingjun97/dongbei-vscode ，在插件商店[直接安装](https://marketplace.visualstudio.com/items?itemName=mingjun97.dongbei)就成。
+* vim 的 dongbei 语法高亮度插件：https://github.com/suxpert/dongbei.vim ，整法自个儿瞅去。
