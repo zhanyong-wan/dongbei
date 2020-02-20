@@ -21,7 +21,8 @@ CD 步骤都整好了！
 （假设要发布版本 `x.y.z`）
 
 1. 把根目录下 `setup.cfg` 文件里 `metadata` 项目内的 `version` 改成 `x.y.z`。
-2. `git commit`
-3. `git tag -a x.y.z` 把最新的 commit 标记成 `x.y.z`。
-4. `git push --tags origin master` 把 commit 连同 tag 一起 push 到 GitHub repo；剩下的事交给 CD 就没毛病了！
-5. 要是不放心，过两分钟到 https://pypi.org/project/dongbei-lang/#history 瞅瞅发布成功没。
+1. 把 `src/dongbei.py` 文件里的 `DONGBEI_VERSION` 值改成 `x.y.z`。
+1. `git commit`
+1. `git tag -a x.y.z` 把最新的 commit 标记成 `x.y.z`。
+1. `git push --tags origin master` 把 commit 连同 tag 一起 push 到 GitHub repo；剩下的事交给 CD 就没毛病了！
+1. 要是不放心，过两分钟到 https://pypi.org/project/dongbei-lang/#history 瞅瞅发布成功没。

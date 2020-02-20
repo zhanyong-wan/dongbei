@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""dongbei语言执行器
+"""dongbei语言执行器 {version}
 
 用法：
     dongbei.py [--xudao] 源程序文件名...
@@ -14,6 +14,7 @@ import re
 import sys
 
 XUDAO_FLAG = '--xudao'
+DONGBEI_VERSION = '0.0.5'
 
 KW_APPEND = '来了个'
 KW_ASSERT = '保准'
@@ -1733,7 +1734,7 @@ def Run(code, xudao=False):
 
 def main():
   if len(sys.argv) == 1:
-    sys.exit(__doc__)
+    sys.exit(__doc__.format(version=DONGBEI_VERSION))
 
   xudao = False
   if XUDAO_FLAG in sys.argv:
