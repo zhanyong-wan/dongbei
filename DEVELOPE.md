@@ -24,3 +24,4 @@ CD 步骤都整好了！
 2. `git commit`
 3. `git tag -a x.y.z` 把最新的 commit 标记成 `x.y.z`。
 4. `git push --tags origin master` 把 commit 连同 tag 一起 push 到 GitHub repo；剩下的事交给 CD 就没毛病了！
+5. 要是不放心，过两分钟到 https://pypi.org/project/dongbei-lang/#history 瞅瞅发布成功没。
