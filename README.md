@@ -16,7 +16,7 @@
 * [跑程序](#跑程序)
 * [参与开发](#参与开发)
 * [周边](#周边)
-  
+
 ## 引言
 
 dongbei是啥？它是一门*以东北方言词汇为基本关键字的以人为本的编程语言。*
@@ -136,6 +136,15 @@ dongbei hello-world.dongbei
 
 用前两种方法的时候，可以在命令行加上 `--xudao`（絮叨）让系统打印和 dongbei 程序对应的 Python 代码。
 这在开发和学习 dongbei 的时候大有裨益。
+
+没有虚拟环境忒费劲，用虚拟环境整一下：
+
+```
+$ python3 -m venv venv
+$ source venv/bin/activate
+$ pip install -r requirements.txt
+```
+之后跑一下子：`$ dongbei demo/磨叽.dongbei`
 
 ## 参与开发
 
