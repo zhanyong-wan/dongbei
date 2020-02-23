@@ -1359,7 +1359,7 @@ class DongbeiParser(object):
 
     cmp, tokens = DongbeiParser().TryConsumeKeyword(KW_COMPARE, tokens)
     if cmp:
-      arith2, tokens = ParseArithmeticExpr(tokens)
+      arith2, tokens = self.ParseArithmeticExpr(tokens)
       relation, tokens = DongbeiParser().TryConsumeKeyword(KW_GREATER, tokens)
       if not relation:
         relation, tokens = ConsumeKeyword(KW_LESS, tokens)
@@ -1382,6 +1382,11 @@ class DongbeiParser(object):
       return ComparisonExpr(arith, Keyword(KW_IS_NONE), None), tokens
 
     return arith, tokens
+
+  def ParseArithmeticExpr(self, tokens):
+    expr, tokens = self.TryParseArithmeticExpr(tokens)
+    assert expr, '期望 ArithmeticExpr。落空了：%s' % (tokens[:5],)
+    return expr, tokens
 
   # End of class Dongbei
 
@@ -1486,11 +1491,6 @@ def ParseExprList(tokens):
     comma, tokens = DongbeiParser().TryConsumeKeyword(KW_COMMA, tokens_after_expr_list)
     if not comma:
       return exprs, tokens_after_expr_list
-
-def ParseArithmeticExpr(tokens):
-  expr, tokens = DongbeiParser().TryParseArithmeticExpr(tokens)
-  assert expr, '期望 ArithmeticExpr。落空了：%s' % (tokens[:5],)
-  return expr, tokens
 
 def ParseExprFromStr(str):
   parser = DongbeiParser()
