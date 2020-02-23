@@ -1315,6 +1315,12 @@ class DongbeiParser(object):
 
     return None, orig_tokens
 
+  def TryParseNonConcatExpr(self, tokens):
+    tuple, tokens = DongbeiParser().TryParseTupleExpr(tokens)
+    if tuple:
+      return tuple, tokens
+    return TryParseCompOrArithExpr(tokens)
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1456,14 +1462,8 @@ def TryParseCompOrArithExpr(tokens):
 
   return arith, tokens
 
-def TryParseNonConcatExpr(tokens):
-  tuple, tokens = DongbeiParser().TryParseTupleExpr(tokens)
-  if tuple:
-    return tuple, tokens
-  return TryParseCompOrArithExpr(tokens)
-
 def TryParseExpr(tokens):
-  nc_expr, tokens = TryParseNonConcatExpr(tokens)
+  nc_expr, tokens = DongbeiParser().TryParseNonConcatExpr(tokens)
   if not nc_expr:
     return None, tokens
 
@@ -1474,7 +1474,7 @@ def TryParseExpr(tokens):
     if not concat:
       break
 
-    nc_expr, tokens = TryParseNonConcatExpr(tokens)
+    nc_expr, tokens = DongbeiParser().TryParseNonConcatExpr(tokens)
     if nc_expr:
       nc_exprs.append(nc_expr)
     else:
