@@ -975,7 +975,8 @@ class DongbeiParser(object):
         self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_CLASS_DEF, (subclass, id, methods))
 
-    expr1, self.tokens = self.TryParseExpr(orig_tokens)
+    self.tokens = orig_tokens
+    expr1 = self.TryParseExpr()
     if expr1:
       # Code below is fof statements that start with an expression.
     
@@ -1327,11 +1328,10 @@ class DongbeiParser(object):
     expr, self.tokens = self.TryParseCompOrArithExpr(self.tokens)
     return expr
 
-  def TryParseExpr(self, tokens):
-    self.tokens = tokens
+  def TryParseExpr(self):
     nc_expr = self.TryParseNonConcatExpr()
     if not nc_expr:
-      return None, self.tokens
+      return None
 
     nc_exprs = [nc_expr]
     while True:
@@ -1349,14 +1349,15 @@ class DongbeiParser(object):
         break
 
     if len(nc_exprs) == 1:
-      return nc_exprs[0], self.tokens
+      return nc_exprs[0]
 
-    return ConcatExpr(nc_exprs), self.tokens
+    return ConcatExpr(nc_exprs)
 
   def ParseExpr(self, tokens):
-    expr, tokens = self.TryParseExpr(tokens)
-    assert expr, '指望一个表达式，但是啥也没有；%s' % tokens[:5]
-    return expr, tokens
+    self.tokens = tokens
+    expr = self.TryParseExpr()
+    assert expr, '指望一个表达式，但是啥也没有；%s' % self.tokens[:5]
+    return expr, self.tokens
 
   def TryParseCompOrArithExpr(self, tokens):
     arith, tokens = self.TryParseArithmeticExpr(tokens)
@@ -1481,7 +1482,9 @@ class DongbeiParser(object):
     exprs = []
     tokens_after_expr_list = tokens
     while True:
-      expr, tokens_after_expr_list = self.TryParseExpr(tokens)
+      self.tokens = tokens
+      expr = self.TryParseExpr()
+      tokens_after_expr_list = self.tokens
       if expr:
         exprs.append(expr)
       else:
@@ -1556,7 +1559,8 @@ def ParseExprFromStr(str):
 # Not meant to be in DongbeiParser.
 def TryParseExprFromStr(str):
   parser = DongbeiParser()
-  return parser.TryParseExpr(parser.Tokenize(str))
+  parser.tokens = parser.Tokenize(str)
+  return parser.TryParseExpr(), parser.tokens
 
 # Not meant to be in DongbeiParser.
 def ParseStmtFromStr(str):
