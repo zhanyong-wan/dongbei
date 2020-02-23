@@ -976,7 +976,7 @@ class DongbeiParser(object):
         _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
         return Statement(STMT_CLASS_DEF, (subclass, id, methods)), tokens
 
-    expr1, tokens = TryParseExpr(orig_tokens)
+    expr1, tokens = self.TryParseExpr(orig_tokens)
     if expr1:
       # Code below is fof statements that start with an expression.
     
@@ -1321,6 +1321,31 @@ class DongbeiParser(object):
       return tuple, tokens
     return TryParseCompOrArithExpr(tokens)
 
+  def TryParseExpr(self, tokens):
+    nc_expr, tokens = DongbeiParser().TryParseNonConcatExpr(tokens)
+    if not nc_expr:
+      return None, tokens
+
+    nc_exprs = [nc_expr]
+    while True:
+      pre_operator_tokens = tokens
+      concat, tokens = DongbeiParser().TryConsumeKeyword(KW_CONCAT, tokens)
+      if not concat:
+        break
+
+      nc_expr, tokens = DongbeiParser().TryParseNonConcatExpr(tokens)
+      if nc_expr:
+        nc_exprs.append(nc_expr)
+      else:
+        # We have a trailing concat operator without an expression to follow it.
+        tokens = pre_operator_tokens
+        break
+
+    if len(nc_exprs) == 1:
+      return nc_exprs[0], tokens
+
+    return ConcatExpr(nc_exprs), tokens
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1415,7 +1440,7 @@ def ParseExprList(tokens):
   exprs = []
   tokens_after_expr_list = tokens
   while True:
-    expr, tokens_after_expr_list = TryParseExpr(tokens)
+    expr, tokens_after_expr_list = DongbeiParser().TryParseExpr(tokens)
     if expr:
       exprs.append(expr)
     else:
@@ -1462,33 +1487,8 @@ def TryParseCompOrArithExpr(tokens):
 
   return arith, tokens
 
-def TryParseExpr(tokens):
-  nc_expr, tokens = DongbeiParser().TryParseNonConcatExpr(tokens)
-  if not nc_expr:
-    return None, tokens
-
-  nc_exprs = [nc_expr]
-  while True:
-    pre_operator_tokens = tokens
-    concat, tokens = DongbeiParser().TryConsumeKeyword(KW_CONCAT, tokens)
-    if not concat:
-      break
-
-    nc_expr, tokens = DongbeiParser().TryParseNonConcatExpr(tokens)
-    if nc_expr:
-      nc_exprs.append(nc_expr)
-    else:
-      # We have a trailing concat operator without an expression to follow it.
-      tokens = pre_operator_tokens
-      break
-
-  if len(nc_exprs) == 1:
-    return nc_exprs[0], tokens
-
-  return ConcatExpr(nc_exprs), tokens
-
 def ParseExpr(tokens):
-  expr, tokens = TryParseExpr(tokens)
+  expr, tokens = DongbeiParser().TryParseExpr(tokens)
   assert expr, '指望一个表达式，但是啥也没有；%s' % tokens[:5]
   return expr, tokens
 
@@ -1498,7 +1498,7 @@ def ParseExprFromStr(str):
 
 def TryParseExprFromStr(str):
   parser = DongbeiParser()
-  return TryParseExpr(parser.Tokenize(str))
+  return parser.TryParseExpr(parser.Tokenize(str))
 
 def TryParseFuncDef(tokens, is_method=False):
   orig_tokens = tokens
