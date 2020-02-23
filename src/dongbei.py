@@ -942,7 +942,7 @@ class DongbeiParser(object):
         else_stmt = None
       return Statement(STMT_CONDITIONAL, (expr, then_stmt, else_stmt)), tokens
 
-    func_def, tokens = TryParseFuncDef(tokens)
+    func_def, tokens = self.TryParseFuncDef(tokens)
     if func_def:
       return func_def, tokens
 
@@ -1388,6 +1388,40 @@ class DongbeiParser(object):
     assert expr, '期望 ArithmeticExpr。落空了：%s' % (tokens[:5],)
     return expr, tokens
 
+  def TryParseFuncDef(self, tokens, is_method=False):
+    orig_tokens = tokens
+    id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
+    if not id:
+      return None, tokens
+
+    open_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_PAREN, tokens)
+    params = [IdentifierToken(ID_SELF)] if is_method else []
+    if open_paren:
+      while True:
+        param, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+        params.append(param)
+        close_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_CLOSE_PAREN, tokens)
+        if close_paren:
+          break
+        _, tokens = ConsumeKeyword(KW_COMMA, tokens)
+        
+      func_def, tokens = ConsumeToken(
+          Keyword(KW_DEF), tokens)
+      stmts, tokens = DongbeiParser().ParseStmts(tokens)
+      _, tokens = ConsumeKeyword(KW_END, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
+
+    # not open_paren
+    func_def, tokens = DongbeiParser().TryConsumeKeyword(KW_DEF, tokens)
+    if func_def:
+      stmts, tokens = DongbeiParser().ParseStmts(tokens)
+      _, tokens = ConsumeKeyword(KW_END, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
+
+    return None, orig_tokens
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1492,52 +1526,20 @@ def ParseExprList(tokens):
     if not comma:
       return exprs, tokens_after_expr_list
 
+# Not meant to be in DongbeiParser.
 def ParseExprFromStr(str):
   parser = DongbeiParser()
   return parser.ParseExpr(parser.Tokenize(str))
 
+# Not meant to be in DongbeiParser.
 def TryParseExprFromStr(str):
   parser = DongbeiParser()
   return parser.TryParseExpr(parser.Tokenize(str))
 
-def TryParseFuncDef(tokens, is_method=False):
-  orig_tokens = tokens
-  id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
-  if not id:
-    return None, tokens
-
-  open_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_PAREN, tokens)
-  params = [IdentifierToken(ID_SELF)] if is_method else []
-  if open_paren:
-    while True:
-      param, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-      params.append(param)
-      close_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_CLOSE_PAREN, tokens)
-      if close_paren:
-        break
-      _, tokens = ConsumeKeyword(KW_COMMA, tokens)
-      
-    func_def, tokens = ConsumeToken(
-        Keyword(KW_DEF), tokens)
-    stmts, tokens = DongbeiParser().ParseStmts(tokens)
-    _, tokens = ConsumeKeyword(KW_END, tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
-
-  # not open_paren
-  func_def, tokens = DongbeiParser().TryConsumeKeyword(KW_DEF, tokens)
-  if func_def:
-    stmts, tokens = DongbeiParser().ParseStmts(tokens)
-    _, tokens = ConsumeKeyword(KW_END, tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
-
-  return None, orig_tokens
-
 def ParseMethodDefs(tokens):
   methods = []
   while True:
-    method, tokens = TryParseFuncDef(tokens, is_method=True)
+    method, tokens = DongbeiParser().TryParseFuncDef(tokens, is_method=True)
     if method:
       methods.append(method)
     else:
