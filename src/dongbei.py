@@ -1244,6 +1244,37 @@ class DongbeiParser(object):
       expr = ArithmeticExpr(expr, operator, factors[i + 1])
     return expr, tokens
 
+  def TryParseArithmeticExpr(self, tokens):
+    term, tokens = DongbeiParser().TryParseTermExpr(tokens)
+    if not term:
+      return None, tokens
+
+    terms = [term]  # All terms of the expression.
+    operators = []  # Operators between the terms. The len of this is len(terms) - 1.
+
+    while True:
+      pre_operator_tokens = tokens
+      operator, tokens = DongbeiParser().TryConsumeKeyword(KW_PLUS, tokens)
+      if not operator:
+        operator, tokens = DongbeiParser().TryConsumeKeyword(KW_MINUS, tokens)
+      if not operator:
+        break
+
+      term, tokens = DongbeiParser().TryParseTermExpr(tokens)
+      if term:
+        operators.append(operator)
+        terms.append(term)
+      else:
+        # We have a trailing operator without a term to follow it.
+        tokens = pre_operator_tokens
+        break
+
+    assert len(terms) == len(operators) + 1
+    expr = terms[0]
+    for i, operator in enumerate(operators):
+      expr = ArithmeticExpr(expr, operator, terms[i + 1])
+    return expr, tokens
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1368,44 +1399,13 @@ def TryParseCallExpr(tokens):
     _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
   return CallExpr(func_name, args), tokens
  
-def TryParseArithmeticExpr(tokens):
-  term, tokens = DongbeiParser().TryParseTermExpr(tokens)
-  if not term:
-    return None, tokens
-
-  terms = [term]  # All terms of the expression.
-  operators = []  # Operators between the terms. The len of this is len(terms) - 1.
-
-  while True:
-    pre_operator_tokens = tokens
-    operator, tokens = DongbeiParser().TryConsumeKeyword(KW_PLUS, tokens)
-    if not operator:
-      operator, tokens = DongbeiParser().TryConsumeKeyword(KW_MINUS, tokens)
-    if not operator:
-      break
-
-    term, tokens = DongbeiParser().TryParseTermExpr(tokens)
-    if term:
-      operators.append(operator)
-      terms.append(term)
-    else:
-      # We have a trailing operator without a term to follow it.
-      tokens = pre_operator_tokens
-      break
-
-  assert len(terms) == len(operators) + 1
-  expr = terms[0]
-  for i, operator in enumerate(operators):
-    expr = ArithmeticExpr(expr, operator, terms[i + 1])
-  return expr, tokens
-
 def ParseArithmeticExpr(tokens):
-  expr, tokens = TryParseArithmeticExpr(tokens)
+  expr, tokens = DongbeiParser().TryParseArithmeticExpr(tokens)
   assert expr, '期望 ArithmeticExpr。落空了：%s' % (tokens[:5],)
   return expr, tokens
 
 def TryParseCompOrArithExpr(tokens):
-  arith, tokens = TryParseArithmeticExpr(tokens)
+  arith, tokens = DongbeiParser().TryParseArithmeticExpr(tokens)
   if not arith:
     return None, tokens
   post_arith_tokens = tokens
@@ -1420,7 +1420,7 @@ def TryParseCompOrArithExpr(tokens):
 
   cmp, tokens = DongbeiParser().TryConsumeKeyword(KW_COMPARE_WITH, tokens)
   if cmp:
-    arith2, tokens = TryParseArithmeticExpr(tokens)
+    arith2, tokens = DongbeiParser().TryParseArithmeticExpr(tokens)
     if not arith2:
       return arith, post_arith_tokens
     relation, tokens = DongbeiParser().TryConsumeKeyword(KW_EQUAL, tokens)
