@@ -933,11 +933,11 @@ class DongbeiParser(object):
     if check:
       expr, tokens = self.ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_THEN, tokens)
-      then_stmt, tokens = ParseStmt(tokens)
+      then_stmt, tokens = self.ParseStmt(tokens)
       # Parse the optional else-branch.
       kw_else, tokens = self.TryConsumeKeyword(KW_ELSE, tokens)
       if kw_else:
-        else_stmt, tokens = ParseStmt(tokens)
+        else_stmt, tokens = self.ParseStmt(tokens)
       else:
         else_stmt = None
       return Statement(STMT_CONDITIONAL, (expr, then_stmt, else_stmt)), tokens
@@ -1431,6 +1431,11 @@ class DongbeiParser(object):
       else:
         return methods, tokens
 
+  def ParseStmt(self, tokens):
+    stmt, tokens = self.TryParseStmt(tokens)
+    assert stmt, '期望语句，落空了：%s' % (tokens[:5],)
+    return stmt, tokens
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1545,14 +1550,9 @@ def TryParseExprFromStr(str):
   parser = DongbeiParser()
   return parser.TryParseExpr(parser.Tokenize(str))
 
-def ParseStmt(tokens):
-  stmt, tokens = DongbeiParser().TryParseStmt(tokens)
-  assert stmt, '期望语句，落空了：%s' % (tokens[:5],)
-  return stmt, tokens
-
-def ParseStmtFromStr(tokens):
+def ParseStmtFromStr(str):
   parser = DongbeiParser()
-  return ParseStmt(parser.Tokenize(tokens))
+  return parser.ParseStmt(parser.Tokenize(str))
 
 def TranslateStatementToPython(stmt, indent = ''):
   """Translates the statements to Python code, without trailing newline."""
