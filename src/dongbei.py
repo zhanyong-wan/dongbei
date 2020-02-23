@@ -683,15 +683,18 @@ def Keyword(str):
   return Token(TK_KEYWORD, str)
 
 def TokenizeStringLiteralAndRest(code):
+  """Returns a list of tokens."""
+
+  tokens = []
   close_quote_pos = code.find(KW_CLOSE_QUOTE)
   if close_quote_pos < 0:
-    yield Token(TK_STRING_LITERAL, code)
-    return
+    tokens.append(Token(TK_STRING_LITERAL, code))
+    return tokens
 
-  yield Token(TK_STRING_LITERAL, code[:close_quote_pos])
-  yield Keyword(KW_CLOSE_QUOTE)
-  for tk in BasicTokenize(code[close_quote_pos + len(KW_CLOSE_QUOTE):]):
-    yield tk    
+  tokens.append(Token(TK_STRING_LITERAL, code[:close_quote_pos]))
+  tokens.append(Keyword(KW_CLOSE_QUOTE))
+  tokens.extend(BasicTokenize(code[close_quote_pos + len(KW_CLOSE_QUOTE):]))
+  return tokens
 
 def SkipWhitespaceAndComment(code):
   while True:
@@ -713,18 +716,20 @@ def TryParseKeyword(keyword, code):
   return keyword, code
 
 def BasicTokenize(code):
+  """Returns a list of tokens from the dongbei code."""
+
+  tokens = []
   code = SkipWhitespaceAndComment(code)
   if not code:
-    return
+    return tokens
 
   # Parse 【标识符】.
   m = re.match('^(【(.*?)】)', code)
   if m:
     id = re.sub(r'\s+', '', m.group(2))  # Ignore whitespace.
-    yield IdentifierToken(id)
-    for tk in BasicTokenize(code[len(m.group(1)):]):
-      yield tk
-    return
+    tokens.append(IdentifierToken(id))
+    tokens.extend(BasicTokenize(code[len(m.group(1)):]))
+    return tokens
     
   # Try to parse a keyword at the beginning of the code.
   for keyword in KEYWORDS:
@@ -732,18 +737,16 @@ def BasicTokenize(code):
     if kw:
       keyword = KEYWORD_TO_NORMALIZED_KEYWORD.get(keyword, keyword)
       last_token = Keyword(keyword)
-      yield last_token
+      tokens.append(last_token)
       if last_token == Keyword(KW_OPEN_QUOTE):
-        for tk in TokenizeStringLiteralAndRest(remaining_code):
-          yield tk
+        tokens.extend(TokenizeStringLiteralAndRest(remaining_code))
       else:
-        for tk in BasicTokenize(remaining_code.lstrip()):
-          yield tk
-      return
+        tokens.extend(BasicTokenize(remaining_code.lstrip()))
+      return tokens
 
-  yield Token(TK_CHAR, code[0])
-  for tk in BasicTokenize(code[1:]):
-    yield tk
+  tokens.append(Token(TK_CHAR, code[0]))
+  tokens.extend(BasicTokenize(code[1:]))
+  return tokens
   
 
 CHINESE_DIGITS = {
@@ -776,11 +779,14 @@ def TryParseInteger(str):
   return None, str
     
 def TokenizeStrContainingNoKeyword(chars):
+  """Returns a list of tokens."""
+  tokens = []
   integer, rest = TryParseInteger(chars)
   if integer is not None:
-    yield Token(TK_INTEGER_LITERAL, integer)
+    tokens.append(Token(TK_INTEGER_LITERAL, integer))
   if rest:
-    yield IdentifierToken(rest)
+    tokens.append(IdentifierToken(rest))
+  return tokens
 
 class DongbeiParser(object):
   def __init__(self):
@@ -789,13 +795,14 @@ class DongbeiParser(object):
 
   def Tokenize(self, code, src_file=None):
     self.code = code
-    self.tokens = list(self._Tokenize(code))
+    self._Tokenize()
     return self.tokens
 
-  def _Tokenize(self, code):
+  def _Tokenize(self):
+    """Tokenizes self.code into self.tokens."""
     last_token = Token(None, None)
     chars = ''
-    for token in BasicTokenize(code):
+    for token in BasicTokenize(self.code):
       last_last_token = last_token
       last_token = token
       if token.kind == TK_CHAR:
@@ -808,12 +815,10 @@ class DongbeiParser(object):
       else:
         if last_last_token.kind == TK_CHAR:
           # A sequence of consecutive TK_CHARs ended.
-          for tk in TokenizeStrContainingNoKeyword(chars):
-            yield tk
-        yield token
+          self.tokens.extend(TokenizeStrContainingNoKeyword(chars))
+        self.tokens.append(token)
         chars = ''
-    for tk in TokenizeStrContainingNoKeyword(chars):
-      yield tk
+    self.tokens.extend(TokenizeStrContainingNoKeyword(chars))
 
 ID_ARGV = '最高指示'
 ID_INIT = '新对象'
