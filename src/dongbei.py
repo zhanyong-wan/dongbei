@@ -861,14 +861,14 @@ class DongbeiParser(object):
     # Parse 保准
     assert_, tokens = self.TryConsumeKeyword(KW_ASSERT, tokens)
     if assert_:
-      expr, tokens = ParseExpr(tokens)
+      expr, tokens = self.ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_ASSERT, expr), tokens
 
     # Parse 辟谣
     assert_, tokens = self.TryConsumeKeyword(KW_ASSERT_FALSE, tokens)
     if assert_:
-      expr, tokens = ParseExpr(tokens)
+      expr, tokens = self.ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_ASSERT_FALSE, expr), tokens
 
@@ -876,7 +876,7 @@ class DongbeiParser(object):
     raise_, tokens = self.TryConsumeKeyword(KW_RAISE, tokens)
     if raise_:
       print(tokens)
-      expr, tokens = ParseExpr(tokens)
+      expr, tokens = self.ParseExpr(tokens)
       print(tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_RAISE, expr), tokens
@@ -884,14 +884,14 @@ class DongbeiParser(object):
     # Parse 削：
     set_none, tokens = self.TryConsumeKeyword(KW_SET_NONE, tokens)
     if set_none:
-      expr, tokens = ParseExpr(tokens)
+      expr, tokens = self.ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_SET_NONE, expr), tokens
 
     # Parse 炮决：
     del_, tokens = self.TryConsumeKeyword(KW_DEL, tokens)
     if del_:
-      expr, tokens = ParseExpr(tokens)
+      expr, tokens = self.ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_DEL, expr), tokens
 
@@ -899,7 +899,7 @@ class DongbeiParser(object):
     say, tokens = self.TryConsumeKeyword(KW_SAY, tokens)
     if say:
       colon, tokens = ConsumeKeyword(KW_COLON, tokens)
-      expr, tokens = ParseExpr(tokens)
+      expr, tokens = self.ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_SAY, expr), tokens
 
@@ -912,7 +912,7 @@ class DongbeiParser(object):
     # Parse 滚犊子吧
     ret, tokens = self.TryConsumeKeyword(KW_RETURN, tokens)
     if ret:
-      expr, tokens = ParseExpr(tokens)
+      expr, tokens = self.ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_RETURN, expr), tokens
 
@@ -931,7 +931,7 @@ class DongbeiParser(object):
     # Parse 寻思
     check, tokens = self.TryConsumeKeyword(KW_CHECK, tokens)
     if check:
-      expr, tokens = ParseExpr(tokens)
+      expr, tokens = self.ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_THEN, tokens)
       then_stmt, tokens = ParseStmt(tokens)
       # Parse the optional else-branch.
@@ -983,9 +983,9 @@ class DongbeiParser(object):
       # Parse 从...到...磨叽
       from_, tokens = self.TryConsumeKeyword(KW_FROM, tokens)
       if from_:
-        from_expr, tokens = ParseExpr(tokens)
+        from_expr, tokens = self.ParseExpr(tokens)
         _, tokens = ConsumeKeyword(KW_TO, tokens)
-        to_expr, tokens = ParseExpr(tokens)
+        to_expr, tokens = self.ParseExpr(tokens)
         _, tokens = ConsumeKeyword(KW_LOOP, tokens)
         stmts, tokens = DongbeiParser().ParseStmts(tokens)
         _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
@@ -995,7 +995,7 @@ class DongbeiParser(object):
       # Parse 在...磨叽
       in_, tokens = self.TryConsumeKeyword(KW_IN, tokens)
       if in_:
-        range_expr, tokens = ParseExpr(tokens)
+        range_expr, tokens = self.ParseExpr(tokens)
         _, tokens = ConsumeKeyword(KW_LOOP, tokens)
         stmts, tokens = DongbeiParser().ParseStmts(tokens)
         _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
@@ -1015,21 +1015,21 @@ class DongbeiParser(object):
       # Parse 装
       become, tokens = self.TryConsumeKeyword(KW_BECOME, tokens)
       if become:
-        expr, tokens = ParseExpr(tokens)
+        expr, tokens = self.ParseExpr(tokens)
         _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
         return Statement(STMT_ASSIGN, (expr1, expr)), tokens
 
       # Parse 来了个
       append, tokens = self.TryConsumeKeyword(KW_APPEND, tokens)
       if append:
-        expr, tokens = ParseExpr(tokens)
+        expr, tokens = self.ParseExpr(tokens)
         _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
         return Statement(STMT_APPEND, (expr1, expr)), tokens
 
       # Parse 来了群
       extend, tokens = self.TryConsumeKeyword(KW_EXTEND, tokens)
       if extend:
-        expr, tokens = ParseExpr(tokens)
+        expr, tokens = self.ParseExpr(tokens)
         _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
         return Statement(STMT_EXTEND, (expr1, expr)), tokens
 
@@ -1044,7 +1044,7 @@ class DongbeiParser(object):
       # Parse 走X步
       inc, tokens = self.TryConsumeKeyword(KW_INC_BY, tokens)
       if inc:
-        expr, tokens = ParseExpr(tokens)
+        expr, tokens = self.ParseExpr(tokens)
         _, tokens = ConsumeKeyword(KW_STEP, tokens)
         _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
         return Statement(STMT_INC_BY, (expr1, expr)), tokens
@@ -1060,7 +1060,7 @@ class DongbeiParser(object):
       # Parse 稍X步
       dec, tokens = self.TryConsumeKeyword(KW_DEC_BY, tokens)
       if dec:
-        expr, tokens = ParseExpr(tokens)
+        expr, tokens = self.ParseExpr(tokens)
         _, tokens = ConsumeKeyword(KW_STEP, tokens)
         _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
         return Statement(STMT_DEC_BY, (expr1, expr)), tokens
@@ -1115,7 +1115,7 @@ class DongbeiParser(object):
     # Do we see a parenthesis?
     open_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_PAREN, tokens)
     if open_paren:
-      expr, tokens = ParseExpr(tokens)
+      expr, tokens = self.ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
       return ParenExpr(expr), tokens
 
@@ -1346,6 +1346,11 @@ class DongbeiParser(object):
 
     return ConcatExpr(nc_exprs), tokens
 
+  def ParseExpr(self, tokens):
+    expr, tokens = self.TryParseExpr(tokens)
+    assert expr, '指望一个表达式，但是啥也没有；%s' % tokens[:5]
+    return expr, tokens
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1487,14 +1492,9 @@ def TryParseCompOrArithExpr(tokens):
 
   return arith, tokens
 
-def ParseExpr(tokens):
-  expr, tokens = DongbeiParser().TryParseExpr(tokens)
-  assert expr, '指望一个表达式，但是啥也没有；%s' % tokens[:5]
-  return expr, tokens
-
 def ParseExprFromStr(str):
   parser = DongbeiParser()
-  return ParseExpr(parser.Tokenize(str))
+  return parser.ParseExpr(parser.Tokenize(str))
 
 def TryParseExprFromStr(str):
   parser = DongbeiParser()
