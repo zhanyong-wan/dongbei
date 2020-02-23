@@ -795,11 +795,11 @@ class DongbeiParser(object):
 
   def Tokenize(self, code, src_file=None):
     self.code = code
-    self._Tokenize()
-    return self.tokens
+    return self._Tokenize()
 
   def _Tokenize(self):
-    """Tokenizes self.code into self.tokens."""
+    """Tokenizes self.code into tokens."""
+    tokens = []
     last_token = Token(None, None)
     chars = ''
     for token in BasicTokenize(self.code):
@@ -815,10 +815,16 @@ class DongbeiParser(object):
       else:
         if last_last_token.kind == TK_CHAR:
           # A sequence of consecutive TK_CHARs ended.
-          self.tokens.extend(TokenizeStrContainingNoKeyword(chars))
-        self.tokens.append(token)
+          tokens.extend(TokenizeStrContainingNoKeyword(chars))
+        tokens.append(token)
         chars = ''
-    self.tokens.extend(TokenizeStrContainingNoKeyword(chars))
+    tokens.extend(TokenizeStrContainingNoKeyword(chars))
+    return tokens
+
+  def TranslateTokensToAst(self, tokens):
+    statements, tokens = ParseStmts(tokens)
+    assert not tokens, ('多余符号：%s' % (tokens,))
+    return statements
 
 ID_ARGV = '最高指示'
 ID_INIT = '新对象'
@@ -1700,21 +1706,11 @@ def TranslateStatementToPython(stmt, indent = ''):
     return indent + stmt.value.ToPython()
 
   sys.exit('俺不懂 %s 语句咋执行。' % (stmt.kind))
-  
-def TranslateTokensToPython(tokens):
-  statements, tokens = ParseStmts(tokens)
-  assert not tokens, ('多余符号：%s' % (tokens,))
-  py_code = []
-  for s in statements:
-    py_code.append(TranslateStatementToPython(s))
-  return '\n'.join(py_code)
 
 def ParseToAst(code):
   parser = DongbeiParser()
   tokens = parser.Tokenize(code)
-  statements, tokens = ParseStmts(tokens)
-  assert not tokens, ('多余符号：%s' % (tokens,))
-  return statements
+  return parser.TranslateTokensToAst(tokens)
 
 _dongbei_output = ''
 def _dongbei_append_output(s):
@@ -1733,7 +1729,12 @@ def _dongbei_1_infinite_loop():
 def TranslateDongbeiToPython(code, src_file=None):
   parser = DongbeiParser()
   tokens = parser.Tokenize(code, src_file)
-  return TranslateTokensToPython(tokens)
+  statements = parser.TranslateTokensToAst(tokens)
+
+  py_code = []
+  for s in statements:
+    py_code.append(TranslateStatementToPython(s))
+  return '\n'.join(py_code)
 
 def Run(code, src_file=None, xudao=False):
   py_code = TranslateDongbeiToPython(code, src_file=src_file)
