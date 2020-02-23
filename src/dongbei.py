@@ -1405,7 +1405,7 @@ class DongbeiParser(object):
           break
         _, tokens = ConsumeKeyword(KW_COMMA, tokens)
         
-      func_def, tokens = ConsumeToken(
+      func_def, tokens = self.ConsumeToken(
           Keyword(KW_DEF), tokens)
       stmts, tokens = DongbeiParser().ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END, tokens)
@@ -1456,6 +1456,14 @@ class DongbeiParser(object):
       return None, tokens
     return token, tokens[1:]
 
+  def ConsumeToken(self, token, tokens):
+    if not tokens:
+      sys.exit('语句结束太早。')
+    if token != tokens[0]:
+      sys.exit('期望符号 %s，实际却是 %s。' %
+              (token, tokens[0]))
+    return token, tokens[1:]
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1481,16 +1489,8 @@ def GetPythonVarName(var):
 
   return var
 
-def ConsumeToken(token, tokens):
-  if not tokens:
-    sys.exit('语句结束太早。')
-  if token != tokens[0]:
-    sys.exit('期望符号 %s，实际却是 %s。' %
-             (token, tokens[0]))
-  return token, tokens[1:]
-
 def ConsumeKeyword(keyword, tokens):
-  return ConsumeToken(Keyword(keyword), tokens)
+  return DongbeiParser().ConsumeToken(Keyword(keyword), tokens)
 
 # Expression grammar:
 #
