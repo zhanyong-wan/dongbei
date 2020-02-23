@@ -934,15 +934,14 @@ class DongbeiParser(object):
     check, tokens = self.TryConsumeKeyword(KW_CHECK, tokens)
     if check:
       expr, tokens = self.ParseExpr(tokens)
-      _, tokens = self.ConsumeKeyword(KW_THEN, tokens)
-      then_stmt, tokens = self.ParseStmt(tokens)
+      _, self.tokens = self.ConsumeKeyword(KW_THEN, tokens)
+      then_stmt = self.ParseStmt()
       # Parse the optional else-branch.
-      kw_else, tokens = self.TryConsumeKeyword(KW_ELSE, tokens)
+      kw_else, self.tokens = self.TryConsumeKeyword(KW_ELSE, self.tokens)
       if kw_else:
-        else_stmt, tokens = self.ParseStmt(tokens)
+        else_stmt = self.ParseStmt()
       else:
         else_stmt = None
-      self.tokens = tokens
       return Statement(STMT_CONDITIONAL, (expr, then_stmt, else_stmt))
 
     func_def, self.tokens = self.TryParseFuncDef(tokens)
@@ -1434,11 +1433,10 @@ class DongbeiParser(object):
       else:
         return methods, tokens
 
-  def ParseStmt(self, tokens):
-    self.tokens = tokens
+  def ParseStmt(self):
     stmt = self.TryParseStmt()
     assert stmt, '期望语句，落空了：%s' % (self.tokens[:5],)
-    return stmt, self.tokens
+    return stmt
 
   def TryConsumeTokenType(self, tk_type, tokens):
     if not tokens:
@@ -1557,7 +1555,8 @@ def TryParseExprFromStr(str):
 # Not meant to be in DongbeiParser.
 def ParseStmtFromStr(str):
   parser = DongbeiParser()
-  return parser.ParseStmt(parser.Tokenize(str))
+  parser.tokens = parser.Tokenize(str)
+  return parser.ParseStmt(), parser.tokens
 
 def TranslateStatementToPython(stmt, indent = ''):
   """Translates the statements to Python code, without trailing newline."""
