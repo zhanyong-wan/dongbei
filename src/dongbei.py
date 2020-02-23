@@ -904,7 +904,7 @@ class DongbeiParser(object):
       return Statement(STMT_SAY, expr), tokens
 
     # Parse 整
-    call_expr, tokens = TryParseCallExpr(tokens)
+    call_expr, tokens = self.TryParseCallExpr(tokens)
     if call_expr:
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_CALL, call_expr), tokens
@@ -1120,7 +1120,7 @@ class DongbeiParser(object):
       return ParenExpr(expr), tokens
 
     # Do we see a function call?
-    call_expr, tokens = TryParseCallExpr(tokens)
+    call_expr, tokens = self.TryParseCallExpr(tokens)
     if call_expr:
       return call_expr, tokens
     
@@ -1181,7 +1181,7 @@ class DongbeiParser(object):
         continue
 
       # Parse method call.
-      call, tokens = TryParseCallExpr(tokens)
+      call, tokens = self.TryParseCallExpr(tokens)
       if call:
         expr = MethodCallExpr(expr, call)
         continue
@@ -1275,6 +1275,26 @@ class DongbeiParser(object):
       expr = ArithmeticExpr(expr, operator, terms[i + 1])
     return expr, tokens
 
+  def TryParseCallExpr(self, tokens):
+    """Returns (call_expr, remaining tokens)."""
+    call, tokens = DongbeiParser().TryConsumeKeyword(KW_CALL, tokens)
+    if not call:
+      return None, tokens
+
+    base_init, tokens = DongbeiParser().TryConsumeKeyword(KW_BASE_INIT, tokens)
+    if base_init:
+      func_name = 'super().__init__'
+    else:
+      func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+      func_name = func.value
+
+    open_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_PAREN, tokens)
+    args = []
+    if open_paren:
+      args, tokens = ParseExprList(tokens)
+      _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
+    return CallExpr(func_name, args), tokens
+  
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1379,26 +1399,6 @@ def ParseExprList(tokens):
     if not comma:
       return exprs, tokens_after_expr_list
 
-def TryParseCallExpr(tokens):
-  """Returns (call_expr, remaining tokens)."""
-  call, tokens = DongbeiParser().TryConsumeKeyword(KW_CALL, tokens)
-  if not call:
-    return None, tokens
-
-  base_init, tokens = DongbeiParser().TryConsumeKeyword(KW_BASE_INIT, tokens)
-  if base_init:
-    func_name = 'super().__init__'
-  else:
-    func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-    func_name = func.value
-
-  open_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_PAREN, tokens)
-  args = []
-  if open_paren:
-    args, tokens = ParseExprList(tokens)
-    _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
-  return CallExpr(func_name, args), tokens
- 
 def ParseArithmeticExpr(tokens):
   expr, tokens = DongbeiParser().TryParseArithmeticExpr(tokens)
   assert expr, '期望 ArithmeticExpr。落空了：%s' % (tokens[:5],)
