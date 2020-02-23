@@ -831,10 +831,245 @@ class DongbeiParser(object):
 
     stmts = []
     while True:
-      stmt, tokens = TryParseStmt(tokens)
+      stmt, tokens = self.TryParseStmt(tokens)
       if not stmt:
         return stmts, tokens
       stmts.append(stmt)
+
+  def TryParseStmt(self, tokens):
+    """Returns (statement, remainding_tokens)."""
+
+    orig_tokens = tokens
+
+    # Parse 翠花，上
+    imp, tokens = TryConsumeKeyword(KW_IMPORT, tokens)
+    if imp:
+      module, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_IMPORT, module), tokens
+
+    # Parse 开整：
+    begin, tokens = TryConsumeKeyword(KW_BEGIN, tokens)
+    if begin:
+      stmts, tokens = DongbeiParser().ParseStmts(tokens)
+      if not stmts:
+        stmts = []
+      _, tokens = ConsumeKeyword(KW_END, tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_COMPOUND, stmts), tokens
+
+    # Parse 保准
+    assert_, tokens = TryConsumeKeyword(KW_ASSERT, tokens)
+    if assert_:
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_ASSERT, expr), tokens
+
+    # Parse 辟谣
+    assert_, tokens = TryConsumeKeyword(KW_ASSERT_FALSE, tokens)
+    if assert_:
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_ASSERT_FALSE, expr), tokens
+
+    # Parse 整叉劈了
+    raise_, tokens = TryConsumeKeyword(KW_RAISE, tokens)
+    if raise_:
+      print(tokens)
+      expr, tokens = ParseExpr(tokens)
+      print(tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_RAISE, expr), tokens
+
+    # Parse 削：
+    set_none, tokens = TryConsumeKeyword(KW_SET_NONE, tokens)
+    if set_none:
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_SET_NONE, expr), tokens
+
+    # Parse 炮决：
+    del_, tokens = TryConsumeKeyword(KW_DEL, tokens)
+    if del_:
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_DEL, expr), tokens
+
+    # Parse 唠唠：
+    say, tokens = TryConsumeKeyword(KW_SAY, tokens)
+    if say:
+      colon, tokens = ConsumeKeyword(KW_COLON, tokens)
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_SAY, expr), tokens
+
+    # Parse 整
+    call_expr, tokens = TryParseCallExpr(tokens)
+    if call_expr:
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_CALL, call_expr), tokens
+
+    # Parse 滚犊子吧
+    ret, tokens = TryConsumeKeyword(KW_RETURN, tokens)
+    if ret:
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_RETURN, expr), tokens
+
+    # Parse 接着磨叽
+    cont, tokens = TryConsumeKeyword(KW_CONTINUE, tokens)
+    if cont:
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_CONTINUE, None), tokens
+
+    # Parse 尥蹶子
+    break_, tokens = TryConsumeKeyword(KW_BREAK, tokens)
+    if break_:
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_BREAK, None), tokens
+
+    # Parse 寻思
+    check, tokens = TryConsumeKeyword(KW_CHECK, tokens)
+    if check:
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_THEN, tokens)
+      then_stmt, tokens = ParseStmt(tokens)
+      # Parse the optional else-branch.
+      kw_else, tokens = TryConsumeKeyword(KW_ELSE, tokens)
+      if kw_else:
+        else_stmt, tokens = ParseStmt(tokens)
+      else:
+        else_stmt = None
+      return Statement(STMT_CONDITIONAL, (expr, then_stmt, else_stmt)), tokens
+
+    func_def, tokens = TryParseFuncDef(tokens)
+    if func_def:
+      return func_def, tokens
+
+    # Parse an identifier name.
+    id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
+
+    if id:
+      # Code below is for statements that start with an identifier.
+
+      # Parse 是活雷锋
+      is_var, tokens = TryConsumeKeyword(KW_IS_VAR, tokens)
+      if is_var:
+        _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+        return Statement(STMT_VAR_DECL, id), tokens
+
+      # Parse 都是活雷锋
+      is_list, tokens = TryConsumeKeyword(KW_IS_LIST, tokens)
+      if is_list:
+        _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+        return Statement(STMT_LIST_VAR_DECL, id), tokens
+
+      # Parse 阶级
+      class_, tokens = TryConsumeKeyword(KW_CLASS, tokens)
+      if class_:
+        _, tokens = ConsumeKeyword(KW_DERIVED, tokens)
+        subclass, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+        _, tokens = ConsumeKeyword(KW_CLASS, tokens)
+        _, tokens = ConsumeKeyword(KW_DEF, tokens)
+        methods, tokens = ParseMethodDefs(tokens)
+        _, tokens = ConsumeKeyword(KW_END, tokens)
+        _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+        return Statement(STMT_CLASS_DEF, (subclass, id, methods)), tokens
+
+    expr1, tokens = TryParseExpr(orig_tokens)
+    if expr1:
+      # Code below is fof statements that start with an expression.
+    
+      # Parse 从...到...磨叽
+      from_, tokens = TryConsumeKeyword(KW_FROM, tokens)
+      if from_:
+        from_expr, tokens = ParseExpr(tokens)
+        _, tokens = ConsumeKeyword(KW_TO, tokens)
+        to_expr, tokens = ParseExpr(tokens)
+        _, tokens = ConsumeKeyword(KW_LOOP, tokens)
+        stmts, tokens = DongbeiParser().ParseStmts(tokens)
+        _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
+        _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+        return Statement(STMT_LOOP, (expr1, from_expr, to_expr, stmts)), tokens
+
+      # Parse 在...磨叽
+      in_, tokens = TryConsumeKeyword(KW_IN, tokens)
+      if in_:
+        range_expr, tokens = ParseExpr(tokens)
+        _, tokens = ConsumeKeyword(KW_LOOP, tokens)
+        stmts, tokens = DongbeiParser().ParseStmts(tokens)
+        _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
+        _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+        return Statement(STMT_RANGE_LOOP, (expr1, range_expr, stmts)), tokens
+
+      # Parse 从一而终磨叽 or the '1 Infinite Loop' 彩蛋
+      infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP, tokens)
+      if not infinite_loop:
+        infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP_EGG, tokens)
+      if infinite_loop:
+        stmts, tokens = DongbeiParser().ParseStmts(tokens)
+        _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
+        _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+        return Statement(STMT_INFINITE_LOOP, (expr1, stmts)), tokens
+
+      # Parse 装
+      become, tokens = TryConsumeKeyword(KW_BECOME, tokens)
+      if become:
+        expr, tokens = ParseExpr(tokens)
+        _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+        return Statement(STMT_ASSIGN, (expr1, expr)), tokens
+
+      # Parse 来了个
+      append, tokens = TryConsumeKeyword(KW_APPEND, tokens)
+      if append:
+        expr, tokens = ParseExpr(tokens)
+        _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+        return Statement(STMT_APPEND, (expr1, expr)), tokens
+
+      # Parse 来了群
+      extend, tokens = TryConsumeKeyword(KW_EXTEND, tokens)
+      if extend:
+        expr, tokens = ParseExpr(tokens)
+        _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+        return Statement(STMT_EXTEND, (expr1, expr)), tokens
+
+      # Parse 走走
+      inc, tokens = TryConsumeKeyword(KW_INC, tokens)
+      if inc:
+        _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+        return (Statement(STMT_INC_BY,
+                          (expr1, IntegerLiteralExpr(1))),
+                tokens)
+
+      # Parse 走X步
+      inc, tokens = TryConsumeKeyword(KW_INC_BY, tokens)
+      if inc:
+        expr, tokens = ParseExpr(tokens)
+        _, tokens = ConsumeKeyword(KW_STEP, tokens)
+        _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+        return Statement(STMT_INC_BY, (expr1, expr)), tokens
+
+      # Parse 稍稍
+      dec, tokens = TryConsumeKeyword(KW_DEC, tokens)
+      if dec:
+        _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+        return (Statement(STMT_DEC_BY,
+                          (expr1, IntegerLiteralExpr(1))),
+                tokens)
+
+      # Parse 稍X步
+      dec, tokens = TryConsumeKeyword(KW_DEC_BY, tokens)
+      if dec:
+        expr, tokens = ParseExpr(tokens)
+        _, tokens = ConsumeKeyword(KW_STEP, tokens)
+        _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+        return Statement(STMT_DEC_BY, (expr1, expr)), tokens
+
+      # Treat the expression as a statement.
+      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
+      return Statement(STMT_EXPR, expr1), tokens
+
+    return None, orig_tokens
 
 ID_ARGV = '最高指示'
 ID_INIT = '新对象'
@@ -1306,243 +1541,8 @@ def ParseMethodDefs(tokens):
     else:
       return methods, tokens
 
-def TryParseStmt(tokens):
-  """Returns (statement, remainding_tokens)."""
-
-  orig_tokens = tokens
-
-  # Parse 翠花，上
-  imp, tokens = TryConsumeKeyword(KW_IMPORT, tokens)
-  if imp:
-    module, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_IMPORT, module), tokens
-
-  # Parse 开整：
-  begin, tokens = TryConsumeKeyword(KW_BEGIN, tokens)
-  if begin:
-    stmts, tokens = DongbeiParser().ParseStmts(tokens)
-    if not stmts:
-      stmts = []
-    _, tokens = ConsumeKeyword(KW_END, tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_COMPOUND, stmts), tokens
-
-  # Parse 保准
-  assert_, tokens = TryConsumeKeyword(KW_ASSERT, tokens)
-  if assert_:
-    expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_ASSERT, expr), tokens
-
-  # Parse 辟谣
-  assert_, tokens = TryConsumeKeyword(KW_ASSERT_FALSE, tokens)
-  if assert_:
-    expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_ASSERT_FALSE, expr), tokens
-
-  # Parse 整叉劈了
-  raise_, tokens = TryConsumeKeyword(KW_RAISE, tokens)
-  if raise_:
-    print(tokens)
-    expr, tokens = ParseExpr(tokens)
-    print(tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_RAISE, expr), tokens
-
-  # Parse 削：
-  set_none, tokens = TryConsumeKeyword(KW_SET_NONE, tokens)
-  if set_none:
-    expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_SET_NONE, expr), tokens
-
-  # Parse 炮决：
-  del_, tokens = TryConsumeKeyword(KW_DEL, tokens)
-  if del_:
-    expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_DEL, expr), tokens
-
-  # Parse 唠唠：
-  say, tokens = TryConsumeKeyword(KW_SAY, tokens)
-  if say:
-    colon, tokens = ConsumeKeyword(KW_COLON, tokens)
-    expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_SAY, expr), tokens
-
-  # Parse 整
-  call_expr, tokens = TryParseCallExpr(tokens)
-  if call_expr:
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_CALL, call_expr), tokens
-
-  # Parse 滚犊子吧
-  ret, tokens = TryConsumeKeyword(KW_RETURN, tokens)
-  if ret:
-    expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_RETURN, expr), tokens
-
-  # Parse 接着磨叽
-  cont, tokens = TryConsumeKeyword(KW_CONTINUE, tokens)
-  if cont:
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_CONTINUE, None), tokens
-
-  # Parse 尥蹶子
-  break_, tokens = TryConsumeKeyword(KW_BREAK, tokens)
-  if break_:
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_BREAK, None), tokens
-
-  # Parse 寻思
-  check, tokens = TryConsumeKeyword(KW_CHECK, tokens)
-  if check:
-    expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_THEN, tokens)
-    then_stmt, tokens = ParseStmt(tokens)
-    # Parse the optional else-branch.
-    kw_else, tokens = TryConsumeKeyword(KW_ELSE, tokens)
-    if kw_else:
-      else_stmt, tokens = ParseStmt(tokens)
-    else:
-      else_stmt = None
-    return Statement(STMT_CONDITIONAL, (expr, then_stmt, else_stmt)), tokens
-
-  func_def, tokens = TryParseFuncDef(tokens)
-  if func_def:
-    return func_def, tokens
-
-  # Parse an identifier name.
-  id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
-
-  if id:
-    # Code below is for statements that start with an identifier.
-
-    # Parse 是活雷锋
-    is_var, tokens = TryConsumeKeyword(KW_IS_VAR, tokens)
-    if is_var:
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_VAR_DECL, id), tokens
-
-    # Parse 都是活雷锋
-    is_list, tokens = TryConsumeKeyword(KW_IS_LIST, tokens)
-    if is_list:
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_LIST_VAR_DECL, id), tokens
-
-    # Parse 阶级
-    class_, tokens = TryConsumeKeyword(KW_CLASS, tokens)
-    if class_:
-      _, tokens = ConsumeKeyword(KW_DERIVED, tokens)
-      subclass, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-      _, tokens = ConsumeKeyword(KW_CLASS, tokens)
-      _, tokens = ConsumeKeyword(KW_DEF, tokens)
-      methods, tokens = ParseMethodDefs(tokens)
-      _, tokens = ConsumeKeyword(KW_END, tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_CLASS_DEF, (subclass, id, methods)), tokens
-
-  expr1, tokens = TryParseExpr(orig_tokens)
-  if expr1:
-    # Code below is fof statements that start with an expression.
-  
-    # Parse 从...到...磨叽
-    from_, tokens = TryConsumeKeyword(KW_FROM, tokens)
-    if from_:
-      from_expr, tokens = ParseExpr(tokens)
-      _, tokens = ConsumeKeyword(KW_TO, tokens)
-      to_expr, tokens = ParseExpr(tokens)
-      _, tokens = ConsumeKeyword(KW_LOOP, tokens)
-      stmts, tokens = DongbeiParser().ParseStmts(tokens)
-      _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_LOOP, (expr1, from_expr, to_expr, stmts)), tokens
-
-    # Parse 在...磨叽
-    in_, tokens = TryConsumeKeyword(KW_IN, tokens)
-    if in_:
-      range_expr, tokens = ParseExpr(tokens)
-      _, tokens = ConsumeKeyword(KW_LOOP, tokens)
-      stmts, tokens = DongbeiParser().ParseStmts(tokens)
-      _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_RANGE_LOOP, (expr1, range_expr, stmts)), tokens
-
-    # Parse 从一而终磨叽 or the '1 Infinite Loop' 彩蛋
-    infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP, tokens)
-    if not infinite_loop:
-      infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP_EGG, tokens)
-    if infinite_loop:
-      stmts, tokens = DongbeiParser().ParseStmts(tokens)
-      _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_INFINITE_LOOP, (expr1, stmts)), tokens
-
-    # Parse 装
-    become, tokens = TryConsumeKeyword(KW_BECOME, tokens)
-    if become:
-      expr, tokens = ParseExpr(tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_ASSIGN, (expr1, expr)), tokens
-
-    # Parse 来了个
-    append, tokens = TryConsumeKeyword(KW_APPEND, tokens)
-    if append:
-      expr, tokens = ParseExpr(tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_APPEND, (expr1, expr)), tokens
-
-    # Parse 来了群
-    extend, tokens = TryConsumeKeyword(KW_EXTEND, tokens)
-    if extend:
-      expr, tokens = ParseExpr(tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_EXTEND, (expr1, expr)), tokens
-
-    # Parse 走走
-    inc, tokens = TryConsumeKeyword(KW_INC, tokens)
-    if inc:
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_INC_BY,
-                        (expr1, IntegerLiteralExpr(1))),
-              tokens)
-
-    # Parse 走X步
-    inc, tokens = TryConsumeKeyword(KW_INC_BY, tokens)
-    if inc:
-      expr, tokens = ParseExpr(tokens)
-      _, tokens = ConsumeKeyword(KW_STEP, tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_INC_BY, (expr1, expr)), tokens
-
-    # Parse 稍稍
-    dec, tokens = TryConsumeKeyword(KW_DEC, tokens)
-    if dec:
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return (Statement(STMT_DEC_BY,
-                        (expr1, IntegerLiteralExpr(1))),
-              tokens)
-
-    # Parse 稍X步
-    dec, tokens = TryConsumeKeyword(KW_DEC_BY, tokens)
-    if dec:
-      expr, tokens = ParseExpr(tokens)
-      _, tokens = ConsumeKeyword(KW_STEP, tokens)
-      _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_DEC_BY, (expr1, expr)), tokens
-
-    # Treat the expression as a statement.
-    _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
-    return Statement(STMT_EXPR, expr1), tokens
-
-  return None, orig_tokens
-
 def ParseStmt(tokens):
-  stmt, tokens = TryParseStmt(tokens)
+  stmt, tokens = DongbeiParser().TryParseStmt(tokens)
   assert stmt, '期望语句，落空了：%s' % (tokens[:5],)
   return stmt, tokens
 
