@@ -840,101 +840,98 @@ class DongbeiParser(object):
   def TryParseStmt(self):
     """Returns statement, mutating self.tokens)."""
 
-    tokens = self.tokens
-    orig_tokens = tokens
+    orig_tokens = self.tokens
 
     # Parse 翠花，上
-    imp, tokens = self.TryConsumeKeyword(KW_IMPORT, tokens)
+    imp, self.tokens = self.TryConsumeKeyword(KW_IMPORT, self.tokens)
     if imp:
-      module, tokens = self.ConsumeTokenType(TK_IDENTIFIER, tokens)
-      _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+      module, self.tokens = self.ConsumeTokenType(TK_IDENTIFIER, self.tokens)
+      self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_IMPORT, module)
 
     # Parse 开整：
-    begin, self.tokens = self.TryConsumeKeyword(KW_BEGIN, tokens)
+    begin, self.tokens = self.TryConsumeKeyword(KW_BEGIN, self.tokens)
     if begin:
       stmts = self.ParseStmts()
       if not stmts:
         stmts = []
-      _, tokens = self.ConsumeKeyword(KW_END, self.tokens)
-      _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+      self.ConsumeKeyword(KW_END)
+      self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_COMPOUND, stmts)
 
     # Parse 保准
-    assert_, tokens = self.TryConsumeKeyword(KW_ASSERT, tokens)
+    assert_, self.tokens = self.TryConsumeKeyword(KW_ASSERT, self.tokens)
     if assert_:
-      expr, tokens = self.ParseExpr(tokens)
-      _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+      expr, self.tokens = self.ParseExpr(self.tokens)
+      self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_ASSERT, expr)
 
     # Parse 辟谣
-    assert_, tokens = self.TryConsumeKeyword(KW_ASSERT_FALSE, tokens)
+    assert_, self.tokens = self.TryConsumeKeyword(KW_ASSERT_FALSE, self.tokens)
     if assert_:
-      expr, tokens = self.ParseExpr(tokens)
-      _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+      expr, self.tokens = self.ParseExpr(self.tokens)
+      self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_ASSERT_FALSE, expr)
 
     # Parse 整叉劈了
-    raise_, tokens = self.TryConsumeKeyword(KW_RAISE, tokens)
+    raise_, self.tokens = self.TryConsumeKeyword(KW_RAISE, self.tokens)
     if raise_:
-      print(tokens)
-      expr, tokens = self.ParseExpr(tokens)
-      print(tokens)
-      _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+      expr, self.tokens = self.ParseExpr(self.tokens)
+      self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_RAISE, expr)
 
     # Parse 削：
-    set_none, tokens = self.TryConsumeKeyword(KW_SET_NONE, tokens)
+    set_none, self.tokens = self.TryConsumeKeyword(KW_SET_NONE, self.tokens)
     if set_none:
-      expr, tokens = self.ParseExpr(tokens)
-      _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+      expr, self.tokens = self.ParseExpr(self.tokens)
+      self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_SET_NONE, expr)
 
     # Parse 炮决：
-    del_, tokens = self.TryConsumeKeyword(KW_DEL, tokens)
+    del_, self.tokens = self.TryConsumeKeyword(KW_DEL, self.tokens)
     if del_:
-      expr, tokens = self.ParseExpr(tokens)
-      _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+      expr, self.tokens = self.ParseExpr(self.tokens)
+      self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_DEL, expr)
 
     # Parse 唠唠：
-    say, tokens = self.TryConsumeKeyword(KW_SAY, tokens)
+    say, self.tokens = self.TryConsumeKeyword(KW_SAY, self.tokens)
     if say:
-      colon, tokens = self.ConsumeKeyword(KW_COLON, tokens)
-      expr, tokens = self.ParseExpr(tokens)
-      _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+      self.ConsumeKeyword(KW_COLON)
+      expr, self.tokens = self.ParseExpr(self.tokens)
+      self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_SAY, expr)
 
     # Parse 整
-    call_expr, tokens = self.TryParseCallExpr(tokens)
+    call_expr, self.tokens = self.TryParseCallExpr(self.tokens)
     if call_expr:
-      _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+      self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_CALL, call_expr)
 
     # Parse 滚犊子吧
-    ret, tokens = self.TryConsumeKeyword(KW_RETURN, tokens)
+    ret, self.tokens = self.TryConsumeKeyword(KW_RETURN, self.tokens)
     if ret:
-      expr, tokens = self.ParseExpr(tokens)
-      _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+      expr, self.tokens = self.ParseExpr(self.tokens)
+      self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_RETURN, expr)
 
     # Parse 接着磨叽
-    cont, tokens = self.TryConsumeKeyword(KW_CONTINUE, tokens)
+    cont, self.tokens = self.TryConsumeKeyword(KW_CONTINUE, self.tokens)
     if cont:
-      _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+      self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_CONTINUE, None)
 
     # Parse 尥蹶子
-    break_, tokens = self.TryConsumeKeyword(KW_BREAK, tokens)
+    break_, self.tokens = self.TryConsumeKeyword(KW_BREAK, self.tokens)
     if break_:
-      _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+      self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_BREAK, None)
 
     # Parse 寻思
-    check, tokens = self.TryConsumeKeyword(KW_CHECK, tokens)
+    check, self.tokens = self.TryConsumeKeyword(KW_CHECK, self.tokens)
     if check:
-      expr, tokens = self.ParseExpr(tokens)
-      _, self.tokens = self.ConsumeKeyword(KW_THEN, tokens)
+      expr, self.tokens = self.ParseExpr(self.tokens)
+      self.ConsumeKeyword(KW_THEN)
       then_stmt = self.ParseStmt()
       # Parse the optional else-branch.
       kw_else, self.tokens = self.TryConsumeKeyword(KW_ELSE, self.tokens)
@@ -944,130 +941,129 @@ class DongbeiParser(object):
         else_stmt = None
       return Statement(STMT_CONDITIONAL, (expr, then_stmt, else_stmt))
 
-    func_def, self.tokens = self.TryParseFuncDef(tokens)
+    func_def, self.tokens = self.TryParseFuncDef(self.tokens)
     if func_def:
       return func_def
 
     # Parse an identifier name.
-    id, tokens = self.TryConsumeTokenType(TK_IDENTIFIER, tokens)
+    id, self.tokens = self.TryConsumeTokenType(TK_IDENTIFIER, self.tokens)
 
     if id:
       # Code below is for statements that start with an identifier.
 
       # Parse 是活雷锋
-      is_var, tokens = self.TryConsumeKeyword(KW_IS_VAR, tokens)
+      is_var, self.tokens = self.TryConsumeKeyword(KW_IS_VAR, self.tokens)
       if is_var:
-        _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+        self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_VAR_DECL, id)
 
       # Parse 都是活雷锋
-      is_list, tokens = self.TryConsumeKeyword(KW_IS_LIST, tokens)
+      is_list, self.tokens = self.TryConsumeKeyword(KW_IS_LIST, self.tokens)
       if is_list:
-        _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+        self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_LIST_VAR_DECL, id)
 
       # Parse 阶级
-      class_, tokens = self.TryConsumeKeyword(KW_CLASS, tokens)
+      class_, self.tokens = self.TryConsumeKeyword(KW_CLASS, self.tokens)
       if class_:
-        _, tokens = self.ConsumeKeyword(KW_DERIVED, tokens)
-        subclass, tokens = self.ConsumeTokenType(TK_IDENTIFIER, tokens)
-        _, tokens = self.ConsumeKeyword(KW_CLASS, tokens)
-        _, tokens = self.ConsumeKeyword(KW_DEF, tokens)
-        methods, tokens = self.ParseMethodDefs(tokens)
-        _, tokens = self.ConsumeKeyword(KW_END, tokens)
-        _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+        self.ConsumeKeyword(KW_DERIVED)
+        subclass, self.tokens = self.ConsumeTokenType(TK_IDENTIFIER, self.tokens)
+        self.ConsumeKeyword(KW_CLASS)
+        self.ConsumeKeyword(KW_DEF)
+        methods, self.tokens = self.ParseMethodDefs(self.tokens)
+        self.ConsumeKeyword(KW_END)
+        self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_CLASS_DEF, (subclass, id, methods))
 
-    expr1, tokens = self.TryParseExpr(orig_tokens)
+    expr1, self.tokens = self.TryParseExpr(orig_tokens)
     if expr1:
       # Code below is fof statements that start with an expression.
     
       # Parse 从...到...磨叽
-      from_, tokens = self.TryConsumeKeyword(KW_FROM, tokens)
+      from_, self.tokens = self.TryConsumeKeyword(KW_FROM, self.tokens)
       if from_:
-        from_expr, tokens = self.ParseExpr(tokens)
-        _, tokens = self.ConsumeKeyword(KW_TO, tokens)
-        to_expr, tokens = self.ParseExpr(tokens)
-        _, self.tokens = self.ConsumeKeyword(KW_LOOP, tokens)
+        from_expr, self.tokens = self.ParseExpr(self.tokens)
+        self.ConsumeKeyword(KW_TO)
+        to_expr, self.tokens = self.ParseExpr(self.tokens)
+        self.ConsumeKeyword(KW_LOOP)
         stmts = self.ParseStmts()
-        _, tokens = self.ConsumeKeyword(KW_END_LOOP, self.tokens)
-        _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+        self.ConsumeKeyword(KW_END_LOOP)
+        self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_LOOP, (expr1, from_expr, to_expr, stmts))
 
       # Parse 在...磨叽
-      in_, tokens = self.TryConsumeKeyword(KW_IN, tokens)
+      in_, self.tokens = self.TryConsumeKeyword(KW_IN, self.tokens)
       if in_:
-        range_expr, tokens = self.ParseExpr(tokens)
-        _, self.tokens = self.ConsumeKeyword(KW_LOOP, tokens)
+        range_expr, self.tokens = self.ParseExpr(self.tokens)
+        self.ConsumeKeyword(KW_LOOP)
         stmts = self.ParseStmts()
-        _, tokens = self.ConsumeKeyword(KW_END_LOOP, self.tokens)
-        _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+        self.ConsumeKeyword(KW_END_LOOP)
+        self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_RANGE_LOOP, (expr1, range_expr, stmts))
 
       # Parse 从一而终磨叽 or the '1 Infinite Loop' 彩蛋
-      infinite_loop, tokens = self.TryConsumeKeyword(KW_1_INFINITE_LOOP, tokens)
+      infinite_loop, self.tokens = self.TryConsumeKeyword(KW_1_INFINITE_LOOP, self.tokens)
       if not infinite_loop:
-        infinite_loop, tokens = self.TryConsumeKeyword(KW_1_INFINITE_LOOP_EGG, tokens)
-      self.tokens = tokens
+        infinite_loop, self.tokens = self.TryConsumeKeyword(KW_1_INFINITE_LOOP_EGG, self.tokens)
       if infinite_loop:
         stmts = self.ParseStmts()
-        _, tokens = self.ConsumeKeyword(KW_END_LOOP, self.tokens)
-        _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+        self.ConsumeKeyword(KW_END_LOOP)
+        self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_INFINITE_LOOP, (expr1, stmts))
 
       # Parse 装
-      become, tokens = self.TryConsumeKeyword(KW_BECOME, tokens)
+      become, self.tokens = self.TryConsumeKeyword(KW_BECOME, self.tokens)
       if become:
-        expr, tokens = self.ParseExpr(tokens)
-        _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+        expr, self.tokens = self.ParseExpr(self.tokens)
+        self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_ASSIGN, (expr1, expr))
 
       # Parse 来了个
-      append, tokens = self.TryConsumeKeyword(KW_APPEND, tokens)
+      append, self.tokens = self.TryConsumeKeyword(KW_APPEND, self.tokens)
       if append:
-        expr, tokens = self.ParseExpr(tokens)
-        _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+        expr, self.tokens = self.ParseExpr(self.tokens)
+        self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_APPEND, (expr1, expr))
 
       # Parse 来了群
-      extend, tokens = self.TryConsumeKeyword(KW_EXTEND, tokens)
+      extend, self.tokens = self.TryConsumeKeyword(KW_EXTEND, self.tokens)
       if extend:
-        expr, tokens = self.ParseExpr(tokens)
-        _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+        expr, self.tokens = self.ParseExpr(self.tokens)
+        self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_EXTEND, (expr1, expr))
 
       # Parse 走走
-      inc, tokens = self.TryConsumeKeyword(KW_INC, tokens)
+      inc, self.tokens = self.TryConsumeKeyword(KW_INC, self.tokens)
       if inc:
-        _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+        self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_INC_BY,
                          (expr1, IntegerLiteralExpr(1)))
 
       # Parse 走X步
-      inc, tokens = self.TryConsumeKeyword(KW_INC_BY, tokens)
+      inc, self.tokens = self.TryConsumeKeyword(KW_INC_BY, self.tokens)
       if inc:
-        expr, tokens = self.ParseExpr(tokens)
-        _, tokens = self.ConsumeKeyword(KW_STEP, tokens)
-        _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+        expr, self.tokens = self.ParseExpr(self.tokens)
+        self.ConsumeKeyword(KW_STEP)
+        self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_INC_BY, (expr1, expr))
 
       # Parse 稍稍
-      dec, tokens = self.TryConsumeKeyword(KW_DEC, tokens)
+      dec, self.tokens = self.TryConsumeKeyword(KW_DEC, self.tokens)
       if dec:
-        _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+        self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_DEC_BY,
                          (expr1, IntegerLiteralExpr(1)))
 
       # Parse 稍X步
-      dec, tokens = self.TryConsumeKeyword(KW_DEC_BY, tokens)
+      dec, self.tokens = self.TryConsumeKeyword(KW_DEC_BY, self.tokens)
       if dec:
-        expr, tokens = self.ParseExpr(tokens)
-        _, tokens = self.ConsumeKeyword(KW_STEP, tokens)
-        _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+        expr, self.tokens = self.ParseExpr(self.tokens)
+        self.ConsumeKeyword(KW_STEP)
+        self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_DEC_BY, (expr1, expr))
 
       # Treat the expression as a statement.
-      _, self.tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
+      self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_EXPR, expr1)
 
     self.tokens = orig_tokens
@@ -1079,61 +1075,63 @@ class DongbeiParser(object):
   def TryParseObjectExpr(self, tokens):
     """Returns (expr, remaining tokens)."""
 
+    self.tokens = tokens
+
     # Do we see 抱团？
-    tuple, tokens = self.TryConsumeKeyword(KW_TUPLE, tokens)
+    tuple, self.tokens = self.TryConsumeKeyword(KW_TUPLE, self.tokens)
     if tuple:
-      return TupleExpr(()), tokens
+      return TupleExpr(()), self.tokens
     
     # Do we see an integer literal?
-    num, tokens = self.TryConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+    num, self.tokens = self.TryConsumeTokenType(TK_INTEGER_LITERAL, self.tokens)
     if num:
-      return LiteralExpr(num), tokens
+      return LiteralExpr(num), self.tokens
 
     # Do we see a None literal?
-    is_none, tokens = self.TryConsumeKeyword(KW_IS_NONE, tokens)
+    is_none, self.tokens = self.TryConsumeKeyword(KW_IS_NONE, self.tokens)
     if is_none:
-      return LiteralExpr(Token(TK_NONE_LITERAL, None)), tokens
+      return LiteralExpr(Token(TK_NONE_LITERAL, None)), self.tokens
 
     # Do we see a string literal?
-    open_quote, tokens = self.TryConsumeKeyword(KW_OPEN_QUOTE, tokens)
+    open_quote, self.tokens = self.TryConsumeKeyword(KW_OPEN_QUOTE, self.tokens)
     if open_quote:
-      str, tokens = self.ConsumeTokenType(TK_STRING_LITERAL, tokens)
-      _, tokens = self.ConsumeKeyword(KW_CLOSE_QUOTE, tokens)
-      return LiteralExpr(str), tokens
+      str, self.tokens = self.ConsumeTokenType(TK_STRING_LITERAL, self.tokens)
+      self.ConsumeKeyword(KW_CLOSE_QUOTE)
+      return LiteralExpr(str), self.tokens
 
     # Do we see an identifier?
-    id, tokens = self.TryConsumeTokenType(TK_IDENTIFIER, tokens)
+    id, self.tokens = self.TryConsumeTokenType(TK_IDENTIFIER, self.tokens)
     if id:
-      new_obj, tokens = self.TryConsumeKeyword(KW_NEW_OBJECT_OF, tokens)
+      new_obj, self.tokens = self.TryConsumeKeyword(KW_NEW_OBJECT_OF, self.tokens)
       if not new_obj:
-        return VariableExpr(id.value), tokens
+        return VariableExpr(id.value), self.tokens
       args = []
-      open_paren, tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, tokens)
+      open_paren, self.tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, self.tokens)
       if open_paren:
-        args, tokens = self.ParseExprList(tokens)
-        _, tokens = self.ConsumeKeyword(KW_CLOSE_PAREN, tokens)
-      return NewObjectExpr(id, args), tokens
+        args, self.tokens = self.ParseExprList(self.tokens)
+        self.ConsumeKeyword(KW_CLOSE_PAREN)
+      return NewObjectExpr(id, args), self.tokens
 
     # Do we see a parenthesis?
-    open_paren, tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, tokens)
+    open_paren, self.tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, self.tokens)
     if open_paren:
-      expr, tokens = self.ParseExpr(tokens)
-      _, tokens = self.ConsumeKeyword(KW_CLOSE_PAREN, tokens)
-      return ParenExpr(expr), tokens
+      expr, self.tokens = self.ParseExpr(self.tokens)
+      self.ConsumeKeyword(KW_CLOSE_PAREN)
+      return ParenExpr(expr), self.tokens
 
     # Do we see a function call?
-    call_expr, tokens = self.TryParseCallExpr(tokens)
+    call_expr, self.tokens = self.TryParseCallExpr(self.tokens)
     if call_expr:
-      return call_expr, tokens
+      return call_expr, self.tokens
     
     # Do we see a list literal?
-    open_bracket, tokens = self.TryConsumeKeyword(KW_OPEN_BRACKET, tokens)
+    open_bracket, self.tokens = self.TryConsumeKeyword(KW_OPEN_BRACKET, self.tokens)
     if open_bracket:
-      exprs, tokens = self.ParseExprList(tokens)
-      _, tokens = self.ConsumeKeyword(KW_CLOSE_BRACKET, tokens)
-      return ListExpr(exprs), tokens
+      exprs, self.tokens = self.ParseExprList(self.tokens)
+      self.ConsumeKeyword(KW_CLOSE_BRACKET)
+      return ListExpr(exprs), self.tokens
 
-    return None, tokens
+    return None, self.tokens
 
   def TryParseAtomicExpr(self, tokens):
     negate, tokens = self.TryConsumeKeyword(KW_NEGATE, tokens)
@@ -1290,12 +1288,12 @@ class DongbeiParser(object):
       func, tokens = self.ConsumeTokenType(TK_IDENTIFIER, tokens)
       func_name = func.value
 
-    open_paren, tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, tokens)
+    open_paren, self.tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, tokens)
     args = []
     if open_paren:
-      args, tokens = self.ParseExprList(tokens)
-      _, tokens = self.ConsumeKeyword(KW_CLOSE_PAREN, tokens)
-    return CallExpr(func_name, args), tokens
+      args, self.tokens = self.ParseExprList(self.tokens)
+      self.ConsumeKeyword(KW_CLOSE_PAREN)
+    return CallExpr(func_name, args), self.tokens
   
   def TryParseTupleExpr(self, tokens):
     orig_tokens = tokens
@@ -1362,10 +1360,10 @@ class DongbeiParser(object):
     cmp, tokens = self.TryConsumeKeyword(KW_COMPARE, tokens)
     if cmp:
       arith2, tokens = self.ParseArithmeticExpr(tokens)
-      relation, tokens = self.TryConsumeKeyword(KW_GREATER, tokens)
+      relation, self.tokens = self.TryConsumeKeyword(KW_GREATER, tokens)
       if not relation:
-        relation, tokens = self.ConsumeKeyword(KW_LESS, tokens)
-      return ComparisonExpr(arith, relation, arith2), tokens
+        relation = self.ConsumeKeyword(KW_LESS)
+      return ComparisonExpr(arith, relation, arith2), self.tokens
 
     cmp, tokens = self.TryConsumeKeyword(KW_COMPARE_WITH, tokens)
     if cmp:
@@ -1391,36 +1389,36 @@ class DongbeiParser(object):
     return expr, tokens
 
   def TryParseFuncDef(self, tokens, is_method=False):
-    orig_tokens = tokens
-    id, tokens = self.TryConsumeTokenType(TK_IDENTIFIER, tokens)
+    self.tokens = tokens
+    orig_tokens = self.tokens
+    id, self.tokens = self.TryConsumeTokenType(TK_IDENTIFIER, self.tokens)
     if not id:
-      return None, tokens
+      return None, self.tokens
 
-    open_paren, tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, tokens)
+    open_paren, self.tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, self.tokens)
     params = [IdentifierToken(ID_SELF)] if is_method else []
     if open_paren:
       while True:
-        param, tokens = self.ConsumeTokenType(TK_IDENTIFIER, tokens)
+        param, self.tokens = self.ConsumeTokenType(TK_IDENTIFIER, self.tokens)
         params.append(param)
-        close_paren, tokens = self.TryConsumeKeyword(KW_CLOSE_PAREN, tokens)
+        close_paren, self.tokens = self.TryConsumeKeyword(KW_CLOSE_PAREN, self.tokens)
         if close_paren:
           break
-        _, tokens = self.ConsumeKeyword(KW_COMMA, tokens)
+        self.ConsumeKeyword(KW_COMMA)
         
-      self.tokens = tokens
       func_def = self.ConsumeToken(Keyword(KW_DEF))
       stmts = self.ParseStmts()
-      _, tokens = self.ConsumeKeyword(KW_END, self.tokens)
-      _, tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
+      self.ConsumeKeyword(KW_END)
+      self.ConsumeKeyword(KW_PERIOD)
+      return Statement(STMT_FUNC_DEF, (id, params, stmts)), self.tokens
 
     # not open_paren
-    func_def, self.tokens = self.TryConsumeKeyword(KW_DEF, tokens)
+    func_def, self.tokens = self.TryConsumeKeyword(KW_DEF, self.tokens)
     if func_def:
       stmts = self.ParseStmts()
-      _, tokens = self.ConsumeKeyword(KW_END, self.tokens)
-      _, tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
-      return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
+      self.ConsumeKeyword(KW_END)
+      self.ConsumeKeyword(KW_PERIOD)
+      return Statement(STMT_FUNC_DEF, (id, params, stmts)), self.tokens
 
     return None, orig_tokens
 
@@ -1467,9 +1465,8 @@ class DongbeiParser(object):
     self.tokens = self.tokens[1:]
     return token
 
-  def ConsumeKeyword(self, keyword, tokens):
-    self.tokens = tokens
-    return self.ConsumeToken(Keyword(keyword)), self.tokens
+  def ConsumeKeyword(self, keyword):
+    return self.ConsumeToken(Keyword(keyword))
 
   def ParseExprList(self, tokens):
     """Parses a comma-separated expression list."""
