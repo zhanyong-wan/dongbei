@@ -1297,7 +1297,7 @@ class DongbeiParser(object):
   
   def TryParseTupleExpr(self, tokens):
     orig_tokens = tokens
-    expr, tokens = TryParseCompOrArithExpr(tokens)
+    expr, tokens = self.TryParseCompOrArithExpr(tokens)
     if not expr:
       return None, orig_tokens
 
@@ -1319,7 +1319,7 @@ class DongbeiParser(object):
     tuple, tokens = DongbeiParser().TryParseTupleExpr(tokens)
     if tuple:
       return tuple, tokens
-    return TryParseCompOrArithExpr(tokens)
+    return self.TryParseCompOrArithExpr(tokens)
 
   def TryParseExpr(self, tokens):
     nc_expr, tokens = DongbeiParser().TryParseNonConcatExpr(tokens)
@@ -1350,6 +1350,38 @@ class DongbeiParser(object):
     expr, tokens = self.TryParseExpr(tokens)
     assert expr, '指望一个表达式，但是啥也没有；%s' % tokens[:5]
     return expr, tokens
+
+  def TryParseCompOrArithExpr(self, tokens):
+    arith, tokens = DongbeiParser().TryParseArithmeticExpr(tokens)
+    if not arith:
+      return None, tokens
+    post_arith_tokens = tokens
+
+    cmp, tokens = DongbeiParser().TryConsumeKeyword(KW_COMPARE, tokens)
+    if cmp:
+      arith2, tokens = ParseArithmeticExpr(tokens)
+      relation, tokens = DongbeiParser().TryConsumeKeyword(KW_GREATER, tokens)
+      if not relation:
+        relation, tokens = ConsumeKeyword(KW_LESS, tokens)
+      return ComparisonExpr(arith, relation, arith2), tokens
+
+    cmp, tokens = DongbeiParser().TryConsumeKeyword(KW_COMPARE_WITH, tokens)
+    if cmp:
+      arith2, tokens = DongbeiParser().TryParseArithmeticExpr(tokens)
+      if not arith2:
+        return arith, post_arith_tokens
+      relation, tokens = DongbeiParser().TryConsumeKeyword(KW_EQUAL, tokens)
+      if not relation:
+        relation, tokens = DongbeiParser().TryConsumeKeyword(KW_NOT_EQUAL, tokens)
+        if not relation:
+          return arith, post_arith_tokens
+      return ComparisonExpr(arith, relation, arith2), tokens
+
+    cmp, tokens = DongbeiParser().TryConsumeKeyword(KW_IS_NONE, tokens)
+    if cmp:
+      return ComparisonExpr(arith, Keyword(KW_IS_NONE), None), tokens
+
+    return arith, tokens
 
   # End of class Dongbei
 
@@ -1459,38 +1491,6 @@ def ParseArithmeticExpr(tokens):
   expr, tokens = DongbeiParser().TryParseArithmeticExpr(tokens)
   assert expr, '期望 ArithmeticExpr。落空了：%s' % (tokens[:5],)
   return expr, tokens
-
-def TryParseCompOrArithExpr(tokens):
-  arith, tokens = DongbeiParser().TryParseArithmeticExpr(tokens)
-  if not arith:
-    return None, tokens
-  post_arith_tokens = tokens
-
-  cmp, tokens = DongbeiParser().TryConsumeKeyword(KW_COMPARE, tokens)
-  if cmp:
-    arith2, tokens = ParseArithmeticExpr(tokens)
-    relation, tokens = DongbeiParser().TryConsumeKeyword(KW_GREATER, tokens)
-    if not relation:
-      relation, tokens = ConsumeKeyword(KW_LESS, tokens)
-    return ComparisonExpr(arith, relation, arith2), tokens
-
-  cmp, tokens = DongbeiParser().TryConsumeKeyword(KW_COMPARE_WITH, tokens)
-  if cmp:
-    arith2, tokens = DongbeiParser().TryParseArithmeticExpr(tokens)
-    if not arith2:
-      return arith, post_arith_tokens
-    relation, tokens = DongbeiParser().TryConsumeKeyword(KW_EQUAL, tokens)
-    if not relation:
-      relation, tokens = DongbeiParser().TryConsumeKeyword(KW_NOT_EQUAL, tokens)
-      if not relation:
-        return arith, post_arith_tokens
-    return ComparisonExpr(arith, relation, arith2), tokens
-
-  cmp, tokens = DongbeiParser().TryConsumeKeyword(KW_IS_NONE, tokens)
-  if cmp:
-    return ComparisonExpr(arith, Keyword(KW_IS_NONE), None), tokens
-
-  return arith, tokens
 
 def ParseExprFromStr(str):
   parser = DongbeiParser()
