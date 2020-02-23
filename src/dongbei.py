@@ -1109,7 +1109,7 @@ class DongbeiParser(object):
       args = []
       open_paren, self.tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, self.tokens)
       if open_paren:
-        args, self.tokens = self.ParseExprList(self.tokens)
+        args = self.ParseExprList()
         self.ConsumeKeyword(KW_CLOSE_PAREN)
       return NewObjectExpr(id, args), self.tokens
 
@@ -1128,7 +1128,7 @@ class DongbeiParser(object):
     # Do we see a list literal?
     open_bracket, self.tokens = self.TryConsumeKeyword(KW_OPEN_BRACKET, self.tokens)
     if open_bracket:
-      exprs, self.tokens = self.ParseExprList(self.tokens)
+      exprs = self.ParseExprList()
       self.ConsumeKeyword(KW_CLOSE_BRACKET)
       return ListExpr(exprs), self.tokens
 
@@ -1295,7 +1295,7 @@ class DongbeiParser(object):
     open_paren, self.tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, self.tokens)
     args = []
     if open_paren:
-      args, self.tokens = self.ParseExprList(self.tokens)
+      args = self.ParseExprList()
       self.ConsumeKeyword(KW_CLOSE_PAREN)
     return CallExpr(func_name, args)
   
@@ -1476,23 +1476,24 @@ class DongbeiParser(object):
   def ConsumeKeyword(self, keyword):
     return self.ConsumeToken(Keyword(keyword))
 
-  def ParseExprList(self, tokens):
+  def ParseExprList(self):
     """Parses a comma-separated expression list."""
 
     exprs = []
-    tokens_after_expr_list = tokens
+    tokens_after_expr_list = self.tokens
     while True:
-      self.tokens = tokens
       expr = self.TryParseExpr()
       tokens_after_expr_list = self.tokens
       if expr:
         exprs.append(expr)
       else:
         # Couldn't parse an expression.
-        return exprs, tokens_after_expr_list
-      comma, tokens = self.TryConsumeKeyword(KW_COMMA, tokens_after_expr_list)
+        self.tokens = tokens_after_expr_list
+        return exprs
+      comma, self.tokens = self.TryConsumeKeyword(KW_COMMA, tokens_after_expr_list)
       if not comma:
-        return exprs, tokens_after_expr_list
+        self.tokens = tokens_after_expr_list
+        return exprs
 
   # End of class DongbeiParser
 
