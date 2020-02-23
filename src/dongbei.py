@@ -1209,6 +1209,41 @@ class DongbeiParser(object):
 
     return expr, tokens
 
+  def TryParseTermExpr(self, tokens):
+    factor, tokens = DongbeiParser().TryParseAtomicExpr(tokens)
+    if not factor:
+      return None, tokens
+
+    factors = [factor]  # All factors of the term.
+    operators = []  # Operators between the factors. The len of this is len(factors) - 1.
+
+    while True:
+      pre_operator_tokens = tokens
+      operator, tokens = DongbeiParser().TryConsumeKeyword(KW_TIMES, tokens)
+      if not operator:
+        operator, tokens = DongbeiParser().TryConsumeKeyword(KW_DIVIDE_BY, tokens)
+      if not operator:
+        operator, tokens = DongbeiParser().TryConsumeKeyword(KW_INTEGER_DIVIDE_BY, tokens)
+      if not operator:
+        operator, tokens = DongbeiParser().TryConsumeKeyword(KW_MODULO, tokens)
+      if not operator:
+        break
+
+      factor, tokens = DongbeiParser().TryParseAtomicExpr(tokens)
+      if factor:
+        operators.append(operator)
+        factors.append(factor)
+      else:
+        # We have a trailing operator without a factor to follow it.
+        tokens = pre_operator_tokens
+        break
+
+    assert len(factors) == len(operators) + 1
+    expr = factors[0]
+    for i, operator in enumerate(operators):
+      expr = ArithmeticExpr(expr, operator, factors[i + 1])
+    return expr, tokens
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1333,43 +1368,8 @@ def TryParseCallExpr(tokens):
     _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
   return CallExpr(func_name, args), tokens
  
-def TryParseTermExpr(tokens):
-  factor, tokens = DongbeiParser().TryParseAtomicExpr(tokens)
-  if not factor:
-    return None, tokens
-
-  factors = [factor]  # All factors of the term.
-  operators = []  # Operators between the factors. The len of this is len(factors) - 1.
-
-  while True:
-    pre_operator_tokens = tokens
-    operator, tokens = DongbeiParser().TryConsumeKeyword(KW_TIMES, tokens)
-    if not operator:
-      operator, tokens = DongbeiParser().TryConsumeKeyword(KW_DIVIDE_BY, tokens)
-    if not operator:
-      operator, tokens = DongbeiParser().TryConsumeKeyword(KW_INTEGER_DIVIDE_BY, tokens)
-    if not operator:
-      operator, tokens = DongbeiParser().TryConsumeKeyword(KW_MODULO, tokens)
-    if not operator:
-      break
-
-    factor, tokens = DongbeiParser().TryParseAtomicExpr(tokens)
-    if factor:
-      operators.append(operator)
-      factors.append(factor)
-    else:
-      # We have a trailing operator without a factor to follow it.
-      tokens = pre_operator_tokens
-      break
-
-  assert len(factors) == len(operators) + 1
-  expr = factors[0]
-  for i, operator in enumerate(operators):
-    expr = ArithmeticExpr(expr, operator, factors[i + 1])
-  return expr, tokens
-
 def TryParseArithmeticExpr(tokens):
-  term, tokens = TryParseTermExpr(tokens)
+  term, tokens = DongbeiParser().TryParseTermExpr(tokens)
   if not term:
     return None, tokens
 
@@ -1384,7 +1384,7 @@ def TryParseArithmeticExpr(tokens):
     if not operator:
       break
 
-    term, tokens = TryParseTermExpr(tokens)
+    term, tokens = DongbeiParser().TryParseTermExpr(tokens)
     if term:
       operators.append(operator)
       terms.append(term)
