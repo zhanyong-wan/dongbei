@@ -971,7 +971,7 @@ class DongbeiParser(object):
         subclass, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
         _, tokens = ConsumeKeyword(KW_CLASS, tokens)
         _, tokens = ConsumeKeyword(KW_DEF, tokens)
-        methods, tokens = ParseMethodDefs(tokens)
+        methods, tokens = self.ParseMethodDefs(tokens)
         _, tokens = ConsumeKeyword(KW_END, tokens)
         _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
         return Statement(STMT_CLASS_DEF, (subclass, id, methods)), tokens
@@ -1422,6 +1422,15 @@ class DongbeiParser(object):
 
     return None, orig_tokens
 
+  def ParseMethodDefs(self, tokens):
+    methods = []
+    while True:
+      method, tokens = self.TryParseFuncDef(tokens, is_method=True)
+      if method:
+        methods.append(method)
+      else:
+        return methods, tokens
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1535,15 +1544,6 @@ def ParseExprFromStr(str):
 def TryParseExprFromStr(str):
   parser = DongbeiParser()
   return parser.TryParseExpr(parser.Tokenize(str))
-
-def ParseMethodDefs(tokens):
-  methods = []
-  while True:
-    method, tokens = DongbeiParser().TryParseFuncDef(tokens, is_method=True)
-    if method:
-      methods.append(method)
-    else:
-      return methods, tokens
 
 def ParseStmt(tokens):
   stmt, tokens = DongbeiParser().TryParseStmt(tokens)
