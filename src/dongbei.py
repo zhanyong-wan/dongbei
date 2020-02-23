@@ -1074,6 +1074,65 @@ class DongbeiParser(object):
   def TryConsumeKeyword(self, keyword, tokens):
     return TryConsumeToken(Keyword(keyword), tokens)
 
+  def TryParseObjectExpr(self, tokens):
+    """Returns (expr, remaining tokens)."""
+
+    # Do we see 抱团？
+    tuple, tokens = DongbeiParser().TryConsumeKeyword(KW_TUPLE, tokens)
+    if tuple:
+      return TupleExpr(()), tokens
+    
+    # Do we see an integer literal?
+    num, tokens = TryConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+    if num:
+      return LiteralExpr(num), tokens
+
+    # Do we see a None literal?
+    is_none, tokens = DongbeiParser().TryConsumeKeyword(KW_IS_NONE, tokens)
+    if is_none:
+      return LiteralExpr(Token(TK_NONE_LITERAL, None)), tokens
+
+    # Do we see a string literal?
+    open_quote, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_QUOTE, tokens)
+    if open_quote:
+      str, tokens = ConsumeTokenType(TK_STRING_LITERAL, tokens)
+      _, tokens = ConsumeKeyword(KW_CLOSE_QUOTE, tokens)
+      return LiteralExpr(str), tokens
+
+    # Do we see an identifier?
+    id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
+    if id:
+      new_obj, tokens = DongbeiParser().TryConsumeKeyword(KW_NEW_OBJECT_OF, tokens)
+      if not new_obj:
+        return VariableExpr(id.value), tokens
+      args = []
+      open_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_PAREN, tokens)
+      if open_paren:
+        args, tokens = ParseExprList(tokens)
+        _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
+      return NewObjectExpr(id, args), tokens
+
+    # Do we see a parenthesis?
+    open_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_PAREN, tokens)
+    if open_paren:
+      expr, tokens = ParseExpr(tokens)
+      _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
+      return ParenExpr(expr), tokens
+
+    # Do we see a function call?
+    call_expr, tokens = TryParseCallExpr(tokens)
+    if call_expr:
+      return call_expr, tokens
+    
+    # Do we see a list literal?
+    open_bracket, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_BRACKET, tokens)
+    if open_bracket:
+      exprs, tokens = ParseExprList(tokens)
+      _, tokens = ConsumeKeyword(KW_CLOSE_BRACKET, tokens)
+      return ListExpr(exprs), tokens
+
+    return None, tokens
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1198,72 +1257,13 @@ def TryParseCallExpr(tokens):
     _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
   return CallExpr(func_name, args), tokens
  
-def TryParseObjectExpr(tokens):
-  """Returns (expr, remaining tokens)."""
-
-  # Do we see 抱团？
-  tuple, tokens = DongbeiParser().TryConsumeKeyword(KW_TUPLE, tokens)
-  if tuple:
-    return TupleExpr(()), tokens
-  
-  # Do we see an integer literal?
-  num, tokens = TryConsumeTokenType(TK_INTEGER_LITERAL, tokens)
-  if num:
-    return LiteralExpr(num), tokens
-
-  # Do we see a None literal?
-  is_none, tokens = DongbeiParser().TryConsumeKeyword(KW_IS_NONE, tokens)
-  if is_none:
-    return LiteralExpr(Token(TK_NONE_LITERAL, None)), tokens
-
-  # Do we see a string literal?
-  open_quote, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_QUOTE, tokens)
-  if open_quote:
-    str, tokens = ConsumeTokenType(TK_STRING_LITERAL, tokens)
-    _, tokens = ConsumeKeyword(KW_CLOSE_QUOTE, tokens)
-    return LiteralExpr(str), tokens
-
-  # Do we see an identifier?
-  id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
-  if id:
-    new_obj, tokens = DongbeiParser().TryConsumeKeyword(KW_NEW_OBJECT_OF, tokens)
-    if not new_obj:
-      return VariableExpr(id.value), tokens
-    args = []
-    open_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_PAREN, tokens)
-    if open_paren:
-      args, tokens = ParseExprList(tokens)
-      _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
-    return NewObjectExpr(id, args), tokens
-
-  # Do we see a parenthesis?
-  open_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_PAREN, tokens)
-  if open_paren:
-    expr, tokens = ParseExpr(tokens)
-    _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
-    return ParenExpr(expr), tokens
-
-  # Do we see a function call?
-  call_expr, tokens = TryParseCallExpr(tokens)
-  if call_expr:
-    return call_expr, tokens
-  
-  # Do we see a list literal?
-  open_bracket, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_BRACKET, tokens)
-  if open_bracket:
-    exprs, tokens = ParseExprList(tokens)
-    _, tokens = ConsumeKeyword(KW_CLOSE_BRACKET, tokens)
-    return ListExpr(exprs), tokens
-
-  return None, tokens
-
 def TryParseAtomicExpr(tokens):
   negate, tokens = DongbeiParser().TryConsumeKeyword(KW_NEGATE, tokens)
   if negate:
     expr, tokens = TryParseAtomicExpr(tokens)
     return NegateExpr(expr), tokens
 
-  obj, tokens = TryParseObjectExpr(tokens)
+  obj, tokens = DongbeiParser().TryParseObjectExpr(tokens)
   if not obj:
     return None, tokens
 
@@ -1289,7 +1289,7 @@ def TryParseAtomicExpr(tokens):
     index, tokens = DongbeiParser().TryConsumeKeyword(KW_INDEX, tokens)
     if index:
       # Parse an ObjectExpr.
-      obj, tokens = TryParseObjectExpr(tokens)
+      obj, tokens = DongbeiParser().TryParseObjectExpr(tokens)
       if obj:
         expr = IndexExpr(expr, obj)
       else:
