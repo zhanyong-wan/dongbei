@@ -10,10 +10,10 @@
 * [引言](#引言)
 * [系统要求](#系统要求)
 * [安装](#安装)
+* [跑程序](#跑程序)
 * [测试](#测试)
 * [你好，世界](#你好世界)
 * [学习材料](#学习材料)
-* [跑程序](#跑程序)
 * [参与开发](#参与开发)
 * [周边](#周边)
 
@@ -95,10 +95,21 @@ $ pip install -r requirements.txt
 ```
 之后跑一下子：`dongbei demo/磨叽.dongbei`
 
+## 跑程序
+
+目前人类已知的跑 dongbei 程序的方法有三种：
+
+1. 要是没有用 pip3 安装 dongbei-lang，可以用 `src/dongbei.py 程序文件` 命令来跑一个 dongbei 程序。
+2. 要是已经安装了 dongbei-lang，可以用 `dongbei 程序文件` 命令。
+3. 要是已经安装了 dongbei-lang，也可以在一个 dongbei 程序文件的开头插入一行 `#!/usr/bin/env dongbei` 再把文件改成可执行的（比如在 Linux / Mac OS 上跑 `chmod +x 程序文件`）。然后，就可以直接用 `程序文件` 命令来跑码了。
+
+用前两种方法的时候，可以在命令行加上 `--xudao`（絮叨）让系统打印和 dongbei 程序对应的 Python 代码。
+这在开发和学习 dongbei 的时候大有裨益。
+
 ## 测试
 
 没事跑跑
-```
+```{shell}
 test/dongbei_test.py
 ```
 身体更健康。
@@ -107,14 +118,14 @@ test/dongbei_test.py
 
 创建一个名字叫 hello-world.dongbei 的文本文件，内容如下：
 
-```
+```{text}
 唠唠：“唉呀，这嘎哒真他妈那啥！”。
 ```
 
 用 utf-8 编码保存。
 要是编辑器因为编码有毛病埋汰你，那就把文件内容改成
 
-```
+```{text}
 # -*- coding: utf-8 -*-
 
 唠唠：“唉呀，这嘎哒真他妈那啥！”。
@@ -124,13 +135,13 @@ test/dongbei_test.py
 
 然后在命令行窗口运行：
 
-```
+```{shell}
 dongbei hello-world.dongbei
 ```
 
 你应该看到执行结果：
 
-```
+```{text}
 唉呀，这嘎哒真他妈那啥！
 ```
 
@@ -145,17 +156,6 @@ dongbei hello-world.dongbei
 这里还有一些精选的示范程序供大家参考：
 
 *  [快速排序](demo/快速排序.dongbei)
-
-## 跑程序
-
-目前人类已知的跑 dongbei 程序的方法有三种：
-
-1. 要是没有用 pip3 安装 dongbei-lang，可以用 `src/dongbei.py 程序文件` 命令来跑一个 dongbei 程序。
-2. 要是已经安装了 dongbei-lang，可以用 `dongbei 程序文件` 命令。
-3. 要是已经安装了 dongbei-lang，也可以在一个 dongbei 程序文件的开头插入一行 `#!/usr/bin/env dongbei` 再把文件改成可执行的（比如在 Linux / Mac OS 上跑 `chmod +x 程序文件`）。然后，就可以直接用 `程序文件` 命令来跑码了。
-
-用前两种方法的时候，可以在命令行加上 `--xudao`（絮叨）让系统打印和 dongbei 程序对应的 Python 代码。
-这在开发和学习 dongbei 的时候大有裨益。
 
 ## 参与开发
 
