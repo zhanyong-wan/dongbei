@@ -1133,6 +1133,82 @@ class DongbeiParser(object):
 
     return None, tokens
 
+  def TryParseAtomicExpr(self, tokens):
+    negate, tokens = DongbeiParser().TryConsumeKeyword(KW_NEGATE, tokens)
+    if negate:
+      expr, tokens = self.TryParseAtomicExpr(tokens)
+      return NegateExpr(expr), tokens
+
+    obj, tokens = DongbeiParser().TryParseObjectExpr(tokens)
+    if not obj:
+      return None, tokens
+
+    expr = obj
+    while True:
+      pre_index_tokens = tokens
+
+      # Parse 的老大
+      index1, tokens = DongbeiParser().TryConsumeKeyword(KW_INDEX_1, tokens)
+      if index1:
+        # dongbei 数组是从1开始的。
+        expr = IndexExpr(expr, IntegerLiteralExpr(1))
+        continue
+
+      # Parse 的老幺
+      index_last, tokens = DongbeiParser().TryConsumeKeyword(KW_INDEX_LAST, tokens)
+      if index_last:
+        # 0 - 1 = -1
+        expr = IndexExpr(expr, IntegerLiteralExpr(0))
+        continue
+
+      # Parse 的老
+      index, tokens = DongbeiParser().TryConsumeKeyword(KW_INDEX, tokens)
+      if index:
+        # Parse an ObjectExpr.
+        obj, tokens = DongbeiParser().TryParseObjectExpr(tokens)
+        if obj:
+          expr = IndexExpr(expr, obj)
+        else:
+          # We have a trailing 的老 without an object expression to follow it.
+          tokens = pre_index_tokens
+          break
+
+      # Parse 的
+      dot, tokens = DongbeiParser().TryConsumeKeyword(KW_DOT, tokens)
+      if dot:
+        property_, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+        expr = ObjectPropertyExpr(expr, property_)
+        continue
+
+      # Parse method call.
+      call, tokens = TryParseCallExpr(tokens)
+      if call:
+        expr = MethodCallExpr(expr, call)
+        continue
+
+      # Parse 有几个坑
+      length, tokens = DongbeiParser().TryConsumeKeyword(KW_LENGTH, tokens)
+      if length:
+        expr = LengthExpr(expr)
+        continue
+
+      # Parse 掐头
+      remove_head, tokens = DongbeiParser().TryConsumeKeyword(KW_REMOVE_HEAD, tokens)
+      if remove_head:
+        expr = SubListExpr(expr, 1, None)
+        continue
+
+      # Parse 去尾
+      remove_tail, tokens = DongbeiParser().TryConsumeKeyword(KW_REMOVE_TAIL, tokens)
+      if remove_tail:
+        expr = SubListExpr(expr, None, 1)
+        continue
+      
+      # Found neither 的老 or 有几个坑 after the expression.
+      break
+
+    return expr, tokens
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1257,84 +1333,8 @@ def TryParseCallExpr(tokens):
     _, tokens = ConsumeKeyword(KW_CLOSE_PAREN, tokens)
   return CallExpr(func_name, args), tokens
  
-def TryParseAtomicExpr(tokens):
-  negate, tokens = DongbeiParser().TryConsumeKeyword(KW_NEGATE, tokens)
-  if negate:
-    expr, tokens = TryParseAtomicExpr(tokens)
-    return NegateExpr(expr), tokens
-
-  obj, tokens = DongbeiParser().TryParseObjectExpr(tokens)
-  if not obj:
-    return None, tokens
-
-  expr = obj
-  while True:
-    pre_index_tokens = tokens
-
-    # Parse 的老大
-    index1, tokens = DongbeiParser().TryConsumeKeyword(KW_INDEX_1, tokens)
-    if index1:
-      # dongbei 数组是从1开始的。
-      expr = IndexExpr(expr, IntegerLiteralExpr(1))
-      continue
-
-    # Parse 的老幺
-    index_last, tokens = DongbeiParser().TryConsumeKeyword(KW_INDEX_LAST, tokens)
-    if index_last:
-      # 0 - 1 = -1
-      expr = IndexExpr(expr, IntegerLiteralExpr(0))
-      continue
-
-    # Parse 的老
-    index, tokens = DongbeiParser().TryConsumeKeyword(KW_INDEX, tokens)
-    if index:
-      # Parse an ObjectExpr.
-      obj, tokens = DongbeiParser().TryParseObjectExpr(tokens)
-      if obj:
-        expr = IndexExpr(expr, obj)
-      else:
-        # We have a trailing 的老 without an object expression to follow it.
-        tokens = pre_index_tokens
-        break
-
-    # Parse 的
-    dot, tokens = DongbeiParser().TryConsumeKeyword(KW_DOT, tokens)
-    if dot:
-      property_, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
-      expr = ObjectPropertyExpr(expr, property_)
-      continue
-
-    # Parse method call.
-    call, tokens = TryParseCallExpr(tokens)
-    if call:
-      expr = MethodCallExpr(expr, call)
-      continue
-
-    # Parse 有几个坑
-    length, tokens = DongbeiParser().TryConsumeKeyword(KW_LENGTH, tokens)
-    if length:
-      expr = LengthExpr(expr)
-      continue
-
-    # Parse 掐头
-    remove_head, tokens = DongbeiParser().TryConsumeKeyword(KW_REMOVE_HEAD, tokens)
-    if remove_head:
-      expr = SubListExpr(expr, 1, None)
-      continue
-
-    # Parse 去尾
-    remove_tail, tokens = DongbeiParser().TryConsumeKeyword(KW_REMOVE_TAIL, tokens)
-    if remove_tail:
-      expr = SubListExpr(expr, None, 1)
-      continue
-    
-    # Found neither 的老 or 有几个坑 after the expression.
-    break
-
-  return expr, tokens
-
 def TryParseTermExpr(tokens):
-  factor, tokens = TryParseAtomicExpr(tokens)
+  factor, tokens = DongbeiParser().TryParseAtomicExpr(tokens)
   if not factor:
     return None, tokens
 
@@ -1353,7 +1353,7 @@ def TryParseTermExpr(tokens):
     if not operator:
       break
 
-    factor, tokens = TryParseAtomicExpr(tokens)
+    factor, tokens = DongbeiParser().TryParseAtomicExpr(tokens)
     if factor:
       operators.append(operator)
       factors.append(factor)
