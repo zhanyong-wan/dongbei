@@ -791,7 +791,7 @@ def TokenizeStrContainingNoKeyword(chars):
 class DongbeiParser(object):
   def __init__(self):
     self.code = None
-    self.tokens = []
+    self.tokens = []  # remaining tokens
 
   def Tokenize(self, code, src_file=None):
     self.code = code
@@ -822,9 +822,19 @@ class DongbeiParser(object):
     return tokens
 
   def TranslateTokensToAst(self, tokens):
-    statements, tokens = ParseStmts(tokens)
+    statements, tokens = self.ParseStmts(tokens)
     assert not tokens, ('多余符号：%s' % (tokens,))
     return statements
+
+  def ParseStmts(self, tokens):
+    """Returns (statement list, remaining tokens)."""
+
+    stmts = []
+    while True:
+      stmt, tokens = TryParseStmt(tokens)
+      if not stmt:
+        return stmts, tokens
+      stmts.append(stmt)
 
 ID_ARGV = '最高指示'
 ID_INIT = '新对象'
@@ -1272,7 +1282,7 @@ def TryParseFuncDef(tokens, is_method=False):
       
     func_def, tokens = ConsumeToken(
         Keyword(KW_DEF), tokens)
-    stmts, tokens = ParseStmts(tokens)
+    stmts, tokens = DongbeiParser().ParseStmts(tokens)
     _, tokens = ConsumeKeyword(KW_END, tokens)
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
@@ -1280,7 +1290,7 @@ def TryParseFuncDef(tokens, is_method=False):
   # not open_paren
   func_def, tokens = TryConsumeKeyword(KW_DEF, tokens)
   if func_def:
-    stmts, tokens = ParseStmts(tokens)
+    stmts, tokens = DongbeiParser().ParseStmts(tokens)
     _, tokens = ConsumeKeyword(KW_END, tokens)
     _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
     return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
@@ -1311,7 +1321,7 @@ def TryParseStmt(tokens):
   # Parse 开整：
   begin, tokens = TryConsumeKeyword(KW_BEGIN, tokens)
   if begin:
-    stmts, tokens = ParseStmts(tokens)
+    stmts, tokens = DongbeiParser().ParseStmts(tokens)
     if not stmts:
       stmts = []
     _, tokens = ConsumeKeyword(KW_END, tokens)
@@ -1447,7 +1457,7 @@ def TryParseStmt(tokens):
       _, tokens = ConsumeKeyword(KW_TO, tokens)
       to_expr, tokens = ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_LOOP, tokens)
-      stmts, tokens = ParseStmts(tokens)
+      stmts, tokens = DongbeiParser().ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_LOOP, (expr1, from_expr, to_expr, stmts)), tokens
@@ -1457,7 +1467,7 @@ def TryParseStmt(tokens):
     if in_:
       range_expr, tokens = ParseExpr(tokens)
       _, tokens = ConsumeKeyword(KW_LOOP, tokens)
-      stmts, tokens = ParseStmts(tokens)
+      stmts, tokens = DongbeiParser().ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_RANGE_LOOP, (expr1, range_expr, stmts)), tokens
@@ -1467,7 +1477,7 @@ def TryParseStmt(tokens):
     if not infinite_loop:
       infinite_loop, tokens = TryConsumeKeyword(KW_1_INFINITE_LOOP_EGG, tokens)
     if infinite_loop:
-      stmts, tokens = ParseStmts(tokens)
+      stmts, tokens = DongbeiParser().ParseStmts(tokens)
       _, tokens = ConsumeKeyword(KW_END_LOOP, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_INFINITE_LOOP, (expr1, stmts)), tokens
@@ -1539,16 +1549,6 @@ def ParseStmt(tokens):
 def ParseStmtFromStr(tokens):
   parser = DongbeiParser()
   return ParseStmt(parser.Tokenize(tokens))
-
-def ParseStmts(tokens):
-  """Returns (statement list, remaining tokens)."""
-
-  stmts = []
-  while True:
-    stmt, tokens = TryParseStmt(tokens)
-    if not stmt:
-      return stmts, tokens
-    stmts.append(stmt)
 
 def TranslateStatementToPython(stmt, indent = ''):
   """Translates the statements to Python code, without trailing newline."""
