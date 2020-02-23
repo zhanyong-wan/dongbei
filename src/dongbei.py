@@ -947,7 +947,7 @@ class DongbeiParser(object):
       return func_def, tokens
 
     # Parse an identifier name.
-    id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
+    id, tokens = self.TryConsumeTokenType(TK_IDENTIFIER, tokens)
 
     if id:
       # Code below is for statements that start with an identifier.
@@ -1083,7 +1083,7 @@ class DongbeiParser(object):
       return TupleExpr(()), tokens
     
     # Do we see an integer literal?
-    num, tokens = TryConsumeTokenType(TK_INTEGER_LITERAL, tokens)
+    num, tokens = self.TryConsumeTokenType(TK_INTEGER_LITERAL, tokens)
     if num:
       return LiteralExpr(num), tokens
 
@@ -1100,7 +1100,7 @@ class DongbeiParser(object):
       return LiteralExpr(str), tokens
 
     # Do we see an identifier?
-    id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
+    id, tokens = self.TryConsumeTokenType(TK_IDENTIFIER, tokens)
     if id:
       new_obj, tokens = DongbeiParser().TryConsumeKeyword(KW_NEW_OBJECT_OF, tokens)
       if not new_obj:
@@ -1390,7 +1390,7 @@ class DongbeiParser(object):
 
   def TryParseFuncDef(self, tokens, is_method=False):
     orig_tokens = tokens
-    id, tokens = TryConsumeTokenType(TK_IDENTIFIER, tokens)
+    id, tokens = self.TryConsumeTokenType(TK_IDENTIFIER, tokens)
     if not id:
       return None, tokens
 
@@ -1436,6 +1436,13 @@ class DongbeiParser(object):
     assert stmt, '期望语句，落空了：%s' % (tokens[:5],)
     return stmt, tokens
 
+  def TryConsumeTokenType(self, tk_type, tokens):
+    if not tokens:
+      return None, tokens
+    if tokens[0].kind == tk_type:
+      return tokens[0], tokens[1:]
+    return None, tokens
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1461,15 +1468,8 @@ def GetPythonVarName(var):
 
   return var
 
-def TryConsumeTokenType(tk_type, tokens):
-  if not tokens:
-    return None, tokens
-  if tokens[0].kind == tk_type:
-    return tokens[0], tokens[1:]
-  return None, tokens
-
 def ConsumeTokenType(tk_type, tokens):
-  tk, tokens = TryConsumeTokenType(tk_type, tokens)
+  tk, tokens = DongbeiParser().TryConsumeTokenType(tk_type, tokens)
   if tk is None:
     sys.exit('期望 %s，实际是 %s' % (tk_type, tokens[0]))
   return tk, tokens
@@ -1550,6 +1550,7 @@ def TryParseExprFromStr(str):
   parser = DongbeiParser()
   return parser.TryParseExpr(parser.Tokenize(str))
 
+# Not meant to be in DongbeiParser.
 def ParseStmtFromStr(str):
   parser = DongbeiParser()
   return parser.ParseStmt(parser.Tokenize(str))
@@ -1711,6 +1712,7 @@ def TranslateStatementToPython(stmt, indent = ''):
 
   sys.exit('俺不懂 %s 语句咋执行。' % (stmt.kind))
 
+# Not meant to be in DongbeiParser.
 def ParseToAst(code):
   parser = DongbeiParser()
   tokens = parser.Tokenize(code)
