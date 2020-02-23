@@ -1072,7 +1072,7 @@ class DongbeiParser(object):
     return None, orig_tokens
 
   def TryConsumeKeyword(self, keyword, tokens):
-    return TryConsumeToken(Keyword(keyword), tokens)
+    return self.TryConsumeToken(Keyword(keyword), tokens)
 
   def TryParseObjectExpr(self, tokens):
     """Returns (expr, remaining tokens)."""
@@ -1449,6 +1449,13 @@ class DongbeiParser(object):
       sys.exit('期望 %s，实际是 %s' % (tk_type, tokens[0]))
     return tk, tokens
       
+  def TryConsumeToken(self, token, tokens):
+    if not tokens:
+      return None, tokens
+    if token != tokens[0]:
+      return None, tokens
+    return token, tokens[1:]
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1473,13 +1480,6 @@ def GetPythonVarName(var):
     return _dongbei_var_to_python_var[var]
 
   return var
-
-def TryConsumeToken(token, tokens):
-  if not tokens:
-    return None, tokens
-  if token != tokens[0]:
-    return None, tokens
-  return token, tokens[1:]
 
 def ConsumeToken(token, tokens):
   if not tokens:
