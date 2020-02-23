@@ -1108,7 +1108,7 @@ class DongbeiParser(object):
       args = []
       open_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_PAREN, tokens)
       if open_paren:
-        args, tokens = ParseExprList(tokens)
+        args, tokens = self.ParseExprList(tokens)
         _, tokens = self.ConsumeKeyword(KW_CLOSE_PAREN, tokens)
       return NewObjectExpr(id, args), tokens
 
@@ -1127,7 +1127,7 @@ class DongbeiParser(object):
     # Do we see a list literal?
     open_bracket, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_BRACKET, tokens)
     if open_bracket:
-      exprs, tokens = ParseExprList(tokens)
+      exprs, tokens = self.ParseExprList(tokens)
       _, tokens = self.ConsumeKeyword(KW_CLOSE_BRACKET, tokens)
       return ListExpr(exprs), tokens
 
@@ -1291,7 +1291,7 @@ class DongbeiParser(object):
     open_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_PAREN, tokens)
     args = []
     if open_paren:
-      args, tokens = ParseExprList(tokens)
+      args, tokens = self.ParseExprList(tokens)
       _, tokens = self.ConsumeKeyword(KW_CLOSE_PAREN, tokens)
     return CallExpr(func_name, args), tokens
   
@@ -1467,6 +1467,22 @@ class DongbeiParser(object):
   def ConsumeKeyword(self, keyword, tokens):
     return self.ConsumeToken(Keyword(keyword), tokens)
 
+  def ParseExprList(self, tokens):
+    """Parses a comma-separated expression list."""
+
+    exprs = []
+    tokens_after_expr_list = tokens
+    while True:
+      expr, tokens_after_expr_list = self.TryParseExpr(tokens)
+      if expr:
+        exprs.append(expr)
+      else:
+        # Couldn't parse an expression.
+        return exprs, tokens_after_expr_list
+      comma, tokens = self.TryConsumeKeyword(KW_COMMA, tokens_after_expr_list)
+      if not comma:
+        return exprs, tokens_after_expr_list
+
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1523,22 +1539,6 @@ def GetPythonVarName(var):
 #                整 Identifier（ExprList）
 #   ExprList ::= Expr |
 #                Expr，ExprList
-
-def ParseExprList(tokens):
-  """Parses a comma-separated expression list."""
-
-  exprs = []
-  tokens_after_expr_list = tokens
-  while True:
-    expr, tokens_after_expr_list = DongbeiParser().TryParseExpr(tokens)
-    if expr:
-      exprs.append(expr)
-    else:
-      # Couldn't parse an expression.
-      return exprs, tokens_after_expr_list
-    comma, tokens = DongbeiParser().TryConsumeKeyword(KW_COMMA, tokens_after_expr_list)
-    if not comma:
-      return exprs, tokens_after_expr_list
 
 # Not meant to be in DongbeiParser.
 def ParseExprFromStr(str):
