@@ -822,18 +822,19 @@ class DongbeiParser(object):
     return tokens
 
   def TranslateTokensToAst(self, tokens):
-    statements, tokens = self.ParseStmts(tokens)
-    assert not tokens, ('多余符号：%s' % (tokens,))
+    self.tokens = tokens
+    statements = self.ParseStmts()
+    assert not self.tokens, ('多余符号：%s' % (self.tokens,))
     return statements
 
-  def ParseStmts(self, tokens):
-    """Returns (statement list, remaining tokens)."""
+  def ParseStmts(self):
+    """Returns a statement list, mutating self.tokens."""
 
     stmts = []
     while True:
-      stmt, tokens = self.TryParseStmt(tokens)
+      stmt, self.tokens = self.TryParseStmt(self.tokens)
       if not stmt:
-        return stmts, tokens
+        return stmts
       stmts.append(stmt)
 
   def TryParseStmt(self, tokens):
@@ -849,12 +850,12 @@ class DongbeiParser(object):
       return Statement(STMT_IMPORT, module), tokens
 
     # Parse 开整：
-    begin, tokens = self.TryConsumeKeyword(KW_BEGIN, tokens)
+    begin, self.tokens = self.TryConsumeKeyword(KW_BEGIN, tokens)
     if begin:
-      stmts, tokens = self.ParseStmts(tokens)
+      stmts = self.ParseStmts()
       if not stmts:
         stmts = []
-      _, tokens = self.ConsumeKeyword(KW_END, tokens)
+      _, tokens = self.ConsumeKeyword(KW_END, self.tokens)
       _, tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_COMPOUND, stmts), tokens
 
@@ -986,9 +987,9 @@ class DongbeiParser(object):
         from_expr, tokens = self.ParseExpr(tokens)
         _, tokens = self.ConsumeKeyword(KW_TO, tokens)
         to_expr, tokens = self.ParseExpr(tokens)
-        _, tokens = self.ConsumeKeyword(KW_LOOP, tokens)
-        stmts, tokens = self.ParseStmts(tokens)
-        _, tokens = self.ConsumeKeyword(KW_END_LOOP, tokens)
+        _, self.tokens = self.ConsumeKeyword(KW_LOOP, tokens)
+        stmts = self.ParseStmts()
+        _, tokens = self.ConsumeKeyword(KW_END_LOOP, self.tokens)
         _, tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
         return Statement(STMT_LOOP, (expr1, from_expr, to_expr, stmts)), tokens
 
@@ -996,9 +997,9 @@ class DongbeiParser(object):
       in_, tokens = self.TryConsumeKeyword(KW_IN, tokens)
       if in_:
         range_expr, tokens = self.ParseExpr(tokens)
-        _, tokens = self.ConsumeKeyword(KW_LOOP, tokens)
-        stmts, tokens = self.ParseStmts(tokens)
-        _, tokens = self.ConsumeKeyword(KW_END_LOOP, tokens)
+        _, self.tokens = self.ConsumeKeyword(KW_LOOP, tokens)
+        stmts = self.ParseStmts()
+        _, tokens = self.ConsumeKeyword(KW_END_LOOP, self.tokens)
         _, tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
         return Statement(STMT_RANGE_LOOP, (expr1, range_expr, stmts)), tokens
 
@@ -1006,9 +1007,10 @@ class DongbeiParser(object):
       infinite_loop, tokens = self.TryConsumeKeyword(KW_1_INFINITE_LOOP, tokens)
       if not infinite_loop:
         infinite_loop, tokens = self.TryConsumeKeyword(KW_1_INFINITE_LOOP_EGG, tokens)
+      self.tokens = tokens
       if infinite_loop:
-        stmts, tokens = self.ParseStmts(tokens)
-        _, tokens = self.ConsumeKeyword(KW_END_LOOP, tokens)
+        stmts = self.ParseStmts()
+        _, tokens = self.ConsumeKeyword(KW_END_LOOP, self.tokens)
         _, tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
         return Statement(STMT_INFINITE_LOOP, (expr1, stmts)), tokens
 
@@ -1405,18 +1407,18 @@ class DongbeiParser(object):
           break
         _, tokens = self.ConsumeKeyword(KW_COMMA, tokens)
         
-      func_def, tokens = self.ConsumeToken(
+      func_def, self.tokens = self.ConsumeToken(
           Keyword(KW_DEF), tokens)
-      stmts, tokens = self.ParseStmts(tokens)
-      _, tokens = self.ConsumeKeyword(KW_END, tokens)
+      stmts = self.ParseStmts()
+      _, tokens = self.ConsumeKeyword(KW_END, self.tokens)
       _, tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
 
     # not open_paren
-    func_def, tokens = self.TryConsumeKeyword(KW_DEF, tokens)
+    func_def, self.tokens = self.TryConsumeKeyword(KW_DEF, tokens)
     if func_def:
-      stmts, tokens = self.ParseStmts(tokens)
-      _, tokens = self.ConsumeKeyword(KW_END, tokens)
+      stmts = self.ParseStmts()
+      _, tokens = self.ConsumeKeyword(KW_END, self.tokens)
       _, tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_FUNC_DEF, (id, params, stmts)), tokens
 
