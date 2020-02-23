@@ -48,9 +48,29 @@ dongbei 语言是基于 Python 3 二次开发的。
 
 ## 安装
 
-用pip直接就能整上dongbei 。dongbei是Python3写的 ，建议使用pip3 。
+### 安装 python 3
 
-```
+要是你的系统没有 python3 呢，那得先装一个，免费！
+
+比如，你要是用 Mac 的话，就按 [Mac Python3 安装指南](https://docs.python-guide.org/starting/install3/osx/) 来。
+
+### 安装 dongbei
+
+clone 或者下载这个 dongbei 仓库之后，就可以直接跑 src/dongbei.py 了！
+
+要是想更方便呢，建议用 pip3 装 dongbei-lang，完了可以直接用 dongbei 命令跑程序。
+
+#### 安装 pip3
+
+要是你的系统没有pip3呢，也可以装一个，还是免费。详情可咨询：
+[Windows](https://blog.csdn.net/menc15/article/details/65631380),
+[Mac](https://blog.csdn.net/huangpin815/article/details/70194492),
+[Ubuntu](https://www.jianshu.com/p/a0dd650dbd41)。
+
+#### 用 pip3 安装 dongbei
+
+装好 pip3 后就可以装 dongbei-lang 了：
+```{shell}
 # 给这台电脑的所有用户安装
 pip3 install dongbei-lang
 
@@ -59,21 +79,21 @@ pip3 install dongbei-lang --user
 
 # 更新到最新的 dongbei 版本。要是只给当前用户更新，加 --user
 pip3 install dongbei-lang --upgrade
+```
 
-# 使用
+装好了就可以这么用了：
+```{shell}
 dongbei <xxx>.dongbei
 ```
 
-要是你的系统没有pip3呢，也可以装一个，还是免费。详情可咨询：
-[Windows](https://blog.csdn.net/menc15/article/details/65631380)
-[Mac](https://blog.csdn.net/huangpin815/article/details/70194492)
-[Ubuntu](https://www.jianshu.com/p/a0dd650dbd41)
+没有虚拟环境忒费劲，用虚拟环境整一下：
 
-当然你也可以直接跑 src/dongbei.py 。
-
-要是你的系统没有python3呢，那得先装一个，免费！
-
-比如，你要是用 Mac 的话，就按 [Mac Python3 安装指南](https://docs.python-guide.org/starting/install3/osx/) 做。
+```
+$ python3 -m venv venv
+$ source venv/bin/activate
+$ pip install -r requirements.txt
+```
+之后跑一下子：`dongbei demo/磨叽.dongbei`
 
 ## 测试
 
@@ -136,15 +156,6 @@ dongbei hello-world.dongbei
 
 用前两种方法的时候，可以在命令行加上 `--xudao`（絮叨）让系统打印和 dongbei 程序对应的 Python 代码。
 这在开发和学习 dongbei 的时候大有裨益。
-
-没有虚拟环境忒费劲，用虚拟环境整一下：
-
-```
-$ python3 -m venv venv
-$ source venv/bin/activate
-$ pip install -r requirements.txt
-```
-之后跑一下子：`$ dongbei demo/磨叽.dongbei`
 
 ## 参与开发
 
