@@ -903,7 +903,7 @@ class DongbeiParser(object):
       return Statement(STMT_SAY, expr)
 
     # Parse 整
-    call_expr, self.tokens = self.TryParseCallExpr(self.tokens)
+    call_expr = self.TryParseCallExpr()
     if call_expr:
       self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_CALL, call_expr)
@@ -1120,7 +1120,7 @@ class DongbeiParser(object):
       return ParenExpr(expr), self.tokens
 
     # Do we see a function call?
-    call_expr, self.tokens = self.TryParseCallExpr(self.tokens)
+    call_expr = self.TryParseCallExpr()
     if call_expr:
       return call_expr, self.tokens
     
@@ -1181,7 +1181,9 @@ class DongbeiParser(object):
         continue
 
       # Parse method call.
-      call, tokens = self.TryParseCallExpr(tokens)
+      self.tokens = tokens
+      call = self.TryParseCallExpr()
+      tokens = self.tokens
       if call:
         expr = MethodCallExpr(expr, call)
         continue
@@ -1276,25 +1278,25 @@ class DongbeiParser(object):
       expr = ArithmeticExpr(expr, operator, terms[i + 1])
     return expr, self.tokens
 
-  def TryParseCallExpr(self, tokens):
-    """Returns (call_expr, remaining tokens)."""
-    call, tokens = self.TryConsumeKeyword(KW_CALL, tokens)
+  def TryParseCallExpr(self):
+    """Returns call_expr, mutating self.tokens."""
+    call, self.tokens = self.TryConsumeKeyword(KW_CALL, self.tokens)
     if not call:
-      return None, tokens
+      return None
 
-    base_init, tokens = self.TryConsumeKeyword(KW_BASE_INIT, tokens)
+    base_init, self.tokens = self.TryConsumeKeyword(KW_BASE_INIT, self.tokens)
     if base_init:
       func_name = 'super().__init__'
     else:
-      func, tokens = self.ConsumeTokenType(TK_IDENTIFIER, tokens)
+      func, self.tokens = self.ConsumeTokenType(TK_IDENTIFIER, self.tokens)
       func_name = func.value
 
-    open_paren, self.tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, tokens)
+    open_paren, self.tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, self.tokens)
     args = []
     if open_paren:
       args, self.tokens = self.ParseExprList(self.tokens)
       self.ConsumeKeyword(KW_CLOSE_PAREN)
-    return CallExpr(func_name, args), self.tokens
+    return CallExpr(func_name, args)
   
   def TryParseTupleExpr(self, tokens):
     orig_tokens = tokens
