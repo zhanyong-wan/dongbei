@@ -1320,37 +1320,38 @@ class DongbeiParser(object):
     self.tokens = orig_tokens
     return None
 
-  def TryParseNonConcatExpr(self, tokens):
-    self.tokens = tokens
+  def TryParseNonConcatExpr(self):
     tuple = self.TryParseTupleExpr()
     if tuple:
-      return tuple, self.tokens
-    return self.TryParseCompOrArithExpr(self.tokens)
+      return tuple
+    expr, self.tokens = self.TryParseCompOrArithExpr(self.tokens)
+    return expr
 
   def TryParseExpr(self, tokens):
-    nc_expr, tokens = self.TryParseNonConcatExpr(tokens)
+    self.tokens = tokens
+    nc_expr = self.TryParseNonConcatExpr()
     if not nc_expr:
-      return None, tokens
+      return None, self.tokens
 
     nc_exprs = [nc_expr]
     while True:
-      pre_operator_tokens = tokens
-      concat, tokens = self.TryConsumeKeyword(KW_CONCAT, tokens)
+      pre_operator_tokens = self.tokens
+      concat, self.tokens = self.TryConsumeKeyword(KW_CONCAT, self.tokens)
       if not concat:
         break
 
-      nc_expr, tokens = self.TryParseNonConcatExpr(tokens)
+      nc_expr = self.TryParseNonConcatExpr()
       if nc_expr:
         nc_exprs.append(nc_expr)
       else:
         # We have a trailing concat operator without an expression to follow it.
-        tokens = pre_operator_tokens
+        self.tokens = pre_operator_tokens
         break
 
     if len(nc_exprs) == 1:
-      return nc_exprs[0], tokens
+      return nc_exprs[0], self.tokens
 
-    return ConcatExpr(nc_exprs), tokens
+    return ConcatExpr(nc_exprs), self.tokens
 
   def ParseExpr(self, tokens):
     expr, tokens = self.TryParseExpr(tokens)
