@@ -1209,71 +1209,72 @@ class DongbeiParser(object):
 
     return expr, tokens
 
-  def TryParseTermExpr(self, tokens):
-    factor, tokens = self.TryParseAtomicExpr(tokens)
+  def TryParseTermExpr(self):
+    factor, self.tokens = self.TryParseAtomicExpr(self.tokens)
     if not factor:
-      return None, tokens
+      return None
 
     factors = [factor]  # All factors of the term.
     operators = []  # Operators between the factors. The len of this is len(factors) - 1.
 
     while True:
-      pre_operator_tokens = tokens
-      operator, tokens = self.TryConsumeKeyword(KW_TIMES, tokens)
+      pre_operator_tokens = self.tokens
+      operator, self.tokens = self.TryConsumeKeyword(KW_TIMES, self.tokens)
       if not operator:
-        operator, tokens = self.TryConsumeKeyword(KW_DIVIDE_BY, tokens)
+        operator, self.tokens = self.TryConsumeKeyword(KW_DIVIDE_BY, self.tokens)
       if not operator:
-        operator, tokens = self.TryConsumeKeyword(KW_INTEGER_DIVIDE_BY, tokens)
+        operator, self.tokens = self.TryConsumeKeyword(KW_INTEGER_DIVIDE_BY, self.tokens)
       if not operator:
-        operator, tokens = self.TryConsumeKeyword(KW_MODULO, tokens)
+        operator, self.tokens = self.TryConsumeKeyword(KW_MODULO, self.tokens)
       if not operator:
         break
 
-      factor, tokens = self.TryParseAtomicExpr(tokens)
+      factor, self.tokens = self.TryParseAtomicExpr(self.tokens)
       if factor:
         operators.append(operator)
         factors.append(factor)
       else:
         # We have a trailing operator without a factor to follow it.
-        tokens = pre_operator_tokens
+        self.tokens = pre_operator_tokens
         break
 
     assert len(factors) == len(operators) + 1
     expr = factors[0]
     for i, operator in enumerate(operators):
       expr = ArithmeticExpr(expr, operator, factors[i + 1])
-    return expr, tokens
+    return expr
 
   def TryParseArithmeticExpr(self, tokens):
-    term, tokens = self.TryParseTermExpr(tokens)
+    self.tokens = tokens
+    term = self.TryParseTermExpr()
     if not term:
-      return None, tokens
+      return None, self.tokens
 
     terms = [term]  # All terms of the expression.
     operators = []  # Operators between the terms. The len of this is len(terms) - 1.
 
     while True:
-      pre_operator_tokens = tokens
-      operator, tokens = self.TryConsumeKeyword(KW_PLUS, tokens)
+      pre_operator_tokens = self.tokens
+      operator, self.tokens = self.TryConsumeKeyword(KW_PLUS, self.tokens)
       if not operator:
-        operator, tokens = self.TryConsumeKeyword(KW_MINUS, tokens)
+        operator, self.tokens = self.TryConsumeKeyword(KW_MINUS, self.tokens)
       if not operator:
         break
 
-      term, tokens = self.TryParseTermExpr(tokens)
+      term = self.TryParseTermExpr()
       if term:
         operators.append(operator)
         terms.append(term)
       else:
         # We have a trailing operator without a term to follow it.
-        tokens = pre_operator_tokens
+        self.tokens = pre_operator_tokens
         break
 
     assert len(terms) == len(operators) + 1
     expr = terms[0]
     for i, operator in enumerate(operators):
       expr = ArithmeticExpr(expr, operator, terms[i + 1])
-    return expr, tokens
+    return expr, self.tokens
 
   def TryParseCallExpr(self, tokens):
     """Returns (call_expr, remaining tokens)."""
