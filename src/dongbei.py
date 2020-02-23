@@ -782,28 +782,38 @@ def TokenizeStrContainingNoKeyword(chars):
   if rest:
     yield IdentifierToken(rest)
 
-def Tokenize(code):
-  last_token = Token(None, None)
-  chars = ''
-  for token in BasicTokenize(code):
-    last_last_token = last_token
-    last_token = token
-    if token.kind == TK_CHAR:
-      if last_last_token.kind == TK_CHAR:
-        chars += token.value
-        continue
+class DongbeiParser(object):
+  def __init__(self):
+    self.code = None
+    self.tokens = []
+
+  def Tokenize(self, code, src_file=None):
+    self.code = code
+    self.tokens = list(self._Tokenize(code))
+    return self.tokens
+
+  def _Tokenize(self, code):
+    last_token = Token(None, None)
+    chars = ''
+    for token in BasicTokenize(code):
+      last_last_token = last_token
+      last_token = token
+      if token.kind == TK_CHAR:
+        if last_last_token.kind == TK_CHAR:
+          chars += token.value
+          continue
+        else:
+          chars = token.value
+          continue
       else:
-        chars = token.value
-        continue
-    else:
-      if last_last_token.kind == TK_CHAR:
-        # A sequence of consecutive TK_CHARs ended.
-        for tk in TokenizeStrContainingNoKeyword(chars):
-          yield tk
-      yield token
-      chars = ''
-  for tk in TokenizeStrContainingNoKeyword(chars):
-    yield tk
+        if last_last_token.kind == TK_CHAR:
+          # A sequence of consecutive TK_CHARs ended.
+          for tk in TokenizeStrContainingNoKeyword(chars):
+            yield tk
+        yield token
+        chars = ''
+    for tk in TokenizeStrContainingNoKeyword(chars):
+      yield tk
 
 ID_ARGV = '最高指示'
 ID_INIT = '新对象'
@@ -1225,10 +1235,12 @@ def ParseExpr(tokens):
   return expr, tokens
 
 def ParseExprFromStr(str):
-  return ParseExpr(list(Tokenize(str)))
+  parser = DongbeiParser()
+  return ParseExpr(parser.Tokenize(str))
 
 def TryParseExprFromStr(str):
-  return TryParseExpr(list(Tokenize(str)))
+  parser = DongbeiParser()
+  return TryParseExpr(parser.Tokenize(str))
 
 def TryParseFuncDef(tokens, is_method=False):
   orig_tokens = tokens
@@ -1514,7 +1526,8 @@ def ParseStmt(tokens):
   return stmt, tokens
 
 def ParseStmtFromStr(tokens):
-  return ParseStmt(list(Tokenize(tokens)))
+  parser = DongbeiParser()
+  return ParseStmt(parser.Tokenize(tokens))
 
 def ParseStmts(tokens):
   """Returns (statement list, remaining tokens)."""
@@ -1692,7 +1705,8 @@ def TranslateTokensToPython(tokens):
   return '\n'.join(py_code)
 
 def ParseToAst(code):
-  tokens = list(Tokenize(code))
+  parser = DongbeiParser()
+  tokens = parser.Tokenize(code)
   statements, tokens = ParseStmts(tokens)
   assert not tokens, ('多余符号：%s' % (tokens,))
   return statements
@@ -1711,12 +1725,13 @@ def _dongbei_1_infinite_loop():
   while True:
     yield 1
 
-def TranslateDongbeiToPython(code):
-  tokens = list(Tokenize(code))
+def TranslateDongbeiToPython(code, src_file=None):
+  parser = DongbeiParser()
+  tokens = parser.Tokenize(code, src_file)
   return TranslateTokensToPython(tokens)
 
-def Run(code, xudao=False):
-  py_code = TranslateDongbeiToPython(code)
+def Run(code, src_file=None, xudao=False):
+  py_code = TranslateDongbeiToPython(code, src_file=src_file)
   if xudao:
     print('Python 代码：')
     print('%s' % (py_code,))
@@ -1752,7 +1767,7 @@ def main():
   with io.open(program, 'r', encoding='utf-8') as src_file:
     if xudao:
       print(f'执行 {program} ...')
-    Run(src_file.read(), xudao=xudao)
+    Run(src_file.read(), src_file=program, xudao=xudao)
 
 if __name__ == '__main__':
   main()
