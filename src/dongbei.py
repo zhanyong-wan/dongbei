@@ -1407,8 +1407,8 @@ class DongbeiParser(object):
           break
         _, tokens = self.ConsumeKeyword(KW_COMMA, tokens)
         
-      func_def, self.tokens = self.ConsumeToken(
-          Keyword(KW_DEF), tokens)
+      self.tokens = tokens
+      func_def = self.ConsumeToken(Keyword(KW_DEF))
       stmts = self.ParseStmts()
       _, tokens = self.ConsumeKeyword(KW_END, self.tokens)
       _, tokens = self.ConsumeKeyword(KW_PERIOD, tokens)
@@ -1458,16 +1458,18 @@ class DongbeiParser(object):
       return None, tokens
     return token, tokens[1:]
 
-  def ConsumeToken(self, token, tokens):
-    if not tokens:
+  def ConsumeToken(self, token):
+    if not self.tokens:
       sys.exit('语句结束太早。')
-    if token != tokens[0]:
+    if token != self.tokens[0]:
       sys.exit('期望符号 %s，实际却是 %s。' %
-              (token, tokens[0]))
-    return token, tokens[1:]
+              (token, self.tokens[0]))
+    self.tokens = self.tokens[1:]
+    return token
 
   def ConsumeKeyword(self, keyword, tokens):
-    return self.ConsumeToken(Keyword(keyword), tokens)
+    self.tokens = tokens
+    return self.ConsumeToken(Keyword(keyword)), self.tokens
 
   def ParseExprList(self, tokens):
     """Parses a comma-separated expression list."""
