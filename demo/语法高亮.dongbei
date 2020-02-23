@@ -1,0 +1,8 @@
+#!/usr/bin/env dongbei
+# -*- coding: utf-8 -*-
+
+# 演示语法高亮 (https://github.com/mingjun97/dongbei-vscode)。
+
+【老 王】装 鸭 蛋。  # 变量名和常量名中间可以有空格。
+【老王】装 【老王】。  # 装不是变量名的一部分。
+唠唠：老王、“好！”！  # 感叹号和句号一样颜色。
