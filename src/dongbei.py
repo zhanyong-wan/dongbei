@@ -1298,31 +1298,34 @@ class DongbeiParser(object):
       self.ConsumeKeyword(KW_CLOSE_PAREN)
     return CallExpr(func_name, args)
   
-  def TryParseTupleExpr(self, tokens):
-    orig_tokens = tokens
-    expr, tokens = self.TryParseCompOrArithExpr(tokens)
+  def TryParseTupleExpr(self):
+    orig_tokens = self.tokens
+    expr, self.tokens = self.TryParseCompOrArithExpr(self.tokens)
     if not expr:
-      return None, orig_tokens
+      self.tokens = orig_tokens
+      return None
 
     # Do we see 抱团?
-    tuple, tokens = self.TryConsumeKeyword(KW_TUPLE, tokens)
+    tuple, self.tokens = self.TryConsumeKeyword(KW_TUPLE, self.tokens)
     if tuple:
-      return TupleExpr((expr,)), tokens
+      return TupleExpr((expr,))
 
     # Do we see 跟？
-    and_, tokens = self.TryConsumeKeyword(KW_COMPARE_WITH, tokens)
+    and_, self.tokens = self.TryConsumeKeyword(KW_COMPARE_WITH, self.tokens)
     if and_:
-      rest_of_tuple, tokens = self.TryParseTupleExpr(tokens)
+      rest_of_tuple = self.TryParseTupleExpr()
       if rest_of_tuple:
-        return TupleExpr((expr,) + rest_of_tuple.tuple), tokens
+        return TupleExpr((expr,) + rest_of_tuple.tuple)
 
-    return None, orig_tokens
+    self.tokens = orig_tokens
+    return None
 
   def TryParseNonConcatExpr(self, tokens):
-    tuple, tokens = self.TryParseTupleExpr(tokens)
+    self.tokens = tokens
+    tuple = self.TryParseTupleExpr()
     if tuple:
-      return tuple, tokens
-    return self.TryParseCompOrArithExpr(tokens)
+      return tuple, self.tokens
+    return self.TryParseCompOrArithExpr(self.tokens)
 
   def TryParseExpr(self, tokens):
     nc_expr, tokens = self.TryParseNonConcatExpr(tokens)
