@@ -844,7 +844,7 @@ class DongbeiParser(object):
     # Parse 翠花，上
     imp, tokens = self.TryConsumeKeyword(KW_IMPORT, tokens)
     if imp:
-      module, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+      module, tokens = self.ConsumeTokenType(TK_IDENTIFIER, tokens)
       _, tokens = ConsumeKeyword(KW_PERIOD, tokens)
       return Statement(STMT_IMPORT, module), tokens
 
@@ -968,7 +968,7 @@ class DongbeiParser(object):
       class_, tokens = self.TryConsumeKeyword(KW_CLASS, tokens)
       if class_:
         _, tokens = ConsumeKeyword(KW_DERIVED, tokens)
-        subclass, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+        subclass, tokens = self.ConsumeTokenType(TK_IDENTIFIER, tokens)
         _, tokens = ConsumeKeyword(KW_CLASS, tokens)
         _, tokens = ConsumeKeyword(KW_DEF, tokens)
         methods, tokens = self.ParseMethodDefs(tokens)
@@ -1095,7 +1095,7 @@ class DongbeiParser(object):
     # Do we see a string literal?
     open_quote, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_QUOTE, tokens)
     if open_quote:
-      str, tokens = ConsumeTokenType(TK_STRING_LITERAL, tokens)
+      str, tokens = self.ConsumeTokenType(TK_STRING_LITERAL, tokens)
       _, tokens = ConsumeKeyword(KW_CLOSE_QUOTE, tokens)
       return LiteralExpr(str), tokens
 
@@ -1176,7 +1176,7 @@ class DongbeiParser(object):
       # Parse 的
       dot, tokens = DongbeiParser().TryConsumeKeyword(KW_DOT, tokens)
       if dot:
-        property_, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+        property_, tokens = self.ConsumeTokenType(TK_IDENTIFIER, tokens)
         expr = ObjectPropertyExpr(expr, property_)
         continue
 
@@ -1285,7 +1285,7 @@ class DongbeiParser(object):
     if base_init:
       func_name = 'super().__init__'
     else:
-      func, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+      func, tokens = self.ConsumeTokenType(TK_IDENTIFIER, tokens)
       func_name = func.value
 
     open_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_OPEN_PAREN, tokens)
@@ -1398,7 +1398,7 @@ class DongbeiParser(object):
     params = [IdentifierToken(ID_SELF)] if is_method else []
     if open_paren:
       while True:
-        param, tokens = ConsumeTokenType(TK_IDENTIFIER, tokens)
+        param, tokens = self.ConsumeTokenType(TK_IDENTIFIER, tokens)
         params.append(param)
         close_paren, tokens = DongbeiParser().TryConsumeKeyword(KW_CLOSE_PAREN, tokens)
         if close_paren:
@@ -1443,6 +1443,12 @@ class DongbeiParser(object):
       return tokens[0], tokens[1:]
     return None, tokens
 
+  def ConsumeTokenType(self, tk_type, tokens):
+    tk, tokens = self.TryConsumeTokenType(tk_type, tokens)
+    if tk is None:
+      sys.exit('期望 %s，实际是 %s' % (tk_type, tokens[0]))
+    return tk, tokens
+      
   # End of class Dongbei
 
 ID_ARGV = '最高指示'
@@ -1468,12 +1474,6 @@ def GetPythonVarName(var):
 
   return var
 
-def ConsumeTokenType(tk_type, tokens):
-  tk, tokens = DongbeiParser().TryConsumeTokenType(tk_type, tokens)
-  if tk is None:
-    sys.exit('期望 %s，实际是 %s' % (tk_type, tokens[0]))
-  return tk, tokens
-    
 def TryConsumeToken(token, tokens):
   if not tokens:
     return None, tokens
