@@ -1246,11 +1246,10 @@ class DongbeiParser(object):
       expr = ArithmeticExpr(expr, operator, factors[i + 1])
     return expr
 
-  def TryParseArithmeticExpr(self, tokens):
-    self.tokens = tokens
+  def TryParseArithmeticExpr(self):
     term = self.TryParseTermExpr()
     if not term:
-      return None, self.tokens
+      return None
 
     terms = [term]  # All terms of the expression.
     operators = []  # Operators between the terms. The len of this is len(terms) - 1.
@@ -1276,7 +1275,7 @@ class DongbeiParser(object):
     expr = terms[0]
     for i, operator in enumerate(operators):
       expr = ArithmeticExpr(expr, operator, terms[i + 1])
-    return expr, self.tokens
+    return expr
 
   def TryParseCallExpr(self):
     """Returns call_expr, mutating self.tokens."""
@@ -1358,7 +1357,7 @@ class DongbeiParser(object):
     return expr
 
   def TryParseCompOrArithExpr(self):
-    arith, self.tokens = self.TryParseArithmeticExpr(self.tokens)
+    arith = self.TryParseArithmeticExpr()
     if not arith:
       return None
     post_arith_tokens = self.tokens
@@ -1373,7 +1372,7 @@ class DongbeiParser(object):
 
     cmp = self.TryConsumeKeyword(KW_COMPARE_WITH)
     if cmp:
-      arith2, self.tokens = self.TryParseArithmeticExpr(self.tokens)
+      arith2 = self.TryParseArithmeticExpr()
       if not arith2:
         self.tokens = post_arith_tokens
         return arith
@@ -1392,7 +1391,7 @@ class DongbeiParser(object):
     return arith
 
   def ParseArithmeticExpr(self):
-    expr, self.tokens = self.TryParseArithmeticExpr(self.tokens)
+    expr = self.TryParseArithmeticExpr()
     assert expr, '期望 ArithmeticExpr。落空了：%s' % (self.tokens[:5],)
     return expr
 
