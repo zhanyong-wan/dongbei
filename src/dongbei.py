@@ -1304,7 +1304,7 @@ class DongbeiParser(object):
   
   def TryParseTupleExpr(self):
     orig_tokens = self.tokens
-    expr, self.tokens = self.TryParseCompOrArithExpr(self.tokens)
+    expr = self.TryParseCompOrArithExpr()
     if not expr:
       self.tokens = orig_tokens
       return None
@@ -1328,7 +1328,7 @@ class DongbeiParser(object):
     tuple = self.TryParseTupleExpr()
     if tuple:
       return tuple
-    expr, self.tokens = self.TryParseCompOrArithExpr(self.tokens)
+    expr = self.TryParseCompOrArithExpr()
     return expr
 
   def TryParseExpr(self):
@@ -1362,39 +1362,39 @@ class DongbeiParser(object):
     assert expr, '指望一个表达式，但是啥也没有；%s' % self.tokens[:5]
     return expr, self.tokens
 
-  def TryParseCompOrArithExpr(self, tokens):
-    arith, tokens = self.TryParseArithmeticExpr(tokens)
+  def TryParseCompOrArithExpr(self):
+    arith, self.tokens = self.TryParseArithmeticExpr(self.tokens)
     if not arith:
-      return None, tokens
-    post_arith_tokens = tokens
+      return None
+    post_arith_tokens = self.tokens
 
-    cmp, tokens = self.TryConsumeKeyword(KW_COMPARE, tokens)
+    cmp, self.tokens = self.TryConsumeKeyword(KW_COMPARE, self.tokens)
     if cmp:
-      self.tokens = tokens
       arith2 = self.ParseArithmeticExpr()
-      tokens = self.tokens
-      relation, self.tokens = self.TryConsumeKeyword(KW_GREATER, tokens)
+      relation, self.tokens = self.TryConsumeKeyword(KW_GREATER, self.tokens)
       if not relation:
         relation = self.ConsumeKeyword(KW_LESS)
-      return ComparisonExpr(arith, relation, arith2), self.tokens
+      return ComparisonExpr(arith, relation, arith2)
 
-    cmp, tokens = self.TryConsumeKeyword(KW_COMPARE_WITH, tokens)
+    cmp, self.tokens = self.TryConsumeKeyword(KW_COMPARE_WITH, self.tokens)
     if cmp:
-      arith2, tokens = self.TryParseArithmeticExpr(tokens)
+      arith2, self.tokens = self.TryParseArithmeticExpr(self.tokens)
       if not arith2:
-        return arith, post_arith_tokens
-      relation, tokens = self.TryConsumeKeyword(KW_EQUAL, tokens)
+        self.tokens = post_arith_tokens
+        return arith
+      relation, self.tokens = self.TryConsumeKeyword(KW_EQUAL, self.tokens)
       if not relation:
-        relation, tokens = self.TryConsumeKeyword(KW_NOT_EQUAL, tokens)
+        relation, self.tokens = self.TryConsumeKeyword(KW_NOT_EQUAL, self.tokens)
         if not relation:
-          return arith, post_arith_tokens
-      return ComparisonExpr(arith, relation, arith2), tokens
+          self.tokens = post_arith_tokens
+          return arith
+      return ComparisonExpr(arith, relation, arith2)
 
-    cmp, tokens = self.TryConsumeKeyword(KW_IS_NONE, tokens)
+    cmp, self.tokens = self.TryConsumeKeyword(KW_IS_NONE, self.tokens)
     if cmp:
-      return ComparisonExpr(arith, Keyword(KW_IS_NONE), None), tokens
+      return ComparisonExpr(arith, Keyword(KW_IS_NONE), None)
 
-    return arith, tokens
+    return arith
 
   def ParseArithmeticExpr(self):
     expr, self.tokens = self.TryParseArithmeticExpr(self.tokens)
