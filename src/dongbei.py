@@ -1132,16 +1132,15 @@ class DongbeiParser(object):
 
     return None
 
-  def TryParseAtomicExpr(self, tokens):
-    self.tokens = tokens
+  def TryParseAtomicExpr(self):
     negate = self.TryConsumeKeyword(KW_NEGATE)
     if negate:
-      expr, self.tokens = self.TryParseAtomicExpr(self.tokens)
-      return NegateExpr(expr), self.tokens
+      expr = self.TryParseAtomicExpr()
+      return NegateExpr(expr)
 
     obj = self.TryParseObjectExpr()
     if not obj:
-      return None, self.tokens
+      return None
 
     expr = obj
     while True:
@@ -1207,10 +1206,10 @@ class DongbeiParser(object):
       # Found neither 的老 or 有几个坑 after the expression.
       break
 
-    return expr, self.tokens
+    return expr
 
   def TryParseTermExpr(self):
-    factor, self.tokens = self.TryParseAtomicExpr(self.tokens)
+    factor = self.TryParseAtomicExpr()
     if not factor:
       return None
 
@@ -1229,7 +1228,7 @@ class DongbeiParser(object):
       if not operator:
         break
 
-      factor, self.tokens = self.TryParseAtomicExpr(self.tokens)
+      factor = self.TryParseAtomicExpr()
       if factor:
         operators.append(operator)
         factors.append(factor)
