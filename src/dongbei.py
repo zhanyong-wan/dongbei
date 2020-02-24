@@ -862,35 +862,35 @@ class DongbeiParser(object):
     # Parse 保准
     assert_, self.tokens = self.TryConsumeKeyword(KW_ASSERT, self.tokens)
     if assert_:
-      expr, self.tokens = self.ParseExpr(self.tokens)
+      expr = self.ParseExpr()
       self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_ASSERT, expr)
 
     # Parse 辟谣
     assert_, self.tokens = self.TryConsumeKeyword(KW_ASSERT_FALSE, self.tokens)
     if assert_:
-      expr, self.tokens = self.ParseExpr(self.tokens)
+      expr = self.ParseExpr()
       self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_ASSERT_FALSE, expr)
 
     # Parse 整叉劈了
     raise_, self.tokens = self.TryConsumeKeyword(KW_RAISE, self.tokens)
     if raise_:
-      expr, self.tokens = self.ParseExpr(self.tokens)
+      expr = self.ParseExpr()
       self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_RAISE, expr)
 
     # Parse 削：
     set_none, self.tokens = self.TryConsumeKeyword(KW_SET_NONE, self.tokens)
     if set_none:
-      expr, self.tokens = self.ParseExpr(self.tokens)
+      expr = self.ParseExpr()
       self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_SET_NONE, expr)
 
     # Parse 炮决：
     del_, self.tokens = self.TryConsumeKeyword(KW_DEL, self.tokens)
     if del_:
-      expr, self.tokens = self.ParseExpr(self.tokens)
+      expr = self.ParseExpr()
       self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_DEL, expr)
 
@@ -898,7 +898,7 @@ class DongbeiParser(object):
     say, self.tokens = self.TryConsumeKeyword(KW_SAY, self.tokens)
     if say:
       self.ConsumeKeyword(KW_COLON)
-      expr, self.tokens = self.ParseExpr(self.tokens)
+      expr = self.ParseExpr()
       self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_SAY, expr)
 
@@ -911,7 +911,7 @@ class DongbeiParser(object):
     # Parse 滚犊子吧
     ret, self.tokens = self.TryConsumeKeyword(KW_RETURN, self.tokens)
     if ret:
-      expr, self.tokens = self.ParseExpr(self.tokens)
+      expr = self.ParseExpr()
       self.ConsumeKeyword(KW_PERIOD)
       return Statement(STMT_RETURN, expr)
 
@@ -930,7 +930,7 @@ class DongbeiParser(object):
     # Parse 寻思
     check, self.tokens = self.TryConsumeKeyword(KW_CHECK, self.tokens)
     if check:
-      expr, self.tokens = self.ParseExpr(self.tokens)
+      expr = self.ParseExpr()
       self.ConsumeKeyword(KW_THEN)
       then_stmt = self.ParseStmt()
       # Parse the optional else-branch.
@@ -982,9 +982,9 @@ class DongbeiParser(object):
       # Parse 从...到...磨叽
       from_, self.tokens = self.TryConsumeKeyword(KW_FROM, self.tokens)
       if from_:
-        from_expr, self.tokens = self.ParseExpr(self.tokens)
+        from_expr = self.ParseExpr()
         self.ConsumeKeyword(KW_TO)
-        to_expr, self.tokens = self.ParseExpr(self.tokens)
+        to_expr = self.ParseExpr()
         self.ConsumeKeyword(KW_LOOP)
         stmts = self.ParseStmts()
         self.ConsumeKeyword(KW_END_LOOP)
@@ -994,7 +994,7 @@ class DongbeiParser(object):
       # Parse 在...磨叽
       in_, self.tokens = self.TryConsumeKeyword(KW_IN, self.tokens)
       if in_:
-        range_expr, self.tokens = self.ParseExpr(self.tokens)
+        range_expr = self.ParseExpr()
         self.ConsumeKeyword(KW_LOOP)
         stmts = self.ParseStmts()
         self.ConsumeKeyword(KW_END_LOOP)
@@ -1014,21 +1014,21 @@ class DongbeiParser(object):
       # Parse 装
       become, self.tokens = self.TryConsumeKeyword(KW_BECOME, self.tokens)
       if become:
-        expr, self.tokens = self.ParseExpr(self.tokens)
+        expr = self.ParseExpr()
         self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_ASSIGN, (expr1, expr))
 
       # Parse 来了个
       append, self.tokens = self.TryConsumeKeyword(KW_APPEND, self.tokens)
       if append:
-        expr, self.tokens = self.ParseExpr(self.tokens)
+        expr = self.ParseExpr()
         self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_APPEND, (expr1, expr))
 
       # Parse 来了群
       extend, self.tokens = self.TryConsumeKeyword(KW_EXTEND, self.tokens)
       if extend:
-        expr, self.tokens = self.ParseExpr(self.tokens)
+        expr = self.ParseExpr()
         self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_EXTEND, (expr1, expr))
 
@@ -1042,7 +1042,7 @@ class DongbeiParser(object):
       # Parse 走X步
       inc, self.tokens = self.TryConsumeKeyword(KW_INC_BY, self.tokens)
       if inc:
-        expr, self.tokens = self.ParseExpr(self.tokens)
+        expr = self.ParseExpr()
         self.ConsumeKeyword(KW_STEP)
         self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_INC_BY, (expr1, expr))
@@ -1057,7 +1057,7 @@ class DongbeiParser(object):
       # Parse 稍X步
       dec, self.tokens = self.TryConsumeKeyword(KW_DEC_BY, self.tokens)
       if dec:
-        expr, self.tokens = self.ParseExpr(self.tokens)
+        expr = self.ParseExpr()
         self.ConsumeKeyword(KW_STEP)
         self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_DEC_BY, (expr1, expr))
@@ -1117,7 +1117,7 @@ class DongbeiParser(object):
     # Do we see a parenthesis?
     open_paren, self.tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, self.tokens)
     if open_paren:
-      expr, self.tokens = self.ParseExpr(self.tokens)
+      expr = self.ParseExpr()
       self.ConsumeKeyword(KW_CLOSE_PAREN)
       return ParenExpr(expr), self.tokens
 
@@ -1356,11 +1356,10 @@ class DongbeiParser(object):
 
     return ConcatExpr(nc_exprs)
 
-  def ParseExpr(self, tokens):
-    self.tokens = tokens
+  def ParseExpr(self):
     expr = self.TryParseExpr()
     assert expr, '指望一个表达式，但是啥也没有；%s' % self.tokens[:5]
-    return expr, self.tokens
+    return expr
 
   def TryParseCompOrArithExpr(self):
     arith, self.tokens = self.TryParseArithmeticExpr(self.tokens)
@@ -1563,7 +1562,8 @@ def GetPythonVarName(var):
 # Not meant to be in DongbeiParser.
 def ParseExprFromStr(str):
   parser = DongbeiParser()
-  return parser.ParseExpr(parser.Tokenize(str))
+  parser.tokens = parser.Tokenize(str)
+  return parser.ParseExpr(), parser.tokens
 
 # Not meant to be in DongbeiParser.
 def TryParseExprFromStr(str):
