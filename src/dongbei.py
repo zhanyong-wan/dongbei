@@ -969,7 +969,7 @@ class DongbeiParser(object):
         subclass = self.ConsumeTokenType(TK_IDENTIFIER)
         self.ConsumeKeyword(KW_CLASS)
         self.ConsumeKeyword(KW_DEF)
-        methods, self.tokens = self.ParseMethodDefs(self.tokens)
+        methods = self.ParseMethodDefs()
         self.ConsumeKeyword(KW_END)
         self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_CLASS_DEF, (subclass, id, methods))
@@ -1433,14 +1433,14 @@ class DongbeiParser(object):
 
     return None, orig_tokens
 
-  def ParseMethodDefs(self, tokens):
+  def ParseMethodDefs(self):
     methods = []
     while True:
-      method, tokens = self.TryParseFuncDef(tokens, is_method=True)
+      method, self.tokens = self.TryParseFuncDef(self.tokens, is_method=True)
       if method:
         methods.append(method)
       else:
-        return methods, tokens
+        return methods
 
   def ParseStmt(self):
     stmt = self.TryParseStmt()
