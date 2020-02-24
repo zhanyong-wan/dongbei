@@ -946,8 +946,7 @@ class DongbeiParser(object):
       return func_def
 
     # Parse an identifier name.
-    id, self.tokens = self.TryConsumeTokenType(TK_IDENTIFIER, self.tokens)
-
+    id = self.TryConsumeTokenType(TK_IDENTIFIER)
     if id:
       # Code below is for statements that start with an identifier.
 
@@ -1086,7 +1085,7 @@ class DongbeiParser(object):
       return TupleExpr(()), self.tokens
     
     # Do we see an integer literal?
-    num, self.tokens = self.TryConsumeTokenType(TK_INTEGER_LITERAL, self.tokens)
+    num = self.TryConsumeTokenType(TK_INTEGER_LITERAL)
     if num:
       return LiteralExpr(num), self.tokens
 
@@ -1103,7 +1102,7 @@ class DongbeiParser(object):
       return LiteralExpr(str), self.tokens
 
     # Do we see an identifier?
-    id, self.tokens = self.TryConsumeTokenType(TK_IDENTIFIER, self.tokens)
+    id = self.TryConsumeTokenType(TK_IDENTIFIER)
     if id:
       new_obj, self.tokens = self.TryConsumeKeyword(KW_NEW_OBJECT_OF, self.tokens)
       if not new_obj:
@@ -1403,7 +1402,7 @@ class DongbeiParser(object):
   def TryParseFuncDef(self, tokens, is_method=False):
     self.tokens = tokens
     orig_tokens = self.tokens
-    id, self.tokens = self.TryConsumeTokenType(TK_IDENTIFIER, self.tokens)
+    id = self.TryConsumeTokenType(TK_IDENTIFIER)
     if not id:
       return None, self.tokens
 
@@ -1448,15 +1447,17 @@ class DongbeiParser(object):
     assert stmt, '期望语句，落空了：%s' % (self.tokens[:5],)
     return stmt
 
-  def TryConsumeTokenType(self, tk_type, tokens):
-    if not tokens:
-      return None, tokens
-    if tokens[0].kind == tk_type:
-      return tokens[0], tokens[1:]
-    return None, tokens
+  def TryConsumeTokenType(self, tk_type):
+    if not self.tokens:
+      return None
+    if self.tokens[0].kind == tk_type:
+      token = self.tokens[0]
+      self.tokens = self.tokens[1:]
+      return token
+    return None
 
   def ConsumeTokenType(self, tk_type):
-    tk, self.tokens = self.TryConsumeTokenType(tk_type, self.tokens)
+    tk = self.TryConsumeTokenType(tk_type)
     if tk is None:
       sys.exit('期望 %s，实际是 %s' % (tk_type, self.tokens[0]))
     return tk
