@@ -1073,66 +1073,64 @@ class DongbeiParser(object):
     token = self.TryConsumeToken(Keyword(keyword))
     return token
 
-  def TryParseObjectExpr(self, tokens):
+  def TryParseObjectExpr(self):
     """Returns (expr, remaining tokens)."""
-
-    self.tokens = tokens
 
     # Do we see 抱团？
     tuple = self.TryConsumeKeyword(KW_TUPLE)
     if tuple:
-      return TupleExpr(()), self.tokens
+      return TupleExpr(())
     
     # Do we see an integer literal?
     num = self.TryConsumeTokenType(TK_INTEGER_LITERAL)
     if num:
-      return LiteralExpr(num), self.tokens
+      return LiteralExpr(num)
 
     # Do we see a None literal?
     is_none = self.TryConsumeKeyword(KW_IS_NONE)
     if is_none:
-      return LiteralExpr(Token(TK_NONE_LITERAL, None)), self.tokens
+      return LiteralExpr(Token(TK_NONE_LITERAL, None))
 
     # Do we see a string literal?
     open_quote = self.TryConsumeKeyword(KW_OPEN_QUOTE)
     if open_quote:
       str = self.ConsumeTokenType(TK_STRING_LITERAL)
       self.ConsumeKeyword(KW_CLOSE_QUOTE)
-      return LiteralExpr(str), self.tokens
+      return LiteralExpr(str)
 
     # Do we see an identifier?
     id = self.TryConsumeTokenType(TK_IDENTIFIER)
     if id:
       new_obj = self.TryConsumeKeyword(KW_NEW_OBJECT_OF)
       if not new_obj:
-        return VariableExpr(id.value), self.tokens
+        return VariableExpr(id.value)
       args = []
       open_paren = self.TryConsumeKeyword(KW_OPEN_PAREN)
       if open_paren:
         args = self.ParseExprList()
         self.ConsumeKeyword(KW_CLOSE_PAREN)
-      return NewObjectExpr(id, args), self.tokens
+      return NewObjectExpr(id, args)
 
     # Do we see a parenthesis?
     open_paren = self.TryConsumeKeyword(KW_OPEN_PAREN)
     if open_paren:
       expr = self.ParseExpr()
       self.ConsumeKeyword(KW_CLOSE_PAREN)
-      return ParenExpr(expr), self.tokens
+      return ParenExpr(expr)
 
     # Do we see a function call?
     call_expr = self.TryParseCallExpr()
     if call_expr:
-      return call_expr, self.tokens
+      return call_expr
     
     # Do we see a list literal?
     open_bracket = self.TryConsumeKeyword(KW_OPEN_BRACKET)
     if open_bracket:
       exprs = self.ParseExprList()
       self.ConsumeKeyword(KW_CLOSE_BRACKET)
-      return ListExpr(exprs), self.tokens
+      return ListExpr(exprs)
 
-    return None, self.tokens
+    return None
 
   def TryParseAtomicExpr(self, tokens):
     self.tokens = tokens
@@ -1141,7 +1139,7 @@ class DongbeiParser(object):
       expr, self.tokens = self.TryParseAtomicExpr(self.tokens)
       return NegateExpr(expr), self.tokens
 
-    obj, self.tokens = self.TryParseObjectExpr(self.tokens)
+    obj = self.TryParseObjectExpr()
     if not obj:
       return None, self.tokens
 
@@ -1167,7 +1165,7 @@ class DongbeiParser(object):
       index = self.TryConsumeKeyword(KW_INDEX)
       if index:
         # Parse an ObjectExpr.
-        obj, self.tokens = self.TryParseObjectExpr(self.tokens)
+        obj = self.TryParseObjectExpr()
         if obj:
           expr = IndexExpr(expr, obj)
         else:
