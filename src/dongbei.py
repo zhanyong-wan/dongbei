@@ -1071,7 +1071,9 @@ class DongbeiParser(object):
     return None
 
   def TryConsumeKeyword(self, keyword, tokens):
-    return self.TryConsumeToken(Keyword(keyword), tokens)
+    self.tokens = tokens
+    token = self.TryConsumeToken(Keyword(keyword))
+    return token, self.tokens
 
   def TryParseObjectExpr(self, tokens):
     """Returns (expr, remaining tokens)."""
@@ -1457,12 +1459,13 @@ class DongbeiParser(object):
       sys.exit('期望 %s，实际是 %s' % (tk_type, tokens[0]))
     return tk, tokens
       
-  def TryConsumeToken(self, token, tokens):
-    if not tokens:
-      return None, tokens
-    if token != tokens[0]:
-      return None, tokens
-    return token, tokens[1:]
+  def TryConsumeToken(self, token):
+    if not self.tokens:
+      return None
+    if token != self.tokens[0]:
+      return None
+    self.tokens = self.tokens[1:]
+    return token
 
   def ConsumeToken(self, token):
     if not self.tokens:
