@@ -941,7 +941,7 @@ class DongbeiParser(object):
         else_stmt = None
       return Statement(STMT_CONDITIONAL, (expr, then_stmt, else_stmt))
 
-    func_def, self.tokens = self.TryParseFuncDef(self.tokens)
+    func_def = self.TryParseFuncDef()
     if func_def:
       return func_def
 
@@ -1399,12 +1399,11 @@ class DongbeiParser(object):
     assert expr, '期望 ArithmeticExpr。落空了：%s' % (tokens[:5],)
     return expr, tokens
 
-  def TryParseFuncDef(self, tokens, is_method=False):
-    self.tokens = tokens
+  def TryParseFuncDef(self, is_method=False):
     orig_tokens = self.tokens
     id = self.TryConsumeTokenType(TK_IDENTIFIER)
     if not id:
-      return None, self.tokens
+      return None
 
     open_paren, self.tokens = self.TryConsumeKeyword(KW_OPEN_PAREN, self.tokens)
     params = [IdentifierToken(ID_SELF)] if is_method else []
@@ -1421,7 +1420,7 @@ class DongbeiParser(object):
       stmts = self.ParseStmts()
       self.ConsumeKeyword(KW_END)
       self.ConsumeKeyword(KW_PERIOD)
-      return Statement(STMT_FUNC_DEF, (id, params, stmts)), self.tokens
+      return Statement(STMT_FUNC_DEF, (id, params, stmts))
 
     # not open_paren
     func_def, self.tokens = self.TryConsumeKeyword(KW_DEF, self.tokens)
@@ -1429,14 +1428,15 @@ class DongbeiParser(object):
       stmts = self.ParseStmts()
       self.ConsumeKeyword(KW_END)
       self.ConsumeKeyword(KW_PERIOD)
-      return Statement(STMT_FUNC_DEF, (id, params, stmts)), self.tokens
+      return Statement(STMT_FUNC_DEF, (id, params, stmts))
 
-    return None, orig_tokens
+    self.tokens = orig_tokens
+    return None
 
   def ParseMethodDefs(self):
     methods = []
     while True:
-      method, self.tokens = self.TryParseFuncDef(self.tokens, is_method=True)
+      method = self.TryParseFuncDef(is_method=True)
       if method:
         methods.append(method)
       else:
