@@ -5,7 +5,7 @@
 [![体格咋地](https://api.travis-ci.com/zhanyong-wan/dongbei.svg?branch=master)](https://travis-ci.com/zhanyong-wan/dongbei)
 
 扫码关注原作者微信公众号“老万故事会”
-<img src="doc/lwgsh.jpg" height="129">
+<img src="doc/lwgsh.jpg" height="129"/>
 
 * [引言](#引言)
 * [系统要求](#系统要求)
@@ -169,3 +169,4 @@ dongbei的老铁们开发了这些个周边项目，让你在用dongbei编程的
 
 * VS Code 的 dongbei 语法高亮度插件：https://github.com/mingjun97/dongbei-vscode ，在插件商店[直接安装](https://marketplace.visualstudio.com/items?itemName=mingjun97.dongbei)就成。
 * vim 的 dongbei 语法高亮度插件：https://github.com/suxpert/dongbei.vim ，整法自个儿瞅去。
+  效果示例：<br/><img src="doc/dongbei-vim-screencast.gif" />
