@@ -654,6 +654,13 @@ class ComparisonExpr(Expr):
   def ToPython(self):
     if self.relation.value == KW_IS_NONE:
       return f'({self.op1.ToPython()}) is None'
+    elif self.relation.value == KW_IS_VAR:
+      if isinstance(self.op1, VariableExpr):
+        return f'"{self.op1.var}" in locals()'
+      else:
+        return 'False'
+    elif self.relation.value == KW_IS_LIST:
+      return f'isinstance({self.op1.ToPython()}, list)'
     return '%s %s %s' % (self.op1.ToPython(),
                          COMPARISON_KEYWORD_TO_PYTHON[self.relation.value],
                          self.op2.ToPython())
@@ -1384,6 +1391,14 @@ class DongbeiParser(object):
     cmp = self.TryConsumeKeyword(KW_IS_NONE)
     if cmp:
       return ComparisonExpr(arith, Keyword(KW_IS_NONE), None)
+
+    cmp = self.TryConsumeKeyword(KW_IS_VAR)
+    if cmp:
+      return ComparisonExpr(arith, Keyword(KW_IS_VAR), None)
+
+    cmp = self.TryConsumeKeyword(KW_IS_LIST)
+    if cmp:
+      return ComparisonExpr(arith, Keyword(KW_IS_LIST), None)
 
     return arith
 
