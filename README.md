@@ -156,7 +156,9 @@ dongbei hello-world.dongbei
 
 这里还有一些精选的示范程序供大家参考：
 
-*  [快速排序](demo/快速排序.dongbei)
+* [快速排序](demo/快速排序.dongbei)
+* [汉诺塔动唤](demo/汉诺塔动唤.dongbei)。运行结果：
+  <br/><img src="doc/hanoi.gif" />
 
 ## 参与开发
 
