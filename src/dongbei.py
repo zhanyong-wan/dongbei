@@ -125,7 +125,7 @@ KEYWORDS = (
   KW_ELSE,
   KW_EXTEND,
   KW_END,   # must match 整完了 before matching 整
-  KW_RAISE,  # must match 整劈叉了 before matching 整
+  KW_RAISE,  # must match 整叉劈了 before matching 整
   KW_CALL,  # 整
   KW_END_LOOP,
   KW_EQUAL,
