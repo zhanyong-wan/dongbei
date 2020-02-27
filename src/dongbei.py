@@ -187,7 +187,7 @@ KEYWORD_TO_NORMALIZED_KEYWORD = {
 TK_KEYWORD = 'KEYWORD'
 TK_IDENTIFIER = 'IDENTIFIER'
 TK_STRING_LITERAL = 'STRING'
-TK_INTEGER_LITERAL = 'INTEGER'
+TK_NUMBER_LITERAL = 'NUMBER'
 TK_NONE_LITERAL = 'NONE'
 TK_CHAR = 'CHAR'
 
@@ -473,7 +473,7 @@ class LiteralExpr(Expr):
     return self.token == other.token
 
   def ToDongbei(self):
-    if self.token.kind == TK_INTEGER_LITERAL:
+    if self.token.kind == TK_NUMBER_LITERAL:
       return str(self.token.value)
     if self.token.kind == TK_STRING_LITERAL:
       return '“%s”' % (self.token.value,)
@@ -482,7 +482,7 @@ class LiteralExpr(Expr):
     raise Exception('Unexpected token kind %s' % (self.token.kind,))
 
   def ToPython(self):
-    if self.token.kind == TK_INTEGER_LITERAL:
+    if self.token.kind == TK_NUMBER_LITERAL:
       return str(self.token.value)
     if self.token.kind == TK_STRING_LITERAL:
       return '"%s"' % (self.token.value,)
@@ -513,8 +513,8 @@ class TupleExpr(Expr):
     
     return '(%s)' % (', '.join(field.ToPython() for field in self.tuple))
 
-def IntegerLiteralExpr(value):
-  return LiteralExpr(Token(TK_INTEGER_LITERAL, value))
+def NumberLiteralExpr(value):
+  return LiteralExpr(Token(TK_NUMBER_LITERAL, value))
 
 def StringLiteralExpr(value):
   return LiteralExpr(Token(TK_STRING_LITERAL, value))
@@ -768,12 +768,16 @@ CHINESE_DIGITS = {
     '十': 10,
     }
 
-def TryParseInteger(str):
-  """Returns (integer, remainder)."""
+def TryParseNumber(str):
+  """Returns (number, remainder)."""
 
-  m = re.match(r'^(-?[0-9]+)(.*)', str)
+  m = re.match(r'^(-?[0-9]+(\.[0-9]*)?)(.*)', str)
   if m:
-    return int(m.group(1)), m.group(2)
+    number_str = m.group(1)
+    remainder = m.group(3)
+    if '.' in number_str:
+      return float(number_str), remainder
+    return int(number_str), remainder
   for chinese_digit, value in CHINESE_DIGITS.items():
     if str.startswith(chinese_digit):
       return value, str[len(chinese_digit):]
@@ -782,9 +786,9 @@ def TryParseInteger(str):
 def TokenizeStrContainingNoKeyword(chars):
   """Returns a list of tokens."""
   tokens = []
-  integer, rest = TryParseInteger(chars)
-  if integer is not None:
-    tokens.append(Token(TK_INTEGER_LITERAL, integer))
+  number, rest = TryParseNumber(chars)
+  if number is not None:
+    tokens.append(Token(TK_NUMBER_LITERAL, number))
   if rest:
     tokens.append(IdentifierToken(rest))
   return tokens
@@ -1038,7 +1042,7 @@ class DongbeiParser(object):
       if inc:
         self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_INC_BY,
-                         (expr1, IntegerLiteralExpr(1)))
+                         (expr1, NumberLiteralExpr(1)))
 
       # Parse 走X步
       inc = self.TryConsumeKeyword(KW_INC_BY)
@@ -1053,7 +1057,7 @@ class DongbeiParser(object):
       if dec:
         self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_DEC_BY,
-                         (expr1, IntegerLiteralExpr(1)))
+                         (expr1, NumberLiteralExpr(1)))
 
       # Parse 稍X步
       dec = self.TryConsumeKeyword(KW_DEC_BY)
@@ -1082,8 +1086,8 @@ class DongbeiParser(object):
     if tuple:
       return TupleExpr(())
     
-    # Do we see an integer literal?
-    num = self.TryConsumeTokenType(TK_INTEGER_LITERAL)
+    # Do we see a number literal?
+    num = self.TryConsumeTokenType(TK_NUMBER_LITERAL)
     if num:
       return LiteralExpr(num)
 
@@ -1151,14 +1155,14 @@ class DongbeiParser(object):
       index1 = self.TryConsumeKeyword(KW_INDEX_1)
       if index1:
         # dongbei 数组是从1开始的。
-        expr = IndexExpr(expr, IntegerLiteralExpr(1))
+        expr = IndexExpr(expr, NumberLiteralExpr(1))
         continue
 
       # Parse 的老幺
       index_last = self.TryConsumeKeyword(KW_INDEX_LAST)
       if index_last:
         # 0 - 1 = -1
-        expr = IndexExpr(expr, IntegerLiteralExpr(0))
+        expr = IndexExpr(expr, NumberLiteralExpr(0))
         continue
 
       # Parse 的老

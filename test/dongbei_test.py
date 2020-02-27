@@ -19,12 +19,12 @@ from src.dongbei import ComparisonExpr
 from src.dongbei import ConcatExpr
 from src.dongbei import DongbeiParser
 from src.dongbei import IdentifierToken
-from src.dongbei import IntegerLiteralExpr
+from src.dongbei import NumberLiteralExpr
 from src.dongbei import Keyword
 from src.dongbei import ParenExpr
 from src.dongbei import TokenizeStrContainingNoKeyword
 from src.dongbei import ParseExprFromStr
-from src.dongbei import TryParseInteger
+from src.dongbei import TryParseNumber
 from src.dongbei import ParseStmtFromStr
 from src.dongbei import ParseToAst
 from src.dongbei import Run
@@ -40,7 +40,7 @@ from src.dongbei import Statement
 from src.dongbei import StringLiteralExpr
 from src.dongbei import TK_CHAR
 from src.dongbei import TK_IDENTIFIER
-from src.dongbei import TK_INTEGER_LITERAL
+from src.dongbei import TK_NUMBER_LITERAL
 from src.dongbei import TK_STRING_LITERAL
 from src.dongbei import Token
 from src.dongbei import TranslateDongbeiToPython
@@ -50,11 +50,11 @@ def Tokenize(code):
   return DongbeiParser().Tokenize(code)
 
 class DongbeiParseExprTest(unittest.TestCase):
-  def testParseInteger(self):
+  def testParseNumber(self):
     self.assertEqual(ParseExprFromStr('5')[0],
-                     IntegerLiteralExpr(5))
+                     NumberLiteralExpr(5))
     self.assertEqual(ParseExprFromStr('九')[0],
-                     IntegerLiteralExpr(9))
+                     NumberLiteralExpr(9))
     
   def testParseStringLiteral(self):
     self.assertEqual(ParseExprFromStr('“ 哈  哈   ”')[0],
@@ -79,42 +79,42 @@ class DongbeiParseExprTest(unittest.TestCase):
                      CallExpr('老王', []))
     self.assertEqual(ParseExprFromStr('整老王（5）')[0],
                      CallExpr('老王',
-                              [IntegerLiteralExpr(5)]))
+                              [NumberLiteralExpr(5)]))
     self.assertEqual(ParseExprFromStr('整老王(6)')[0],
                      CallExpr('老王',
-                              [IntegerLiteralExpr(6)]))
+                              [NumberLiteralExpr(6)]))
     self.assertEqual(ParseExprFromStr('整老王(老刘，6)')[0],
                      CallExpr('老王',
                               [VariableExpr('老刘'),
-                               IntegerLiteralExpr(6)]))
+                               NumberLiteralExpr(6)]))
     self.assertEqual(ParseExprFromStr('整老王(“你”，老刘，6)')[0],
                      CallExpr('老王',
                               [StringLiteralExpr('你'),
                                VariableExpr('老刘'),
-                               IntegerLiteralExpr(6)]))
+                               NumberLiteralExpr(6)]))
     self.assertEqual(ParseExprFromStr('整老王(“你”,老刘，6)')[0],
                      CallExpr('老王',
                               [StringLiteralExpr('你'),
                                VariableExpr('老刘'),
-                               IntegerLiteralExpr(6)]))
+                               NumberLiteralExpr(6)]))
 
   def testParseTermExpr(self):
     self.assertEqual(ParseExprFromStr('老王乘五')[0],
                      ArithmeticExpr(
                          VariableExpr('老王'),
                          Keyword('乘'),
-                         IntegerLiteralExpr(5))
+                         NumberLiteralExpr(5))
                      )
     self.assertEqual(ParseExprFromStr('五除以老王')[0],
                      ArithmeticExpr(
-                         IntegerLiteralExpr(5),
+                         NumberLiteralExpr(5),
                          Keyword('除以'),
                          VariableExpr('老王'))
                      )
     self.assertEqual(ParseExprFromStr('五除以老王乘老刘')[0],
                      ArithmeticExpr(
                          ArithmeticExpr(
-                             IntegerLiteralExpr(5),
+                             NumberLiteralExpr(5),
                              Keyword('除以'),
                              VariableExpr('老王')),
                          Keyword('乘'),
@@ -124,24 +124,24 @@ class DongbeiParseExprTest(unittest.TestCase):
   def testParseArithmeticExpr(self):
     self.assertEqual(ParseExprFromStr('5加六')[0],
                      ArithmeticExpr(
-                         IntegerLiteralExpr(5),
+                         NumberLiteralExpr(5),
                          Keyword('加'),
-                         IntegerLiteralExpr(6)
+                         NumberLiteralExpr(6)
                      ))
     self.assertEqual(ParseExprFromStr('5加六乘3')[0],
                      ArithmeticExpr(
-                         IntegerLiteralExpr(5),
+                         NumberLiteralExpr(5),
                          Keyword('加'),
                          ArithmeticExpr(
-                             IntegerLiteralExpr(6),
+                             NumberLiteralExpr(6),
                              Keyword('乘'),
-                             IntegerLiteralExpr(3))))
+                             NumberLiteralExpr(3))))
     self.assertEqual(ParseExprFromStr('5减六减老王')[0],
                      ArithmeticExpr(
                          ArithmeticExpr(
-                             IntegerLiteralExpr(5),
+                             NumberLiteralExpr(5),
                              Keyword('减'),
-                             IntegerLiteralExpr(6)
+                             NumberLiteralExpr(6)
                          ),
                          Keyword('减'),
                          VariableExpr('老王'))
@@ -150,18 +150,18 @@ class DongbeiParseExprTest(unittest.TestCase):
   def testParseComparisonExpr(self):
     self.assertEqual(ParseExprFromStr('5比6还大')[0],
                      ComparisonExpr(
-                         IntegerLiteralExpr(5),
+                         NumberLiteralExpr(5),
                          Keyword('还大'),
-                         IntegerLiteralExpr(6)
+                         NumberLiteralExpr(6)
                      ))
     self.assertEqual(ParseExprFromStr('老王加5比6还小')[0],
                      ComparisonExpr(
                          ArithmeticExpr(
                              VariableExpr('老王'),
                              Keyword('加'),
-                             IntegerLiteralExpr(5)),
+                             NumberLiteralExpr(5)),
                          Keyword('还小'),
-                         IntegerLiteralExpr(6)
+                         NumberLiteralExpr(6)
                      ))
     self.assertEqual(ParseExprFromStr('老王跟老刘一样一样的')[0],
                      ComparisonExpr(
@@ -174,16 +174,16 @@ class DongbeiParseExprTest(unittest.TestCase):
                          ArithmeticExpr(
                              VariableExpr('老王'),
                              Keyword('加'),
-                             IntegerLiteralExpr(5)),
+                             NumberLiteralExpr(5)),
                          Keyword('不是一样一样的'),
-                         IntegerLiteralExpr(6)
+                         NumberLiteralExpr(6)
                      ))
 
   def testParseConcatExpr(self):
     self.assertEqual(ParseExprFromStr('老王、2')[0],
                      ConcatExpr([
                          VariableExpr('老王'),
-                         IntegerLiteralExpr(2)
+                         NumberLiteralExpr(2)
                      ]))
   def testParseConcatExpr(self):
     self.assertEqual(ParseExprFromStr('老王加油、2、“哈”')[0],
@@ -192,7 +192,7 @@ class DongbeiParseExprTest(unittest.TestCase):
                              VariableExpr('老王'),
                              Keyword('加'),
                              VariableExpr('油')),
-                         IntegerLiteralExpr(2),
+                         NumberLiteralExpr(2),
                          StringLiteralExpr('哈')
                      ]))
 
@@ -204,7 +204,7 @@ class DongbeiParseStatementTest(unittest.TestCase):
                   (ComparisonExpr(
                       VariableExpr('老王'),
                       Keyword('还大'),
-                      IntegerLiteralExpr(5)),
+                      NumberLiteralExpr(5)),
                    # then-branch
                    Statement(STMT_SAY,
                              VariableExpr('老王')),
@@ -286,7 +286,7 @@ class DongbeiTest(unittest.TestCase):
         Tokenize('老张'),
         [IdentifierToken('老张')])
     self.assertEqual(
-        TryParseInteger('老张'),
+        TryParseNumber('老张'),
         (None, '老张'))
     self.assertEqual(
         list(TokenizeStrContainingNoKeyword('老张')),
@@ -314,7 +314,7 @@ class DongbeiTest(unittest.TestCase):
         Tokenize('老张装250。\n老王装老张。\n'),
         [IdentifierToken('老张'),
          Keyword('装'),
-         Token(TK_INTEGER_LITERAL, 250),
+         Token(TK_NUMBER_LITERAL, 250),
          Keyword('。'),
          IdentifierToken('老王'),
          Keyword('装'),
@@ -332,15 +332,15 @@ class DongbeiTest(unittest.TestCase):
   def testTokenizeArithmetic(self):
     self.assertEqual(
         Tokenize('250加13减二乘五除以九'),
-        [Token(TK_INTEGER_LITERAL, 250),
+        [Token(TK_NUMBER_LITERAL, 250),
          Keyword('加'),
-         Token(TK_INTEGER_LITERAL, 13),
+         Token(TK_NUMBER_LITERAL, 13),
          Keyword('减'),
-         Token(TK_INTEGER_LITERAL, 2),
+         Token(TK_NUMBER_LITERAL, 2),
          Keyword('乘'),
-         Token(TK_INTEGER_LITERAL, 5),
+         Token(TK_NUMBER_LITERAL, 5),
          Keyword('除以'),
-         Token(TK_INTEGER_LITERAL, 9),
+         Token(TK_NUMBER_LITERAL, 9),
         ])
     
   def testTokenizeLoop(self):
@@ -348,9 +348,9 @@ class DongbeiTest(unittest.TestCase):
         Tokenize('老王从1到9磨叽：磨叽完了。'),
         [IdentifierToken('老王'),
          Keyword('从'),
-         Token(TK_INTEGER_LITERAL, 1),
+         Token(TK_NUMBER_LITERAL, 1),
          Keyword('到'),
-         Token(TK_INTEGER_LITERAL, 9),
+         Token(TK_NUMBER_LITERAL, 9),
          Keyword('磨叽：'),
          Keyword('磨叽完了'),
          Keyword('。'),
@@ -376,7 +376,7 @@ class DongbeiTest(unittest.TestCase):
         Tokenize('老王走两步'),
         [IdentifierToken('老王'),
          Keyword('走'),
-         Token(TK_INTEGER_LITERAL, 2),
+         Token(TK_NUMBER_LITERAL, 2),
          Keyword('步'),
         ])
 
@@ -389,7 +389,7 @@ class DongbeiTest(unittest.TestCase):
         Tokenize('老王稍三步'),
         [IdentifierToken('老王'),
          Keyword('稍'),
-         Token(TK_INTEGER_LITERAL, 3),
+         Token(TK_NUMBER_LITERAL, 3),
          Keyword('步'),
         ])
 
@@ -398,7 +398,7 @@ class DongbeiTest(unittest.TestCase):
         Tokenize('老刘、二'),
         [IdentifierToken('老刘'),
          Keyword('、'),
-         Token(TK_INTEGER_LITERAL, 2),])
+         Token(TK_NUMBER_LITERAL, 2),])
 
   def testTokenizingFuncDef(self):
     self.assertEqual(
@@ -420,13 +420,13 @@ class DongbeiTest(unittest.TestCase):
         [Statement(
             STMT_INC_BY,
             (VariableExpr('老王'),
-             IntegerLiteralExpr(1)))])
+             NumberLiteralExpr(1)))])
     self.assertEqual(
         ParseToAst('老王走两步。'),
         [Statement(
             STMT_INC_BY,
             (VariableExpr('老王'),
-             IntegerLiteralExpr(2)))])
+             NumberLiteralExpr(2)))])
 
   def testParsingDecrements(self):
     self.assertEqual(
@@ -434,13 +434,13 @@ class DongbeiTest(unittest.TestCase):
         [Statement(
             STMT_DEC_BY,
             (VariableExpr('老王'),
-             IntegerLiteralExpr(1)))])
+             NumberLiteralExpr(1)))])
     self.assertEqual(
         ParseToAst('老王稍三步。'),
         [Statement(
             STMT_DEC_BY,
             (VariableExpr('老王'),
-             IntegerLiteralExpr(3)))])
+             NumberLiteralExpr(3)))])
 
   def testParsingLoop(self):
     self.assertEqual(
@@ -448,8 +448,8 @@ class DongbeiTest(unittest.TestCase):
         [Statement(
             STMT_LOOP,
             (VariableExpr('老王'),
-             IntegerLiteralExpr(1),
-             IntegerLiteralExpr(9),
+             NumberLiteralExpr(1),
+             NumberLiteralExpr(9),
              []))])
 
   def testParsingComparison(self):
@@ -457,9 +457,9 @@ class DongbeiTest(unittest.TestCase):
         ParseToAst('唠唠：2比5还大。'),
         [Statement(
             STMT_SAY,
-            ComparisonExpr(IntegerLiteralExpr(2),
+            ComparisonExpr(NumberLiteralExpr(2),
                            Keyword('还大'),
-                           IntegerLiteralExpr(5)
+                           NumberLiteralExpr(5)
             ))])
 
   def testParsingFuncDef(self):
@@ -478,7 +478,7 @@ class DongbeiTest(unittest.TestCase):
                     # Function body.
                     [Statement(STMT_SAY,
                                LiteralExpr(Token(
-                                   TK_INTEGER_LITERAL, 1)))]
+                                   TK_NUMBER_LITERAL, 1)))]
                    ))])
     
   def testParsingFuncDefWithParam(self):
@@ -495,7 +495,7 @@ class DongbeiTest(unittest.TestCase):
         ParseToAst('整【阶乘】（五）。'),
         [Statement(STMT_CALL,
                    CallExpr('阶乘',
-                            [IntegerLiteralExpr(5)]))])
+                            [NumberLiteralExpr(5)]))])
 
   def testVarAssignmentFromVar(self):
     self.assertEqual(
@@ -739,7 +739,7 @@ class DongbeiTest(unittest.TestCase):
 '''),
       '「啥也不是, 3」\n')
 
-  def testIntegerLiteral(self):
+  def testNumberLiteral(self):
     self.assertEqual(
       Run('唠唠：零。'),
       '0\n')
@@ -785,6 +785,12 @@ class DongbeiTest(unittest.TestCase):
     self.assertEqual(
       Run('唠唠：十。'),
       '10\n')
+    self.assertEqual(
+      Run('唠唠：-10.5。'),
+      '-10.5\n')
+    self.assertEqual(
+      Run('唠唠：5.。'),
+      '5.0\n')
     self.assertEqual(
       Run('唠唠：-10。'),
       '-10\n')
