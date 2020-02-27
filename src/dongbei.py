@@ -1167,6 +1167,7 @@ class DongbeiParser(object):
         obj = self.TryParseObjectExpr()
         if obj:
           expr = IndexExpr(expr, obj)
+          continue
         else:
           # We have a trailing 的老 without an object expression to follow it.
           self.tokens = pre_index_tokens

@@ -971,6 +971,15 @@ class DongbeiTest(unittest.TestCase):
 啥也不是
 ''')
 
+  def testNestedArray(self):
+    self.assertEqual(
+      Run('''
+      张家庄 装 「「一，二」，「三」」。
+      唠唠：张家庄的老二的老大。
+      '''),
+      '''3
+''')
+
   def testSubList(self):
     self.assertEqual(
       Run('''
