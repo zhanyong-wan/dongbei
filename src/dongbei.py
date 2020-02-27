@@ -761,28 +761,30 @@ class DongbeiParser(object):
 
     tokens.append(Token(TK_STRING_LITERAL, code[:close_quote_pos]))
     tokens.append(Keyword(KW_CLOSE_QUOTE))
-    tokens.extend(self.BasicTokenize(code[close_quote_pos + len(KW_CLOSE_QUOTE):]))
+    self.code = code[close_quote_pos + len(KW_CLOSE_QUOTE):]
+    tokens.extend(self.BasicTokenize())
     return tokens
 
-  def BasicTokenize(self, code):
+  def BasicTokenize(self):
     """Returns a list of tokens from the dongbei code."""
 
     tokens = []
-    code = SkipWhitespaceAndComment(code)
-    if not code:
+    self.code = SkipWhitespaceAndComment(self.code)
+    if not self.code:
       return tokens
 
     # Parse 【标识符】.
-    m = re.match('^(【(.*?)】)', code)
+    m = re.match('^(【(.*?)】)', self.code)
     if m:
       id = re.sub(r'\s+', '', m.group(2))  # Ignore whitespace.
       tokens.append(IdentifierToken(id))
-      tokens.extend(self.BasicTokenize(code[len(m.group(1)):]))
+      self.code = self.code[len(m.group(1)):]
+      tokens.extend(self.BasicTokenize())
       return tokens
       
     # Try to parse a keyword at the beginning of the code.
     for keyword in KEYWORDS:
-      kw, remaining_code = TryParseKeyword(keyword, code)
+      kw, remaining_code = TryParseKeyword(keyword, self.code)
       if kw:
         keyword = KEYWORD_TO_NORMALIZED_KEYWORD.get(keyword, keyword)
         last_token = Keyword(keyword)
@@ -790,11 +792,13 @@ class DongbeiParser(object):
         if last_token == Keyword(KW_OPEN_QUOTE):
           tokens.extend(self.TokenizeStringLiteralAndRest(remaining_code))
         else:
-          tokens.extend(self.BasicTokenize(remaining_code.lstrip()))
+          self.code = remaining_code.lstrip()
+          tokens.extend(self.BasicTokenize())
         return tokens
 
-    tokens.append(Token(TK_CHAR, code[0]))
-    tokens.extend(self.BasicTokenize(code[1:]))
+    tokens.append(Token(TK_CHAR, self.code[0]))
+    self.code = self.code[1:]
+    tokens.extend(self.BasicTokenize())
     return tokens
   
   def Tokenize(self, code, src_file=None):
@@ -806,7 +810,7 @@ class DongbeiParser(object):
     tokens = []
     last_token = Token(None, None)
     chars = ''
-    for token in self.BasicTokenize(self.code):
+    for token in self.BasicTokenize():
       last_last_token = last_token
       last_token = token
       if token.kind == TK_CHAR:
