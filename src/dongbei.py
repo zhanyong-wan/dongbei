@@ -11,7 +11,8 @@
 
 import io
 import re
-import sys
+import sys  # needed by 最高指示
+import time  # needed by 打个盹
 
 XUDAO_FLAG = '--xudao'
 DONGBEI_VERSION = '0.0.5'
@@ -1504,6 +1505,7 @@ ID_SELF = '俺'
 ID_YOU_SAY = '你吱声'
 ID_TRUE = '没毛病'
 ID_FALSE = '有毛病'
+ID_SLEEP = '打个盹'
 
 # Maps a dongbei identifier to its corresponding Python identifier.
 _dongbei_var_to_python_var = {
@@ -1513,6 +1515,7 @@ _dongbei_var_to_python_var = {
   ID_YOU_SAY: 'input',
   ID_TRUE: 'True',
   ID_FALSE: 'False',
+  ID_SLEEP: 'time.sleep',
 }
 
 def GetPythonVarName(var):
