@@ -749,7 +749,22 @@ def TokenizeStrContainingNoKeyword(chars):
 class DongbeiParser(object):
   def __init__(self):
     self.code = None
+    self.line = 1
+    self.column = 0
     self.tokens = []  # remaining tokens
+
+  def SkipChar(self):
+    assert self.code
+    if self.code[0] == '\n':
+      self.line += 1
+      self.column = 0
+    else:
+      self.column += 1
+    self.code = self.code[1:]
+
+  def SkipChars(self, num):
+    for x in range(num):
+      self.SkipChar()
 
   def TokenizeStringLiteralAndRest(self):
     """Returns a list of tokens."""
@@ -758,11 +773,13 @@ class DongbeiParser(object):
     close_quote_pos = self.code.find(KW_CLOSE_QUOTE)
     if close_quote_pos < 0:
       tokens.append(Token(TK_NON_TERMINATING_STRING_LITERAL, self.code))
+      self.SkipChars(len(self.code))
       return tokens
 
     tokens.append(Token(TK_STRING_LITERAL, self.code[:close_quote_pos]))
+    self.SkipChars(close_quote_pos)
     tokens.append(Keyword(KW_CLOSE_QUOTE))
-    self.code = self.code[close_quote_pos + len(KW_CLOSE_QUOTE):]
+    self.SkipChars(len(KW_CLOSE_QUOTE))
     tokens.extend(self.BasicTokenize())
     return tokens
 
@@ -805,6 +822,8 @@ class DongbeiParser(object):
   
   def Tokenize(self, code, src_file=None):
     self.code = code
+    self.line = 1
+    self.column = 0
     return self._Tokenize()
 
   def _Tokenize(self):
