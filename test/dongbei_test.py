@@ -13,7 +13,6 @@ sys.path = [os.path.join(os.path.dirname(__file__), '..')] + sys.path
 from src import dongbei
 from src.dongbei import ArithmeticExpr
 from src.dongbei import LiteralExpr
-from src.dongbei import BasicTokenize
 from src.dongbei import CallExpr
 from src.dongbei import ComparisonExpr
 from src.dongbei import ConcatExpr
@@ -243,42 +242,6 @@ class DongbeiTest(unittest.TestCase):
         Run('老张装二。唠唠:【老张】。'), '2\n')
 
   def testTokenize(self):
-    self.assertEqual(
-        list(BasicTokenize('【阶乘】')),
-        [IdentifierToken('阶乘'),])
-    self.assertEqual(
-        list(BasicTokenize('【 阶  乘   】')),
-        [IdentifierToken('阶乘'),])
-    self.assertEqual(
-        list(BasicTokenize('【阶乘】（那啥）')),
-        [IdentifierToken('阶乘'),
-         Keyword('（'),
-         Token(TK_CHAR, '那'),
-         Token(TK_CHAR, '啥'),
-         Keyword('）'),])
-    self.assertEqual(
-        list(BasicTokenize('“ ”')),
-        [Keyword('“'),
-         Token(TK_STRING_LITERAL, ' '),
-         Keyword('”'),])
-    self.assertEqual(
-        list(BasicTokenize('“”')),
-        [Keyword('“'),
-         Token(TK_STRING_LITERAL, ''),
-         Keyword('”'),])
-    self.assertEqual(
-        list(BasicTokenize('“ A B ”')),
-        [Keyword('“'),
-         Token(TK_STRING_LITERAL, ' A B '),
-         Keyword('”'),])
-    self.assertEqual(
-        list(BasicTokenize('老张')),
-        [Token(TK_CHAR, '老'),
-         Token(TK_CHAR, '张'),])
-    self.assertEqual(
-        list(BasicTokenize('  老 张   ')),
-        [Token(TK_CHAR, '老'),
-         Token(TK_CHAR, '张'),])
     self.assertEqual(
         Tokenize('# 123456\n老张'),
         [IdentifierToken('老张')])
