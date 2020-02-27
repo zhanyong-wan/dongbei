@@ -750,18 +750,18 @@ class DongbeiParser(object):
     self.code = None
     self.tokens = []  # remaining tokens
 
-  def TokenizeStringLiteralAndRest(self, code):
+  def TokenizeStringLiteralAndRest(self):
     """Returns a list of tokens."""
 
     tokens = []
-    close_quote_pos = code.find(KW_CLOSE_QUOTE)
+    close_quote_pos = self.code.find(KW_CLOSE_QUOTE)
     if close_quote_pos < 0:
-      tokens.append(Token(TK_STRING_LITERAL, code))
+      tokens.append(Token(TK_STRING_LITERAL, self.code))
       return tokens
 
-    tokens.append(Token(TK_STRING_LITERAL, code[:close_quote_pos]))
+    tokens.append(Token(TK_STRING_LITERAL, self.code[:close_quote_pos]))
     tokens.append(Keyword(KW_CLOSE_QUOTE))
-    self.code = code[close_quote_pos + len(KW_CLOSE_QUOTE):]
+    self.code = self.code[close_quote_pos + len(KW_CLOSE_QUOTE):]
     tokens.extend(self.BasicTokenize())
     return tokens
 
@@ -790,7 +790,8 @@ class DongbeiParser(object):
         last_token = Keyword(keyword)
         tokens.append(last_token)
         if last_token == Keyword(KW_OPEN_QUOTE):
-          tokens.extend(self.TokenizeStringLiteralAndRest(remaining_code))
+          self.code = remaining_code
+          tokens.extend(self.TokenizeStringLiteralAndRest())
         else:
           self.code = remaining_code.lstrip()
           tokens.extend(self.BasicTokenize())
