@@ -187,6 +187,7 @@ KEYWORD_TO_NORMALIZED_KEYWORD = {
 TK_KEYWORD = 'KEYWORD'
 TK_IDENTIFIER = 'IDENTIFIER'
 TK_STRING_LITERAL = 'STRING'
+TK_NON_TERMINATING_STRING_LITERAL = 'NON_TERMINATING_STRING'
 TK_NUMBER_LITERAL = 'NUMBER'
 TK_NONE_LITERAL = 'NONE'
 TK_CHAR = 'CHAR'
@@ -756,7 +757,7 @@ class DongbeiParser(object):
     tokens = []
     close_quote_pos = self.code.find(KW_CLOSE_QUOTE)
     if close_quote_pos < 0:
-      tokens.append(Token(TK_STRING_LITERAL, self.code))
+      tokens.append(Token(TK_NON_TERMINATING_STRING_LITERAL, self.code))
       return tokens
 
     tokens.append(Token(TK_STRING_LITERAL, self.code[:close_quote_pos]))
