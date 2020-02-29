@@ -779,6 +779,7 @@ def TokenizeStrContainingNoKeyword(chars):
   return tokens
 
 class DongbeiParser(object):
+  # TODO: split the code into lines to make skipping lines faster.
   def __init__(self):
     self.code_loc = SourceCodeAndLoc()
     self.tokens = []  # remaining tokens
@@ -786,10 +787,6 @@ class DongbeiParser(object):
   @property
   def code(self):
     return self.code_loc.code
-
-  @code.setter
-  def code(self, value):
-    self.code_loc.code = value
 
   @property
   def loc(self):
@@ -845,13 +842,13 @@ class DongbeiParser(object):
 
   def TryParseKeyword(self, keyword):
     """Returns (parsed keyword string, remaining code)."""
-    orig_code = self.code
+    orig_code_loc = self.code_loc.Clone()
     for char in keyword:
       self.SkipWhitespaceAndComment()
       if not self.code.startswith(char):
-        self.code = orig_code
+        self.code_loc = orig_code_loc
         return None
-      self.code = self.code[1:]
+      self.SkipChar()
     return keyword
 
   def BasicTokenize(self):
@@ -867,7 +864,7 @@ class DongbeiParser(object):
     if m:
       id = re.sub(r'\s+', '', m.group(2))  # Ignore whitespace.
       tokens.append(IdentifierToken(id))
-      self.code = self.code[len(m.group(1)):]
+      self.SkipChars(len(m.group(1)))
       tokens.extend(self.BasicTokenize())
       return tokens
       
@@ -875,21 +872,22 @@ class DongbeiParser(object):
     for keyword in KEYWORDS:
       kw_loc = self.loc
       kw = self.TryParseKeyword(keyword)
-      remaining_code = self.code
+      remaining_code = self.code_loc.Clone()
       if kw:
         keyword = KEYWORD_TO_NORMALIZED_KEYWORD.get(keyword, keyword)
         last_token = Keyword(keyword, kw_loc)
         tokens.append(last_token)
         if last_token.kind == TK_KEYWORD and last_token.value == KW_OPEN_QUOTE:
-          self.code = remaining_code
+          self.code_loc = remaining_code
           tokens.extend(self.TokenizeStringLiteralAndRest())
         else:
-          self.code = remaining_code.lstrip()
+          self.code_loc = remaining_code
+          self.SkipWhitespace()
           tokens.extend(self.BasicTokenize())
         return tokens
 
     tokens.append(Token(TK_CHAR, self.code[0]))
-    self.code = self.code[1:]
+    self.SkipChar()
     tokens.extend(self.BasicTokenize())
     return tokens
   
