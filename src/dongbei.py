@@ -259,9 +259,12 @@ class SourceLoc:
 class SourceCodeAndLoc:
   """Source code and its source file location."""
 
-  def __init__(self, code=None, loc=None):
+  def __init__(self, code, loc):
     self.code = code or ''
-    self.loc = loc or SourceLoc()
+    if loc:
+      self.loc = loc.Clone()
+    else:
+      self.loc = SourceLoc()
 
   def Clone(self):
     return SourceCodeAndLoc(self.code, self.loc.Clone())
@@ -279,7 +282,10 @@ class Token:
   def __init__(self, kind, value, loc):
     self.kind = kind
     self.value = value
-    self.loc = loc  # a SourceLoc
+    if loc:
+      self.loc = loc.Clone()  # a SourceLoc
+    else:
+      self.loc = SourceLoc()
 
   def __str__(self):
     return f'{self.kind} <{self.value}>'
@@ -296,7 +302,7 @@ class Token:
   def __ne__(self, other):
     return not (self == other)
 
-def IdentifierToken(name, loc=None):
+def IdentifierToken(name, loc):
   return Token(TK_IDENTIFIER, name, loc)
 
 class Expr:
@@ -565,11 +571,8 @@ class TupleExpr(Expr):
     
     return '(%s)' % (', '.join(field.ToPython() for field in self.tuple))
 
-def NumberLiteralExpr(value, loc=None):
+def NumberLiteralExpr(value, loc):
   return LiteralExpr(Token(TK_NUMBER_LITERAL, value, loc))
-
-def StringLiteralExpr(value, loc=None):
-  return LiteralExpr(Token(TK_STRING_LITERAL, value, loc))
 
 class VariableExpr(Expr):
   def __init__(self, var):
@@ -731,7 +734,7 @@ class Statement:
   def __ne__(self, other):
     return not (self == other)
 
-def Keyword(str, loc=None):
+def Keyword(str, loc):
   """Returns a keyword token whose value is the given string."""
   return Token(TK_KEYWORD, str, loc)
 
@@ -781,7 +784,7 @@ def TokenizeStrContainingNoKeyword(chars, loc):
 class DongbeiParser(object):
   # TODO: split the code into lines to make skipping lines faster.
   def __init__(self):
-    self.code_loc = SourceCodeAndLoc()
+    self.code_loc = SourceCodeAndLoc(None, None)
     self.tokens = []  # remaining tokens
 
   @property
@@ -864,7 +867,7 @@ class DongbeiParser(object):
     m = re.match('^(【(.*?)】)', self.code)
     if m:
       id = re.sub(r'\s+', '', m.group(2))  # Ignore whitespace.
-      tokens.append(IdentifierToken(id))
+      tokens.append(IdentifierToken(id, self.loc))
       self.SkipChars(len(m.group(1)))
       tokens.extend(self.BasicTokenize())
       return tokens
@@ -892,7 +895,7 @@ class DongbeiParser(object):
     tokens.extend(self.BasicTokenize())
     return tokens
   
-  def Tokenize(self, code, src_file=None):
+  def Tokenize(self, code, src_file):
     self.code_loc.code = code
     self.code_loc.loc = SourceLoc(filepath=src_file)
     return self._Tokenize()
@@ -1173,7 +1176,7 @@ class DongbeiParser(object):
     return None
 
   def TryConsumeKeyword(self, keyword):
-    token = self.TryConsumeToken(Keyword(keyword, self.loc))
+    token = self.TryConsumeToken(Keyword(keyword, None))
     return token
 
   def TryParseObjectExpr(self):
@@ -1507,7 +1510,7 @@ class DongbeiParser(object):
       return None
 
     open_paren = self.TryConsumeKeyword(KW_OPEN_PAREN)
-    params = [IdentifierToken(ID_SELF)] if is_method else []
+    params = [IdentifierToken(ID_SELF, self.loc)] if is_method else []
     if open_paren:
       while True:
         param = self.ConsumeTokenType(TK_IDENTIFIER)
@@ -1572,13 +1575,15 @@ class DongbeiParser(object):
     return token
 
   def ConsumeToken(self, token):
+    """Consumes the given token, ignoring token.loc."""
     if not self.tokens:
       sys.exit('语句结束太早。')
     if token != self.tokens[0]:
       sys.exit('期望符号 %s，实际却是 %s。' %
               (token, self.tokens[0]))
+    found_token = self.tokens[0]
     self.tokens = self.tokens[1:]
-    return token
+    return found_token
 
   def ConsumeKeyword(self, keyword):
     return self.ConsumeToken(Keyword(keyword, None))
@@ -1665,19 +1670,19 @@ def GetPythonVarName(var):
 # Not meant to be in DongbeiParser.
 def ParseExprFromStr(str):
   parser = DongbeiParser()
-  parser.tokens = parser.Tokenize(str)
+  parser.tokens = parser.Tokenize(str, None)
   return parser.ParseExpr(), parser.tokens
 
 # Not meant to be in DongbeiParser.
 def TryParseExprFromStr(str):
   parser = DongbeiParser()
-  parser.tokens = parser.Tokenize(str)
+  parser.tokens = parser.Tokenize(str, None)
   return parser.TryParseExpr(), parser.tokens
 
 # Not meant to be in DongbeiParser.
 def ParseStmtFromStr(str):
   parser = DongbeiParser()
-  parser.tokens = parser.Tokenize(str)
+  parser.tokens = parser.Tokenize(str, None)
   return parser.ParseStmt(), parser.tokens
 
 def TranslateStatementToPython(stmt, indent = ''):
@@ -1840,7 +1845,7 @@ def TranslateStatementToPython(stmt, indent = ''):
 # Not meant to be in DongbeiParser.
 def ParseToAst(code):
   parser = DongbeiParser()
-  tokens = parser.Tokenize(code)
+  tokens = parser.Tokenize(code, None)
   return parser.TranslateTokensToAst(tokens)
 
 _dongbei_output = ''
@@ -1857,7 +1862,7 @@ def _dongbei_1_infinite_loop():
   while True:
     yield 1
 
-def TranslateDongbeiToPython(code, src_file=None):
+def TranslateDongbeiToPython(code, src_file):
   parser = DongbeiParser()
   tokens = parser.Tokenize(code, src_file)
   statements = parser.TranslateTokensToAst(tokens)
@@ -1867,7 +1872,7 @@ def TranslateDongbeiToPython(code, src_file=None):
     py_code.append(TranslateStatementToPython(s))
   return '\n'.join(py_code)
 
-def Run(code, src_file=None, xudao=False):
+def Run(code, src_file, xudao=False):
   py_code = TranslateDongbeiToPython(code, src_file=src_file)
   if xudao:
     print('Python 代码：')

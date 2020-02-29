@@ -17,16 +17,12 @@ from src.dongbei import CallExpr
 from src.dongbei import ComparisonExpr
 from src.dongbei import ConcatExpr
 from src.dongbei import DongbeiParser
-from src.dongbei import IdentifierToken
-from src.dongbei import NumberLiteralExpr
-from src.dongbei import Keyword
 from src.dongbei import ParenExpr
 from src.dongbei import TokenizeStrContainingNoKeyword
 from src.dongbei import ParseExprFromStr
 from src.dongbei import TryParseNumber
 from src.dongbei import ParseStmtFromStr
 from src.dongbei import ParseToAst
-from src.dongbei import Run
 from src.dongbei import STMT_ASSIGN
 from src.dongbei import STMT_CALL
 from src.dongbei import STMT_CONDITIONAL
@@ -36,7 +32,6 @@ from src.dongbei import STMT_INC_BY
 from src.dongbei import STMT_LOOP
 from src.dongbei import STMT_SAY
 from src.dongbei import Statement
-from src.dongbei import StringLiteralExpr
 from src.dongbei import TK_CHAR
 from src.dongbei import TK_IDENTIFIER
 from src.dongbei import TK_NUMBER_LITERAL
@@ -45,8 +40,23 @@ from src.dongbei import Token
 from src.dongbei import TranslateDongbeiToPython
 from src.dongbei import VariableExpr
 
+def Keyword(value):
+  return dongbei.Keyword(value, None)
+
+def NumberLiteralExpr(value):
+  return dongbei.NumberLiteralExpr(value, None)
+
+def IdentifierToken(identifier):
+  return dongbei.IdentifierToken(identifier, None)
+
 def Tokenize(code):
-  return DongbeiParser().Tokenize(code)
+  return DongbeiParser().Tokenize(code, None)
+
+def Run(code):
+  return dongbei.Run(code, None)
+
+def StringLiteralExpr(value):
+  return LiteralExpr(Token(TK_STRING_LITERAL, value, None))
 
 class DongbeiParseExprTest(unittest.TestCase):
   def testParseNumber(self):
@@ -1104,14 +1114,14 @@ class DongbeiTest(unittest.TestCase):
       TranslateDongbeiToPython('''
       无产阶级的接班银Foo阶级咋整：
       整完了。
-      '''),
+      ''', None),
       '''class Foo:
   pass''')
     self.assertEqual(
       TranslateDongbeiToPython('''
       Xyz阶级的接班银Foo阶级咋整：
       整完了。
-      '''),
+      ''', None),
       '''class Foo(Xyz):
   pass''')
 
@@ -1122,7 +1132,7 @@ class DongbeiTest(unittest.TestCase):
         新对象咋整：
         整完了。
       整完了。
-      '''),
+      ''', None),
       '''class 有名:
 
   def __init__(self):
@@ -1135,7 +1145,7 @@ class DongbeiTest(unittest.TestCase):
           俺的名字装名字。
         整完了。
       整完了。
-      '''),
+      ''', None),
       '''class 特有名(有名):
 
   def __init__(self, 名字):
