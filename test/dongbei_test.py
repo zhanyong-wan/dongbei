@@ -252,7 +252,7 @@ class DongbeiTest(unittest.TestCase):
         TryParseNumber('老张'),
         (None, '老张'))
     self.assertEqual(
-        list(TokenizeStrContainingNoKeyword('老张')),
+        list(TokenizeStrContainingNoKeyword('老张', None)),
         [IdentifierToken('老张')])
     self.assertEqual(
         Tokenize('老张是活雷锋'),
@@ -277,7 +277,7 @@ class DongbeiTest(unittest.TestCase):
         Tokenize('老张装250。\n老王装老张。\n'),
         [IdentifierToken('老张'),
          Keyword('装'),
-         Token(TK_NUMBER_LITERAL, 250),
+         Token(TK_NUMBER_LITERAL, 250, None),
          Keyword('。'),
          IdentifierToken('老王'),
          Keyword('装'),
@@ -288,22 +288,22 @@ class DongbeiTest(unittest.TestCase):
         [Keyword('唠唠'),
          Keyword('：'),
          Keyword('“'),
-         Token(TK_STRING_LITERAL, '你好'),
+         Token(TK_STRING_LITERAL, '你好', None),
          Keyword('”'),
          Keyword('。')])
 
   def testTokenizeArithmetic(self):
     self.assertEqual(
         Tokenize('250加13减二乘五除以九'),
-        [Token(TK_NUMBER_LITERAL, 250),
+        [Token(TK_NUMBER_LITERAL, 250, None),
          Keyword('加'),
-         Token(TK_NUMBER_LITERAL, 13),
+         Token(TK_NUMBER_LITERAL, 13, None),
          Keyword('减'),
-         Token(TK_NUMBER_LITERAL, 2),
+         Token(TK_NUMBER_LITERAL, 2, None),
          Keyword('乘'),
-         Token(TK_NUMBER_LITERAL, 5),
+         Token(TK_NUMBER_LITERAL, 5, None),
          Keyword('除以'),
-         Token(TK_NUMBER_LITERAL, 9),
+         Token(TK_NUMBER_LITERAL, 9, None),
         ])
     
   def testTokenizeLoop(self):
@@ -311,9 +311,9 @@ class DongbeiTest(unittest.TestCase):
         Tokenize('老王从1到9磨叽：磨叽完了。'),
         [IdentifierToken('老王'),
          Keyword('从'),
-         Token(TK_NUMBER_LITERAL, 1),
+         Token(TK_NUMBER_LITERAL, 1, None),
          Keyword('到'),
-         Token(TK_NUMBER_LITERAL, 9),
+         Token(TK_NUMBER_LITERAL, 9, None),
          Keyword('磨叽：'),
          Keyword('磨叽完了'),
          Keyword('。'),
@@ -339,7 +339,7 @@ class DongbeiTest(unittest.TestCase):
         Tokenize('老王走两步'),
         [IdentifierToken('老王'),
          Keyword('走'),
-         Token(TK_NUMBER_LITERAL, 2),
+         Token(TK_NUMBER_LITERAL, 2, None),
          Keyword('步'),
         ])
 
@@ -352,7 +352,7 @@ class DongbeiTest(unittest.TestCase):
         Tokenize('老王稍三步'),
         [IdentifierToken('老王'),
          Keyword('稍'),
-         Token(TK_NUMBER_LITERAL, 3),
+         Token(TK_NUMBER_LITERAL, 3, None),
          Keyword('步'),
         ])
 
@@ -361,7 +361,7 @@ class DongbeiTest(unittest.TestCase):
         Tokenize('老刘、二'),
         [IdentifierToken('老刘'),
          Keyword('、'),
-         Token(TK_NUMBER_LITERAL, 2),])
+         Token(TK_NUMBER_LITERAL, 2, None),])
 
   def testTokenizingFuncDef(self):
     self.assertEqual(
@@ -441,7 +441,7 @@ class DongbeiTest(unittest.TestCase):
                     # Function body.
                     [Statement(STMT_SAY,
                                LiteralExpr(Token(
-                                   TK_NUMBER_LITERAL, 1)))]
+                                   TK_NUMBER_LITERAL, 1, None)))]
                    ))])
     
   def testParsingFuncDefWithParam(self):

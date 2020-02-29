@@ -276,7 +276,7 @@ class SourceCodeAndLoc:
       self.SkipChar()
 
 class Token:
-  def __init__(self, kind, value, loc = None):
+  def __init__(self, kind, value, loc):
     self.kind = kind
     self.value = value
     self.loc = loc  # a SourceLoc
@@ -568,8 +568,8 @@ class TupleExpr(Expr):
 def NumberLiteralExpr(value, loc=None):
   return LiteralExpr(Token(TK_NUMBER_LITERAL, value, loc))
 
-def StringLiteralExpr(value):
-  return LiteralExpr(Token(TK_STRING_LITERAL, value))
+def StringLiteralExpr(value, loc=None):
+  return LiteralExpr(Token(TK_STRING_LITERAL, value, loc))
 
 class VariableExpr(Expr):
   def __init__(self, var):
@@ -768,14 +768,14 @@ def TryParseNumber(str):
       return value, str[len(chinese_digit):]
   return None, str
     
-def TokenizeStrContainingNoKeyword(chars):
+def TokenizeStrContainingNoKeyword(chars, loc):
   """Returns a list of tokens."""
   tokens = []
   number, rest = TryParseNumber(chars)
   if number is not None:
-    tokens.append(Token(TK_NUMBER_LITERAL, number))
+    tokens.append(Token(TK_NUMBER_LITERAL, number, loc))
   if rest:
-    tokens.append(IdentifierToken(rest))
+    tokens.append(IdentifierToken(rest, loc))
   return tokens
 
 class DongbeiParser(object):
@@ -827,13 +827,14 @@ class DongbeiParser(object):
     """Returns a list of tokens."""
 
     tokens = []
+    loc = self.loc.Clone()
     close_quote_pos = self.code.find(KW_CLOSE_QUOTE)
     if close_quote_pos < 0:
-      tokens.append(Token(TK_NON_TERMINATING_STRING_LITERAL, self.code))
+      tokens.append(Token(TK_NON_TERMINATING_STRING_LITERAL, self.code, loc))
       self.SkipChars(len(self.code))
       return tokens
 
-    tokens.append(Token(TK_STRING_LITERAL, self.code[:close_quote_pos]))
+    tokens.append(Token(TK_STRING_LITERAL, self.code[:close_quote_pos], loc))
     self.SkipChars(close_quote_pos)
     tokens.append(Keyword(KW_CLOSE_QUOTE, self.loc))
     self.SkipChars(len(KW_CLOSE_QUOTE))
@@ -886,7 +887,7 @@ class DongbeiParser(object):
           tokens.extend(self.BasicTokenize())
         return tokens
 
-    tokens.append(Token(TK_CHAR, self.code[0]))
+    tokens.append(Token(TK_CHAR, self.code[0], self.loc))
     self.SkipChar()
     tokens.extend(self.BasicTokenize())
     return tokens
@@ -899,7 +900,8 @@ class DongbeiParser(object):
   def _Tokenize(self):
     """Tokenizes self.code into tokens."""
     tokens = []
-    last_token = Token(None, None)
+    last_token = Token(None, None, None)
+    loc = self.loc.Clone()
     chars = ''
     for token in self.BasicTokenize():
       last_last_token = last_token
@@ -914,10 +916,10 @@ class DongbeiParser(object):
       else:
         if last_last_token.kind == TK_CHAR:
           # A sequence of consecutive TK_CHARs ended.
-          tokens.extend(TokenizeStrContainingNoKeyword(chars))
+          tokens.extend(TokenizeStrContainingNoKeyword(chars, loc))
         tokens.append(token)
         chars = ''
-    tokens.extend(TokenizeStrContainingNoKeyword(chars))
+    tokens.extend(TokenizeStrContainingNoKeyword(chars, loc))
     return tokens
 
   def TranslateTokensToAst(self, tokens):
@@ -1188,9 +1190,10 @@ class DongbeiParser(object):
       return LiteralExpr(num)
 
     # Do we see a None literal?
+    is_none_loc = self.loc.Clone()
     is_none = self.TryConsumeKeyword(KW_IS_NONE)
     if is_none:
-      return LiteralExpr(Token(TK_NONE_LITERAL, None))
+      return LiteralExpr(Token(TK_NONE_LITERAL, None, is_none_loc))
 
     # Do we see a string literal?
     open_quote = self.TryConsumeKeyword(KW_OPEN_QUOTE)
