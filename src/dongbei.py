@@ -226,10 +226,29 @@ class _Dongbei_Error(Exception):
   def __init__(self, message):
     self.message = message
 
+class SourceLoc:
+  """A source file location."""
+
+  def __init__(self, filepath='<unknown>', line=1, column=0):
+    self.filepath = filepath
+    self.line = line
+    self.column = column
+
+  def Advance(self, string):
+    """Moves the location forward by skipping the given string."""
+
+    for char in string:
+      if char == '\n':
+        self.line += 1
+        self.column = 0
+      else:
+        self.column += 1
+
 class Token:
-  def __init__(self, kind, value):
+  def __init__(self, kind, value, loc = None):
     self.kind = kind
     self.value = value
+    self.loc = loc  # a SourceLoc
 
   def __str__(self):
     return f'{self.kind} <{self.value}>'
@@ -238,6 +257,7 @@ class Token:
     return self.__str__()
 
   def __eq__(self, other):
+    # We don't compare loc as it's not intrinsic.
     return (isinstance(other, Token) and
             self.kind == other.kind and
             self.value == other.value)
@@ -245,8 +265,8 @@ class Token:
   def __ne__(self, other):
     return not (self == other)
 
-def IdentifierToken(name):
-  return Token(TK_IDENTIFIER, name)
+def IdentifierToken(name, loc=None):
+  return Token(TK_IDENTIFIER, name, loc)
 
 class Expr:
   def __init__(self):
@@ -514,8 +534,8 @@ class TupleExpr(Expr):
     
     return '(%s)' % (', '.join(field.ToPython() for field in self.tuple))
 
-def NumberLiteralExpr(value):
-  return LiteralExpr(Token(TK_NUMBER_LITERAL, value))
+def NumberLiteralExpr(value, loc=None):
+  return LiteralExpr(Token(TK_NUMBER_LITERAL, value, loc))
 
 def StringLiteralExpr(value):
   return LiteralExpr(Token(TK_STRING_LITERAL, value))
@@ -680,9 +700,9 @@ class Statement:
   def __ne__(self, other):
     return not (self == other)
 
-def Keyword(str):
+def Keyword(str, loc=None):
   """Returns a keyword token whose value is the given string."""
-  return Token(TK_KEYWORD, str)
+  return Token(TK_KEYWORD, str, loc)
 
 def SkipWhitespaceAndComment(code):
   while True:
@@ -692,16 +712,6 @@ def SkipWhitespaceAndComment(code):
       code = re.sub(r'^.*', '', code)  # Ignore the comment line.
     if len(code) == old_len:  # cannot skip any further.
       return code
-
-def TryParseKeyword(keyword, code):
-  """Returns (parsed keyword string, remaining code)."""
-  orig_code = code
-  for char in keyword:
-    code = SkipWhitespaceAndComment(code)
-    if not code.startswith(char):
-      return None, orig_code
-    code = code[1:]
-  return keyword, code
 
 CHINESE_DIGITS = {
     '鸭蛋': 0,
@@ -749,17 +759,12 @@ def TokenizeStrContainingNoKeyword(chars):
 class DongbeiParser(object):
   def __init__(self):
     self.code = None
-    self.line = 1
-    self.column = 0
+    self.loc = SourceLoc()
     self.tokens = []  # remaining tokens
 
   def SkipChar(self):
     assert self.code
-    if self.code[0] == '\n':
-      self.line += 1
-      self.column = 0
-    else:
-      self.column += 1
+    self.loc.Advance(self.code[0])
     self.code = self.code[1:]
 
   def SkipChars(self, num):
@@ -778,10 +783,21 @@ class DongbeiParser(object):
 
     tokens.append(Token(TK_STRING_LITERAL, self.code[:close_quote_pos]))
     self.SkipChars(close_quote_pos)
-    tokens.append(Keyword(KW_CLOSE_QUOTE))
+    tokens.append(Keyword(KW_CLOSE_QUOTE, self.loc))
     self.SkipChars(len(KW_CLOSE_QUOTE))
     tokens.extend(self.BasicTokenize())
     return tokens
+
+  def TryParseKeyword(self, keyword):
+    """Returns (parsed keyword string, remaining code)."""
+    orig_code = self.code
+    for char in keyword:
+      self.code = SkipWhitespaceAndComment(self.code)
+      if not self.code.startswith(char):
+        self.code = orig_code
+        return None
+      self.code = self.code[1:]
+    return keyword
 
   def BasicTokenize(self):
     """Returns a list of tokens from the dongbei code."""
@@ -802,12 +818,14 @@ class DongbeiParser(object):
       
     # Try to parse a keyword at the beginning of the code.
     for keyword in KEYWORDS:
-      kw, remaining_code = TryParseKeyword(keyword, self.code)
+      kw_loc = self.loc
+      kw = self.TryParseKeyword(keyword)
+      remaining_code = self.code
       if kw:
         keyword = KEYWORD_TO_NORMALIZED_KEYWORD.get(keyword, keyword)
-        last_token = Keyword(keyword)
+        last_token = Keyword(keyword, kw_loc)
         tokens.append(last_token)
-        if last_token == Keyword(KW_OPEN_QUOTE):
+        if last_token.kind == TK_KEYWORD and last_token.value == KW_OPEN_QUOTE:
           self.code = remaining_code
           tokens.extend(self.TokenizeStringLiteralAndRest())
         else:
@@ -822,8 +840,7 @@ class DongbeiParser(object):
   
   def Tokenize(self, code, src_file=None):
     self.code = code
-    self.line = 1
-    self.column = 0
+    self.loc = SourceLoc(filepath=src_file)
     return self._Tokenize()
 
   def _Tokenize(self):
@@ -1062,11 +1079,12 @@ class DongbeiParser(object):
         return Statement(STMT_EXTEND, (expr1, expr))
 
       # Parse 走走
+      inc_loc = self.loc
       inc = self.TryConsumeKeyword(KW_INC)
       if inc:
         self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_INC_BY,
-                         (expr1, NumberLiteralExpr(1)))
+                         (expr1, NumberLiteralExpr(1, inc_loc)))
 
       # Parse 走X步
       inc = self.TryConsumeKeyword(KW_INC_BY)
@@ -1077,11 +1095,12 @@ class DongbeiParser(object):
         return Statement(STMT_INC_BY, (expr1, expr))
 
       # Parse 稍稍
+      dec_loc = self.loc
       dec = self.TryConsumeKeyword(KW_DEC)
       if dec:
         self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_DEC_BY,
-                         (expr1, NumberLiteralExpr(1)))
+                         (expr1, NumberLiteralExpr(1, dec_loc)))
 
       # Parse 稍X步
       dec = self.TryConsumeKeyword(KW_DEC_BY)
@@ -1099,7 +1118,7 @@ class DongbeiParser(object):
     return None
 
   def TryConsumeKeyword(self, keyword):
-    token = self.TryConsumeToken(Keyword(keyword))
+    token = self.TryConsumeToken(Keyword(keyword, self.loc))
     return token
 
   def TryParseObjectExpr(self):
@@ -1176,17 +1195,19 @@ class DongbeiParser(object):
       pre_index_tokens = self.tokens
 
       # Parse 的老大
+      index1_loc = self.loc
       index1 = self.TryConsumeKeyword(KW_INDEX_1)
       if index1:
         # dongbei 数组是从1开始的。
-        expr = IndexExpr(expr, NumberLiteralExpr(1))
+        expr = IndexExpr(expr, NumberLiteralExpr(1, index1_loc))
         continue
 
       # Parse 的老幺
+      index_last_loc = self.loc
       index_last = self.TryConsumeKeyword(KW_INDEX_LAST)
       if index_last:
         # 0 - 1 = -1
-        expr = IndexExpr(expr, NumberLiteralExpr(0))
+        expr = IndexExpr(expr, NumberLiteralExpr(0, index_last_loc))
         continue
 
       # Parse 的老
@@ -1411,9 +1432,10 @@ class DongbeiParser(object):
           return arith
       return ComparisonExpr(arith, relation, arith2)
 
+    cmp_loc = self.loc
     cmp = self.TryConsumeKeyword(KW_IS_NONE)
     if cmp:
-      return ComparisonExpr(arith, Keyword(KW_IS_NONE), None)
+      return ComparisonExpr(arith, Keyword(KW_IS_NONE, cmp_loc), None)
 
     return arith
 
@@ -1439,7 +1461,7 @@ class DongbeiParser(object):
           break
         self.ConsumeKeyword(KW_COMMA)
         
-      func_def = self.ConsumeToken(Keyword(KW_DEF))
+      func_def = self.ConsumeToken(Keyword(KW_DEF, None))
       stmts = self.ParseStmts()
       self.ConsumeKeyword(KW_END)
       self.ConsumeKeyword(KW_PERIOD)
@@ -1503,7 +1525,7 @@ class DongbeiParser(object):
     return token
 
   def ConsumeKeyword(self, keyword):
-    return self.ConsumeToken(Keyword(keyword))
+    return self.ConsumeToken(Keyword(keyword, None))
 
   def ParseExprList(self):
     """Parses a comma-separated expression list."""
