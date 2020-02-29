@@ -791,6 +791,14 @@ class DongbeiParser(object):
   def code(self, value):
     self.code_loc.code = value
 
+  @property
+  def loc(self):
+    return self.code_loc.loc
+
+  @loc.setter
+  def loc(self, value):
+    self.code_loc.loc = value
+
   def SkipChar(self):
     self.code_loc.SkipChar()
 
