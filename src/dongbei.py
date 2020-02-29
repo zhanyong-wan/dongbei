@@ -795,10 +795,6 @@ class DongbeiParser(object):
   def loc(self):
     return self.code_loc.loc
 
-  @loc.setter
-  def loc(self, value):
-    self.code_loc.loc = value
-
   def SkipChar(self):
     self.code_loc.SkipChar()
 
@@ -874,8 +870,8 @@ class DongbeiParser(object):
     return tokens
   
   def Tokenize(self, code, src_file=None):
-    self.code = code
-    self.loc = SourceLoc(filepath=src_file)
+    self.code_loc.code = code
+    self.code_loc.loc = SourceLoc(filepath=src_file)
     return self._Tokenize()
 
   def _Tokenize(self):
