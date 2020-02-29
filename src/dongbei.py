@@ -244,6 +244,28 @@ class SourceLoc:
       else:
         self.column += 1
 
+  def Clone(self):
+    return SourceLoc(self.filepath, self.line, self.column)
+
+class SourceCodeAndLoc:
+  """Source code and its source file location."""
+
+  def __init__(self, code=None, loc=None):
+    self.code = code or ''
+    self.loc = loc or SourceLoc()
+
+  def Clone(self):
+    return SourceCodeAndLoc(self.code, self.loc.Clone())
+
+  def SkipChar(self):
+    assert self.code
+    self.loc.Advance(self.code[0])
+    self.code = self.code[1:]
+
+  def SkipChars(self, num):
+    for x in range(num):
+      self.SkipChar()
+
 class Token:
   def __init__(self, kind, value, loc = None):
     self.kind = kind
@@ -758,14 +780,19 @@ def TokenizeStrContainingNoKeyword(chars):
 
 class DongbeiParser(object):
   def __init__(self):
-    self.code = None
-    self.loc = SourceLoc()
+    self.code_loc = SourceCodeAndLoc()
     self.tokens = []  # remaining tokens
 
+  @property
+  def code(self):
+    return self.code_loc.code
+
+  @code.setter
+  def code(self, value):
+    self.code_loc.code = value
+
   def SkipChar(self):
-    assert self.code
-    self.loc.Advance(self.code[0])
-    self.code = self.code[1:]
+    self.code_loc.SkipChar()
 
   def SkipChars(self, num):
     for x in range(num):
