@@ -247,6 +247,9 @@ class SourceLoc:
   def Clone(self):
     return SourceLoc(self.filepath, self.line, self.column)
 
+  def __str__(self):
+    return f'{self.filepath}:{self.line}:{self.column}'
+
   def __eq__(self, other):
     return (type(other) == SourceLoc and
             self.filepath == other.filepath and
@@ -1563,7 +1566,7 @@ class DongbeiParser(object):
   def ConsumeTokenType(self, tk_type):
     tk = self.TryConsumeTokenType(tk_type)
     if tk is None:
-      sys.exit('期望 %s，实际是 %s' % (tk_type, self.tokens[0]))
+      sys.exit('%s: 期望 %s，实际是 %s' % (self.tokens[0].loc, tk_type, self.tokens[0]))
     return tk
       
   def TryConsumeToken(self, token):
@@ -1579,8 +1582,8 @@ class DongbeiParser(object):
     if not self.tokens:
       sys.exit('语句结束太早。')
     if token != self.tokens[0]:
-      sys.exit('期望符号 %s，实际却是 %s。' %
-              (token, self.tokens[0]))
+      sys.exit('%s: 期望符号 %s，实际却是 %s。' %
+              (self.tokens[0].loc, token, self.tokens[0]))
     found_token = self.tokens[0]
     self.tokens = self.tokens[1:]
     return found_token
