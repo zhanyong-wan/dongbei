@@ -247,6 +247,15 @@ class SourceLoc:
   def Clone(self):
     return SourceLoc(self.filepath, self.line, self.column)
 
+  def __eq__(self, other):
+    return (type(other) == SourceLoc and
+            self.filepath == other.filepath and
+            self.line == other.line and
+            self.column == other.column)
+
+  def __ne__(self, other):
+    return not self.__eq__(other)
+
 class SourceCodeAndLoc:
   """Source code and its source file location."""
 
@@ -726,15 +735,6 @@ def Keyword(str, loc=None):
   """Returns a keyword token whose value is the given string."""
   return Token(TK_KEYWORD, str, loc)
 
-def SkipWhitespaceAndComment(code):
-  while True:
-    old_len = len(code)
-    code = code.lstrip()
-    if code.startswith('#'):  # comment
-      code = re.sub(r'^.*', '', code)  # Ignore the comment line.
-    if len(code) == old_len:  # cannot skip any further.
-      return code
-
 CHINESE_DIGITS = {
     '鸭蛋': 0,
     '零': 0,
@@ -802,6 +802,30 @@ class DongbeiParser(object):
     for x in range(num):
       self.SkipChar()
 
+  def SkipWhitespace(self):
+    """If the next char is a whitespace, skips it and returns True."""
+
+    if self.code and self.code[0].isspace():
+      self.SkipChar()
+      return True
+    return False
+
+  def SkipLine(self):
+    while self.code and self.code[0] != '\n':
+      self.SkipChar()
+    if self.code and self.code[0] == '\n':
+      self.SkipChar()
+
+  def SkipWhitespaceAndComment(self):
+    while True:
+      old_loc = self.loc.Clone()
+      while self.SkipWhitespace():
+        pass
+      if self.code.startswith('#'):  # comment
+        self.SkipLine()
+      if self.loc == old_loc:  # cannot skip any further.
+        return
+
   def TokenizeStringLiteralAndRest(self):
     """Returns a list of tokens."""
 
@@ -823,7 +847,7 @@ class DongbeiParser(object):
     """Returns (parsed keyword string, remaining code)."""
     orig_code = self.code
     for char in keyword:
-      self.code = SkipWhitespaceAndComment(self.code)
+      self.SkipWhitespaceAndComment()
       if not self.code.startswith(char):
         self.code = orig_code
         return None
@@ -834,7 +858,7 @@ class DongbeiParser(object):
     """Returns a list of tokens from the dongbei code."""
 
     tokens = []
-    self.code = SkipWhitespaceAndComment(self.code)
+    self.SkipWhitespaceAndComment()
     if not self.code:
       return tokens
 
