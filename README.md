@@ -1,5 +1,9 @@
 # dongbei - 东北方言编程语言
 
+dongbei 语言永久域名：http://dongbei-lang.org
+
+学编程，就整东北浪！
+
 #### 体格咋地
 
 [![体格咋地](https://api.travis-ci.com/zhanyong-wan/dongbei.svg?branch=master)](https://travis-ci.com/zhanyong-wan/dongbei)
@@ -199,3 +203,5 @@ dongbei的老铁们开发了这些个周边项目，让你在用dongbei编程的
 * VS Code 的 dongbei 语法高亮度插件：https://github.com/mingjun97/dongbei-vscode ，在插件商店[直接安装](https://marketplace.visualstudio.com/items?itemName=mingjun97.dongbei)就成。
 * vim 的 dongbei 语法高亮度插件：https://github.com/suxpert/dongbei.vim ，整法自个儿瞅去。
   效果示例：<br/><img src="doc/dongbei-vim-screencast.gif" />
+
+还有上海宁把 dongbei 本地化搞了个上海话版：https://github.com/cabuliwallah/shanghai-from-dongbei
