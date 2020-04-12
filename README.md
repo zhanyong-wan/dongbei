@@ -189,6 +189,8 @@ dongbei hello-world.dongbei
 * [快速排序](demo/快速排序.dongbei)
 * [汉诺塔动唤](demo/汉诺塔动唤.dongbei)。运行结果：
   <br/><img src="doc/hanoi.gif" />
+* [活着](demo/活着.dongbei)。运行结果：
+  <br/><img src="doc/life-pulsar.gif" />
 
 ## 参与开发
 
