@@ -93,6 +93,7 @@ KW_THEN = '？要行咧就'
 KW_TIMES = '乘'
 KW_TUPLE = '抱团'
 KW_TO = '到'
+KW_YIELD = '出溜'
 
 KEYWORDS = (
   KW_APPEND,
@@ -171,6 +172,7 @@ KEYWORDS = (
   KW_TIMES,
   KW_TUPLE,
   KW_TO,
+  KW_YIELD,
 )
 
 # Maps a keyword to its normalized form.
@@ -219,6 +221,7 @@ STMT_RANGE_LOOP = 'RANGE_LOOP'
 STMT_RETURN = 'RETURN'
 STMT_SAY = 'SAY'
 STMT_VAR_DECL = 'VAR_DECL'
+STMT_YIELD = 'YIELD'
 
 class _Dongbei_Error(Exception):
   """An error in a dongbei program."""
@@ -1139,6 +1142,13 @@ class DongbeiParser(object):
         self.ConsumeKeyword(KW_PERIOD)
         return Statement(STMT_EXTEND, (expr1, expr))
 
+      # Parse 出溜
+      yield_loc = self.loc
+      yield_kw = self.TryConsumeKeyword(KW_YIELD)
+      if yield_kw:
+        self.ConsumeKeyword(KW_PERIOD)
+        return Statement(STMT_YIELD, expr1)
+      
       # Parse 走走
       inc_loc = self.loc
       inc = self.TryConsumeKeyword(KW_INC)
@@ -1580,7 +1590,7 @@ class DongbeiParser(object):
   def ConsumeToken(self, token):
     """Consumes the given token, ignoring token.loc."""
     if not self.tokens:
-      sys.exit('语句结束太早。')
+      sys.exit(f'{self.loc}: 语句结束太早。')
     if token != self.tokens[0]:
       sys.exit('%s: 期望符号 %s，实际却是 %s。' %
               (self.tokens[0].loc, token, self.tokens[0]))
@@ -1719,6 +1729,10 @@ def TranslateStatementToPython(stmt, indent = ''):
   if stmt.kind == STMT_SAY:
     expr = stmt.value
     return indent + '_dongbei_print(%s)' % (expr.ToPython(),)
+
+  if stmt.kind == STMT_YIELD:
+    expr = stmt.value
+    return indent + f'yield ({expr.ToPython()})'
 
   if stmt.kind == STMT_INC_BY:
     var_expr, expr = stmt.value
