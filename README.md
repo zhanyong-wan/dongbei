@@ -4,6 +4,8 @@ dongbei 语言永久域名：http://dongbei-lang.org
 
 学编程，就整东北浪！
 
+> Make dongbei Great Again !!!
+
 #### 体格咋地
 
 [![体格咋地](https://api.travis-ci.com/zhanyong-wan/dongbei.svg?branch=master)](https://travis-ci.com/zhanyong-wan/dongbei)
