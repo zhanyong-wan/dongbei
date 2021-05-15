@@ -1,6 +1,6 @@
 # dongbei - 东北方言编程语言
 
-dongbei 语言永久域名：http://dongbei-lang.org
+dongbei 语言永久域名：http://dongbei-lang.org/
 
 学编程，就整东北浪！
 
@@ -26,7 +26,7 @@ dongbei 语言永久域名：http://dongbei-lang.org
 
 ## 引言
 
-dongbei是啥？它是一门*以东北方言词汇为基本关键字的以人为本的编程语言。*
+dongbei 是啥？它是一门*以东北方言词汇为基本关键字的以人为本的编程语言。*
 
 这玩意儿可是填补了世界方言编程地图上的一大片儿空地啊！
 这么说吧，谁要是看了 dongbei 程序能憋住了不笑，我敬他是纯爷们儿！
@@ -77,13 +77,13 @@ dongbei 编程语言的开发采用了业界领先的 **TDD（TreeNewBee-Driven 
 
 dongbei 语言是基于 Python 3 二次开发的。
 只要能跑 Python 3 的旮旯儿都能跑。
-像 Mac OS 啦、Windows 啦、Linux 啦，等等等等，都成！
+像 macOS 啦、Windows 啦、Linux 啦，等等等等，都成！
 
 ## 安装
 
-### 安装 python 3
+### 安装 python3
 
-要是你的系统没有 python3 呢，那得先装一个，免费！
+要是你的系统还没装 python3 呢，那得先装一个，免费！
 
 比如，你要是用 Mac 的话，就按 [Mac Python3 安装指南](https://docs.python-guide.org/starting/install3/osx/) 来。
 
@@ -95,7 +95,7 @@ clone 或者下载这个 dongbei 仓库之后，就可以直接跑 src/dongbei.p
 
 #### 安装 pip3
 
-要是你的系统没有pip3呢，也可以装一个，还是免费。详情可咨询：
+要是你的系统没有 pip3 呢，也可以装一个，还是免费。详情可咨询：
 [Windows](https://blog.csdn.net/menc15/article/details/65631380),
 [Mac](https://blog.csdn.net/huangpin815/article/details/70194492),
 [Ubuntu](https://www.jianshu.com/p/a0dd650dbd41)。
@@ -103,6 +103,7 @@ clone 或者下载这个 dongbei 仓库之后，就可以直接跑 src/dongbei.p
 #### 用 pip3 安装 dongbei
 
 装好 pip3 后就可以装 dongbei-lang 了：
+
 ```{shell}
 # 给这台电脑的所有用户安装
 pip3 install dongbei-lang
@@ -115,6 +116,7 @@ pip3 install dongbei-lang --upgrade
 ```
 
 装好了就可以这么用了：
+
 ```{shell}
 dongbei <xxx>.dongbei
 ```
@@ -126,6 +128,7 @@ $ python3 -m venv venv
 $ source venv/bin/activate
 $ pip install -r requirements.txt
 ```
+
 之后跑一下子：`dongbei demo/磨叽.dongbei`
 
 ## 跑程序
@@ -134,7 +137,7 @@ $ pip install -r requirements.txt
 
 1. 要是没有用 pip3 安装 dongbei-lang，可以用 `src/dongbei.py 程序文件` 命令来跑一个 dongbei 程序。
 2. 要是已经安装了 dongbei-lang，可以用 `dongbei 程序文件` 命令。
-3. 要是已经安装了 dongbei-lang，也可以在一个 dongbei 程序文件的开头插入一行 `#!/usr/bin/env dongbei` 再把文件改成可执行的（比如在 Linux / Mac OS 上跑 `chmod +x 程序文件`）。然后，就可以直接用 `程序文件` 命令来跑码了。
+3. 要是已经安装了 dongbei-lang，也可以在一个 dongbei 程序文件的开头插入一行 `#!/usr/bin/env dongbei` 再把文件改成可执行的（比如在 Linux / macOS 上跑 `chmod +x 程序文件`）。然后，就可以直接用 `程序文件` 命令来跑码了。
 
 用前两种方法的时候，可以在命令行加上 `--xudao`（絮叨）让系统打印和 dongbei 程序对应的 Python 代码。
 这在开发和学习 dongbei 的时候大有裨益。
@@ -142,20 +145,22 @@ $ pip install -r requirements.txt
 ## 测试
 
 没事跑跑
+
 ```{shell}
 test/dongbei_test.py
 ```
+
 身体更健康。
 
 ## 吃了没，老铁
 
-创建一个名字叫 hello-world.dongbei 的文本文件，内容如下：
+创建一个名字叫 `hello-world.dongbei` 的文本文件，内容如下：
 
 ```{text}
 唠唠：“唉呀，这嘎哒真他妈那啥！”。
 ```
 
-用 utf-8 编码保存。
+用 UTF-8 编码保存。
 要是编辑器因为编码有毛病埋汰你，那就把文件内容改成
 
 ```{text}
@@ -184,7 +189,7 @@ dongbei hello-world.dongbei
 
 要是你习惯以听歌的方式学习，请下载 dongbei 语言官方宣传歌曲[《Dongbei Style》](doc/Dongbei%20Style.mp3)（[歌词](doc/dongbei-style.md)）。
 
-要是你想全面深入掌握 dongbei 语言，那就得读读 [dongbei语言咬文嚼字](doc/dongbei-ref.md)。
+要是你想全面深入掌握 dongbei 语言，那就得读读 [dongbei 语言咬文嚼字](doc/dongbei-ref.md)。
 
 这里还有一些精选的示范程序供大家参考：
 
@@ -197,12 +202,12 @@ dongbei hello-world.dongbei
 ## 参与开发
 
 dongbei 欢迎大伙儿帮衬。
-要是您有意相助，请看[dongbei 开发人间指南](DEVELOPE.md)。
+要是您有意相助，请看 [dongbei 开发人间指南](DEVELOPE.md)。
 
 ## 周边
 
 一个好汉三个帮。
-dongbei的老铁们开发了这些个周边项目，让你在用dongbei编程的时候如虎添翼，如鱼得水，如痴如醉，如胶似漆：
+dongbei 的老铁们开发了这些个周边项目，让你在用 dongbei 编程的时候如虎添翼，如鱼得水，如痴如醉，如胶似漆：
 
 * VS Code 的 dongbei 语法高亮度插件：https://github.com/mingjun97/dongbei-vscode ，在插件商店[直接安装](https://marketplace.visualstudio.com/items?itemName=mingjun97.dongbei)就成。
 * vim 的 dongbei 语法高亮度插件：https://github.com/suxpert/dongbei.vim ，整法自个儿瞅去。
