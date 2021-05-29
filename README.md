@@ -213,4 +213,6 @@ dongbei 的老铁们开发了这些个周边项目，让你在用 dongbei 编程
 * vim 的 dongbei 语法高亮度插件：https://github.com/suxpert/dongbei.vim ，整法自个儿瞅去。
   效果示例：<br/><img src="doc/dongbei-vim-screencast.gif" />
 
-还有上海宁把 dongbei 本地化搞了个上海话版：https://github.com/cabuliwallah/shanghai-from-dongbei
+还有上海宁把 dongbei 本地化搞了个上海话版：https://github.com/cabuliwallah/shanghai-from-dongbei  
+四川宁模仿 dongbei 弄了个四川编程语言:https://github.com/AoiKuiyuyou/SichuanLang.git  
+又有位高中生凑热闹整了个粤语编程语言:https://github.com/StepfenShawn/Cantonese.git  
