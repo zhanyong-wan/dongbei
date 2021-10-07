@@ -35,7 +35,10 @@ CD 步骤都整好了！
 
 1. 把根目录下 `setup.cfg` 文件里 `metadata` 项目内的 `version` 改成 `x.y.z`。
 1. 把 `src/dongbei.py` 文件里的 `DONGBEI_VERSION` 值改成 `x.y.z`。
-1. `git commit`
+1. `git commit -a`
 1. `git tag -a x.y.z` 把最新的 commit 标记成 `x.y.z`。
 1. `git push --tags origin master` 把 commit 连同 tag 一起 push 到 GitHub repo；剩下的事交给 CD 就没毛病了！
-1. 要是不放心，过两分钟到 https://pypi.org/project/dongbei-lang/#history 瞅瞅发布成功没。
+1. 要是不放心，喝二两小酒再到 https://pypi.org/project/dongbei-lang/#history 瞅瞅发布成功没。
+
+记住，从 2021 年 8 月 13 日起 github 就要求在使用 git 命令行用 personal access token 而不是 github 口令来认证了。
+详情请看[帮助](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)。
