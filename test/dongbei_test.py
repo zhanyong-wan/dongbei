@@ -12,23 +12,24 @@ sys.path = [os.path.join(os.path.dirname(__file__), '..')] + sys.path
 
 from src import dongbei
 from src.dongbei import ArithmeticExpr
-from src.dongbei import LiteralExpr
 from src.dongbei import CallExpr
 from src.dongbei import ComparisonExpr
 from src.dongbei import ConcatExpr
 from src.dongbei import DongbeiParser
+from src.dongbei import LiteralExpr
 from src.dongbei import ParenExpr
-from src.dongbei import TokenizeStrContainingNoKeyword
 from src.dongbei import ParseExprFromStr
-from src.dongbei import TryParseNumber
 from src.dongbei import ParseStmtFromStr
 from src.dongbei import ParseToAst
+from src.dongbei import TokenizeStrContainingNoKeyword
+from src.dongbei import TryParseNumber
 from src.dongbei import STMT_ASSIGN
 from src.dongbei import STMT_CALL
 from src.dongbei import STMT_CONDITIONAL
 from src.dongbei import STMT_DEC_BY
 from src.dongbei import STMT_FUNC_DEF
 from src.dongbei import STMT_INC_BY
+from src.dongbei import STMT_INFINITE_LOOP
 from src.dongbei import STMT_LOOP
 from src.dongbei import STMT_SAY
 from src.dongbei import Statement
@@ -423,6 +424,40 @@ class DongbeiTest(unittest.TestCase):
             (VariableExpr('老王'),
              NumberLiteralExpr(1),
              NumberLiteralExpr(9),
+             NumberLiteralExpr(1),
+             []))])
+    self.assertEqual(
+        ParseToAst('老王从二到十一步七蹿磨叽：磨叽完了。'),
+        [Statement(
+            STMT_LOOP,
+            (VariableExpr('老王'),
+             NumberLiteralExpr(2),
+             NumberLiteralExpr(10),
+             NumberLiteralExpr(7),
+             []))])
+    self.assertEqual(
+        ParseToAst('老王从二到十一步七减一蹿磨叽：磨叽完了。'),
+        [Statement(
+            STMT_LOOP,
+            (VariableExpr('老王'),
+             NumberLiteralExpr(2),
+             NumberLiteralExpr(10),
+             ArithmeticExpr(
+                NumberLiteralExpr(7),
+                Keyword('减'),
+                NumberLiteralExpr(1)),
+             []))])
+    self.assertEqual(
+        ParseToAst('老王从一而终磨叽：磨叽完了。'),
+        [Statement(
+            STMT_INFINITE_LOOP,
+            (VariableExpr('老王'),
+             []))])
+    self.assertEqual(
+        ParseToAst('老张在苹果总部磨叽：磨叽完了。'),
+        [Statement(
+            STMT_INFINITE_LOOP,
+            (VariableExpr('老张'),
              []))])
 
   def testParsingComparison(self):

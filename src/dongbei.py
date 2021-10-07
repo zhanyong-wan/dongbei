@@ -89,6 +89,7 @@ KW_REMOVE_TAIL = '去尾'
 KW_RETURN = '滚犊子吧'
 KW_SAY = '唠唠'
 KW_STEP = '步'
+KW_STEP_LOOP = '蹿磨叽：'
 KW_THEN = '？要行咧就'
 KW_TIMES = '乘'
 KW_TUPLE = '抱团'
@@ -168,6 +169,7 @@ KEYWORDS = (
   KW_RETURN,
   KW_SAY,
   KW_STEP,
+  KW_STEP_LOOP,
   KW_THEN,
   KW_TIMES,
   KW_TUPLE,
@@ -294,7 +296,7 @@ class Token:
       self.loc = SourceLoc()
 
   def __str__(self):
-    return f'{self.kind} <{self.value}>'
+    return f'{self.kind} <{repr(self.value)}> @ {self.loc}'
 
   def __repr__(self):
     return self.__str__()
@@ -783,7 +785,8 @@ def TokenizeStrContainingNoKeyword(chars, loc):
   number, rest = TryParseNumber(chars)
   if number is not None:
     tokens.append(Token(TK_NUMBER_LITERAL, number, loc))
-  if rest:
+    tokens.extend(TokenizeStrContainingNoKeyword(rest, loc))
+  elif rest:
     tokens.append(IdentifierToken(rest, loc))
   return tokens
 
@@ -1095,11 +1098,19 @@ class DongbeiParser(object):
         from_expr = self.ParseExpr()
         self.ConsumeKeyword(KW_TO)
         to_expr = self.ParseExpr()
-        self.ConsumeKeyword(KW_LOOP)
+        loop = self.TryConsumeKeyword(KW_LOOP)
+        if loop:
+          step_expr = NumberLiteralExpr(1, None)
+        else:
+          # Parse 一步 N 蹿磨叽
+          self.ConsumeToken(Token(TK_NUMBER_LITERAL, 1, None))
+          self.ConsumeKeyword(KW_STEP)
+          step_expr = self.ParseExpr()
+          self.ConsumeKeyword(KW_STEP_LOOP)
         stmts = self.ParseStmts()
         self.ConsumeKeyword(KW_END_LOOP)
         self.ConsumeKeyword(KW_PERIOD)
-        return Statement(STMT_LOOP, (expr1, from_expr, to_expr, stmts))
+        return Statement(STMT_LOOP, (expr1, from_expr, to_expr, step_expr, stmts))
 
       # Parse 在...磨叽
       in_ = self.TryConsumeKeyword(KW_IN)
@@ -1745,11 +1756,11 @@ def TranslateStatementToPython(stmt, indent = ''):
     return indent + '%s -= %s' % (var, expr.ToPython())
 
   if stmt.kind == STMT_LOOP:
-    var_expr, from_val, to_val, stmts = stmt.value
+    var_expr, from_val, to_val, step_expr, stmts = stmt.value
     var = var_expr.ToPython()
-    loop = indent + 'for %s in range(%s, (%s) + 1):' % (
-        var, from_val.ToPython(),
-        to_val.ToPython())
+    loop = indent + 'for %s in range(%s, (%s) + 1, %s):' % (
+        var, from_val.ToPython(), to_val.ToPython(),
+        step_expr.ToPython())
     for s in stmts:
       loop += '\n' + TranslateStatementToPython(s, indent + '  ')
     if not stmts:
