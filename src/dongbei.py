@@ -10,6 +10,7 @@
 """
 
 import io
+import os
 import re
 import sys  # needed by 最高指示
 import time  # needed by 打个盹
@@ -1927,7 +1928,9 @@ def main():
     sys.argv.remove(XUDAO_FLAG)
 
   program = sys.argv[0]
-  if program.endswith('.py') or program.endswith('/dongbei') or program == 'dongbei':
+  basename = os.path.basename(program)
+  if (basename.endswith('.py') or basename.endswith('.exe') or
+      basename == 'dongbei'):
     # Running the program by explicitly invoking the interpreter.
     # Remove the interpreter name s.t. the dongbei program only sees the
     # name of itself as the program name.
