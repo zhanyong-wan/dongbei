@@ -16,7 +16,7 @@ import sys  # needed by 最高指示
 import time  # needed by 打个盹
 
 XUDAO_FLAG = '--xudao'
-DONGBEI_VERSION = '0.0.12'
+DONGBEI_VERSION = '0.0.13'
 
 KW_APPEND = '来了个'
 KW_ASSERT = '保准'
