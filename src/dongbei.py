@@ -5,6 +5,7 @@
 
 用法：
     dongbei.py [--xudao] 源程序文件名...
+    dongbei.py [--xudao] --bihua dongbei案例名...
 
 要是命令行包含 --xudao（絮叨），在执行前先打印对应的 Python 代码。
 """
@@ -16,6 +17,7 @@ import sys  # needed by 最高指示
 import time  # needed by 打个盹
 
 XUDAO_FLAG = '--xudao'
+BIHUA_FLAG = '--bihua'
 DONGBEI_VERSION = '0.0.13'
 
 KW_APPEND = '来了个'
@@ -1919,13 +1921,18 @@ def Run(code, src_file, xudao=False):
   return _dongbei_output
 
 def main():
-  if len(sys.argv) == 1:
-    sys.exit(__doc__.format(version=DONGBEI_VERSION))
-
   xudao = False
   if XUDAO_FLAG in sys.argv:
     xudao = True
     sys.argv.remove(XUDAO_FLAG)
+
+  bihua = False
+  if BIHUA_FLAG in sys.argv:
+    bihua = True
+    sys.argv.remove(BIHUA_FLAG)
+
+  if len(sys.argv) == 1:
+    sys.exit(__doc__.format(version=DONGBEI_VERSION))
 
   program = sys.argv[0]
   basename = os.path.basename(program)
@@ -1937,11 +1944,27 @@ def main():
     del sys.argv[0]
     program = sys.argv[0]
   
+  if bihua:
+    example = program
+    base = os.path.dirname(os.path.abspath(__file__))
+
+    program = os.path.join(base, f'../demo/{example}.dongbei')
+    if not os.path.exists(program):
+      print(f'例子「{example}」不存在，所以不能比划。')
+      print()
+      print('可以比划的例子：')
+      for example in os.scandir(os.path.join(base, '../demo')):
+        print(f'  {os.path.splitext(os.path.basename(example))[0]}')
+      sys.exit(1)
+
   with io.open(program, 'r', encoding='utf-8') as src_file:
     if xudao:
       print(f'执行 {program} ...')
+    if bihua:
+      print(f'执行「{example}」: https://github.com/zhanyong-wan/dongbei/tree/master/demo/{example}.dongbei ...')
+      print()
+
     Run(src_file.read(), src_file=program, xudao=xudao)
 
 if __name__ == '__main__':
   main()
-
