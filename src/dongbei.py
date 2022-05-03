@@ -5,6 +5,7 @@
 
 用法：
     dongbei.py [--xudao] 源程序文件名...
+    dongbei.py [--xudao] --bihua dongbei案例名...
 
 要是命令行包含 --xudao（絮叨），在执行前先打印对应的 Python 代码。
 """
@@ -15,8 +16,17 @@ import re
 import sys  # needed by 最高指示
 import time  # needed by 打个盹
 
-XUDAO_FLAG = '--xudao'
+from absl import app
+from absl import flags
+
+FLAGS = flags.FLAGS
+
+flags.DEFINE_boolean('xudao', False, '絮叨: 在执行前先打印对应的 Python 代码。')
+flags.DEFINE_boolean('bihua', False, '比划: 直接执行dongbei宝典案例。')
+
 DONGBEI_VERSION = '0.0.13'
+
+EXAMPLE_GROUP_SIZE = 5
 
 KW_APPEND = '来了个'
 KW_ASSERT = '保准'
@@ -1918,30 +1928,46 @@ def Run(code, src_file, xudao=False):
     _dongbei_print(f'\n整叉劈了：{e}')
   return _dongbei_output
 
-def main():
-  if len(sys.argv) == 1:
-    sys.exit(__doc__.format(version=DONGBEI_VERSION))
-
-  xudao = False
-  if XUDAO_FLAG in sys.argv:
-    xudao = True
-    sys.argv.remove(XUDAO_FLAG)
-
-  program = sys.argv[0]
-  basename = os.path.basename(program)
-  if (basename.endswith('.py') or basename.endswith('.exe') or
-      basename == 'dongbei'):
-    # Running the program by explicitly invoking the interpreter.
-    # Remove the interpreter name s.t. the dongbei program only sees the
-    # name of itself as the program name.
-    del sys.argv[0]
-    program = sys.argv[0]
+def dongbei_cli(argv):
+  if argv and (
+    argv[0] == __file__ or argv[0].endswith('.exe') or os.path.basename(argv[0]) == 'dongbei'):
+    argv = argv[1:]
   
+  if len(argv) == 0:
+    sys.exit(__doc__.format(version=DONGBEI_VERSION))
+  
+  if len(argv) > 1:
+    sys.exit('dongbei大哥一次只能上手一个源文件；不然扒蒜老妹儿会觉得大哥不够专一，把大哥爆锤。')
+
+  program = argv[0]
+
+  if FLAGS.bihua:
+    curr_src_base = os.path.dirname(os.path.abspath(__file__))
+    example_program = os.path.join(curr_src_base, f'../demo/{program}.dongbei')
+
+    if not os.path.exists(example_program):
+      print(f'dongbei 大哥尽力了，但 dongbei 大哥没有找到案例 「{program}」。')
+      print()
+
+      all_examples = sorted(map(
+        lambda example_file: os.path.splitext(example_file.name)[0], 
+        os.scandir(os.path.join(curr_src_base, '../demo'))))
+      print('所有案例：')
+      for i in range(0, len(all_examples), EXAMPLE_GROUP_SIZE):
+        print(', '.join(all_examples[i:i + EXAMPLE_GROUP_SIZE]))
+      sys.exit(1)
+    
+    print(f'执行 dongbei 案例: 「{program}」')
+    print()
+    program = example_program
+
   with io.open(program, 'r', encoding='utf-8') as src_file:
-    if xudao:
+    if FLAGS.xudao:
       print(f'执行 {program} ...')
-    Run(src_file.read(), src_file=program, xudao=xudao)
+    Run(src_file.read(), src_file=program, xudao=FLAGS.xudao)
+
+def main():
+  app.run(dongbei_cli)
 
 if __name__ == '__main__':
   main()
-
