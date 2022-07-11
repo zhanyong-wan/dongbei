@@ -1991,34 +1991,31 @@ def _dongbei_1_infinite_loop():
         yield 1
 
 
-def TranslateDongbeiToPython(code, src_file):
+def TranslateDongbeiToPython(code: str, src_file: str, xudao: bool = False) -> str:
     parser = DongbeiParser()
     tokens = parser.Tokenize(code, src_file)
     statements = parser.TranslateTokensToStatements(tokens)
 
-    py_code = []
+    py_code_lines = []
     for s in statements:
-        py_code.append(TranslateStatementToPython(s))
-    return "\n".join(py_code)
-
-
-def Run(dongbei_code: str, src_file: str, xudao: bool = False) -> str:
-    """Runs the given dongbei code.
-
-    Args:
-        dongbei_code: the dongbei code
-        src_file: path to the source file containing the dongbei code; used for error reporting
-        xudao: if True, print the python code translated from the dongbei code
-
-    Returns:
-        the output of the dongbei code
-    """
-
-    py_code = TranslateDongbeiToPython(dongbei_code, src_file=src_file)
+        py_code_lines.append(TranslateStatementToPython(s))
+    py_code = "\n".join(py_code_lines)
     if xudao:
         print("Python 代码：")
-        print("%s" % (py_code,))
-        print("运行结果：")
+        print(py_code)
+        print()
+    return py_code
+
+
+def RunPyCode(py_code: str) -> str:
+    """Runs the given python code.
+
+    Args:
+        py_code: the python code
+
+    Returns:
+        the output of the python code
+    """
     global _dongbei_output
     _dongbei_output = ""
     # See https://stackoverflow.com/questions/871887/using-exec-with-recursive-functions
@@ -2029,6 +2026,22 @@ def Run(dongbei_code: str, src_file: str, xudao: bool = False) -> str:
     except Exception as e:
         _dongbei_print(f"\n整叉劈了：{e}")
     return _dongbei_output
+
+
+def TranslateAndRun(dongbei_code: str, src_file: str, xudao: bool = False) -> str:
+    """Translates the given dongbei code to python and runs it.
+
+    Args:
+        dongbei_code: the dongbei code
+        src_file: path to the source file containing the dongbei code; used for error reporting
+        xudao: if True, print the python code translated from the dongbei code
+
+    Returns:
+        the output of the dongbei code
+    """
+
+    py_code = TranslateDongbeiToPython(dongbei_code, src_file=src_file, xudao=xudao)
+    return RunPyCode(py_code)
 
 
 def get_input(prompt: str) -> str:
@@ -2058,7 +2071,17 @@ def repl():
 
         print(f"你要瞅：\n{dongbei_code}")
         try:
-            yield Run(dongbei_code, "你瞅那玩意儿")
+            py_code = TranslateDongbeiToPython(dongbei_code, src_file="你瞅那动静")
+        except Exception as e1:
+            try:
+                py_code = TranslateDongbeiToPython(
+                    f"嘀咕：{dongbei_code}。", src_file="你瞅那玩意儿"
+                )
+            except Exception as e2:
+                print(e2)
+
+        try:
+            yield RunPyCode(py_code)
         except Exception as e:
             print(e)
 
@@ -2111,7 +2134,7 @@ def dongbei_cli(argv):
         if FLAGS.xudao:
             print(f"执行 {program} ...")
         try:
-            Run(src_file.read(), src_file=program, xudao=FLAGS.xudao)
+            TranslateAndRun(src_file.read(), src_file=program, xudao=FLAGS.xudao)
         except Exception as e:
             print(e)
 

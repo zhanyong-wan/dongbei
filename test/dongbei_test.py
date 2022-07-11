@@ -59,8 +59,8 @@ def Tokenize(code):
     return DongbeiParser().Tokenize(code, None)
 
 
-def Run(code):
-    return dongbei.Run(code, None)
+def TranslateAndRun(code):
+    return dongbei.TranslateAndRun(code, None)
 
 
 def StringLiteralExpr(value):
@@ -221,25 +221,25 @@ class DongbeiParseStatementTest(unittest.TestCase):
 
 class DongbeiTest(unittest.TestCase):
     def testRunEmptyProgram(self):
-        self.assertEqual(Run(""), "")
+        self.assertEqual(TranslateAndRun(""), "")
 
     def testRunHelloWorld(self):
-        self.assertEqual(Run("嘀咕：“这旮旯儿嗷嗷美好哇！”。"), "这旮旯儿嗷嗷美好哇！\n")
+        self.assertEqual(TranslateAndRun("嘀咕：“这旮旯儿嗷嗷美好哇！”。"), "这旮旯儿嗷嗷美好哇！\n")
 
     def testRunHelloWorld2(self):
-        self.assertEqual(Run("嘀咕：“你那旮旯儿也挺美好哇！”。"), "你那旮旯儿也挺美好哇！\n")
+        self.assertEqual(TranslateAndRun("嘀咕：“你那旮旯儿也挺美好哇！”。"), "你那旮旯儿也挺美好哇！\n")
 
     def testVarDecl(self):
-        self.assertEqual(Run("老张是活雷锋。"), "")
+        self.assertEqual(TranslateAndRun("老张是活雷锋。"), "")
 
     def testVarAssignment(self):
-        self.assertEqual(Run("老张是活雷锋。\n老张装250。\n嘀咕：老张。"), "250\n")
+        self.assertEqual(TranslateAndRun("老张是活雷锋。\n老张装250。\n嘀咕：老张。"), "250\n")
 
     def testVarQuotesAreOptional(self):
-        self.assertEqual(Run("老张装二。嘀咕：【老张】。"), "2\n")
+        self.assertEqual(TranslateAndRun("老张装二。嘀咕：【老张】。"), "2\n")
 
     def testColonCanBeNarrow(self):
-        self.assertEqual(Run("老张装二。嘀咕:【老张】。"), "2\n")
+        self.assertEqual(TranslateAndRun("老张装二。嘀咕:【老张】。"), "2\n")
 
     def testTokenize(self):
         self.assertEqual(Tokenize("# 123456\n老张"), [IdentifierToken("老张")])
@@ -549,11 +549,13 @@ class DongbeiTest(unittest.TestCase):
         )
 
     def testVarAssignmentFromVar(self):
-        self.assertEqual(Run("老张是活雷锋。\n老王是活雷锋。\n" "老张装250。\n老王装老张。\n嘀咕：老王。"), "250\n")
+        self.assertEqual(
+            TranslateAndRun("老张是活雷锋。\n老王是活雷锋。\n" "老张装250。\n老王装老张。\n嘀咕：老王。"), "250\n"
+        )
 
     def testAssignmentToArrayElement(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。
 张家庄来了个五。
@@ -564,10 +566,10 @@ class DongbeiTest(unittest.TestCase):
         )
 
     def testIncrements(self):
-        self.assertEqual(Run("老张是活雷锋。老张装二。老张走走。嘀咕：老张。"), "3\n")
-        self.assertEqual(Run("老张是活雷锋。老张装三。老张走五步。嘀咕：老张。"), "8\n")
+        self.assertEqual(TranslateAndRun("老张是活雷锋。老张装二。老张走走。嘀咕：老张。"), "3\n")
+        self.assertEqual(TranslateAndRun("老张是活雷锋。老张装三。老张走五步。嘀咕：老张。"), "8\n")
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。
 张家庄来了个二。
@@ -583,10 +585,10 @@ class DongbeiTest(unittest.TestCase):
         )
 
     def testDecrements(self):
-        self.assertEqual(Run("老张是活雷锋。老张装二。老张稍稍。嘀咕：老张。"), "1\n")
-        self.assertEqual(Run("老张是活雷锋。老张装三。老张稍五步。嘀咕：老张。"), "-2\n")
+        self.assertEqual(TranslateAndRun("老张是活雷锋。老张装二。老张稍稍。嘀咕：老张。"), "1\n")
+        self.assertEqual(TranslateAndRun("老张是活雷锋。老张装三。老张稍五步。嘀咕：老张。"), "-2\n")
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。
 张家庄来了个二。
@@ -602,11 +604,11 @@ class DongbeiTest(unittest.TestCase):
         )
 
     def testLoop(self):
-        self.assertEqual(Run("老张从1到3磨叽：嘀咕：老张。磨叽完了。"), "1\n2\n3\n")
+        self.assertEqual(TranslateAndRun("老张从1到3磨叽：嘀咕：老张。磨叽完了。"), "1\n2\n3\n")
 
     def testRangeLoop(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。
 张家庄来了个二。
@@ -624,14 +626,16 @@ class DongbeiTest(unittest.TestCase):
         )
 
     def testLoopWithNoStatement(self):
-        self.assertEqual(Run("老张从1到2磨叽：磨叽完了。"), "")
+        self.assertEqual(TranslateAndRun("老张从1到2磨叽：磨叽完了。"), "")
 
     def testLoopWithMultipleStatements(self):
-        self.assertEqual(Run("老张从1到2磨叽：嘀咕：老张。嘀咕：老张加一。磨叽完了。"), "1\n2\n2\n3\n")
+        self.assertEqual(
+            TranslateAndRun("老张从1到2磨叽：嘀咕：老张。嘀咕：老张加一。磨叽完了。"), "1\n2\n2\n3\n"
+        )
 
     def testLoopWithContinueAndBreak(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 老张从一到十磨叽：
   寻思：老张跟二一样一样的？
@@ -652,7 +656,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testInfiniteLoop(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 老王装一。
 老张从一而终磨叽：
@@ -671,7 +675,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testInfiniteLoopEgg(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 老王装一。
 老张在苹果总部磨叽：
@@ -690,7 +694,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testLoopWithCompositeVariable(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。
 张家庄来了个二。
@@ -705,7 +709,7 @@ class DongbeiTest(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。
 张家庄来了个二。
@@ -724,7 +728,7 @@ class DongbeiTest(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。
 张家庄来了个二。
@@ -738,7 +742,7 @@ class DongbeiTest(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。
 张家庄来了个二。
@@ -753,47 +757,49 @@ class DongbeiTest(unittest.TestCase):
         )
 
     def testPrintBool(self):
-        self.assertEqual(Run("老王是活雷锋。嘀咕：老王。嘀咕：老王啥也不是。"), "啥也不是\n没毛病\n")
-        self.assertEqual(Run("嘀咕：五比二还大。"), "没毛病\n")
-        self.assertEqual(Run("嘀咕：五比二还大、五比二还小、一跟2一样一样的、1跟二不是一样一样的。"), "没毛病有毛病有毛病没毛病\n")
+        self.assertEqual(TranslateAndRun("老王是活雷锋。嘀咕：老王。嘀咕：老王啥也不是。"), "啥也不是\n没毛病\n")
+        self.assertEqual(TranslateAndRun("嘀咕：五比二还大。"), "没毛病\n")
+        self.assertEqual(
+            TranslateAndRun("嘀咕：五比二还大、五比二还小、一跟2一样一样的、1跟二不是一样一样的。"), "没毛病有毛病有毛病没毛病\n"
+        )
 
     def testAssert(self):
-        self.assertEqual(Run("""保准三加二比五减一还大。"""), "")
+        self.assertEqual(TranslateAndRun("""保准三加二比五减一还大。"""), "")
         self.assertEqual(
-            Run("""保准三加二比五减一还小。"""),
+            TranslateAndRun("""保准三加二比五减一还小。"""),
             """
 整叉劈了：该着 3加2比5减1还小，咋有毛病了咧？
 """,
         )
         self.assertEqual(
-            Run("""辟谣三加二比五减一还大。"""),
+            TranslateAndRun("""辟谣三加二比五减一还大。"""),
             """
 整叉劈了：3加2比5减1还大 不应该啊，咋有毛病了咧？
 """,
         )
-        self.assertEqual(Run("""辟谣三加二比五减一还小。"""), "")
+        self.assertEqual(TranslateAndRun("""辟谣三加二比五减一还小。"""), "")
 
     def testRaise(self):
         self.assertEqual(
-            Run("""整叉劈了：“小朋友请回避！”。"""),
+            TranslateAndRun("""整叉劈了：“小朋友请回避！”。"""),
             """
 整叉劈了：小朋友请回避！
 """,
         )
         self.assertEqual(
-            Run("""小王装2。整叉劈了：小王、“小朋友请回避！”。"""),
+            TranslateAndRun("""小王装2。整叉劈了：小王、“小朋友请回避！”。"""),
             """
 整叉劈了：2小朋友请回避！
 """,
         )
 
     def testBangNarrow(self):
-        self.assertEqual(Run("老王是活雷锋!老王装二!嘀咕：老王!"), "2\n")
+        self.assertEqual(TranslateAndRun("老王是活雷锋!老王装二!嘀咕：老王!"), "2\n")
 
     def testDelete(self):
-        self.assertEqual(Run("老王是活雷锋。老王装二。削老王！嘀咕：老王。"), "啥也不是\n")
+        self.assertEqual(TranslateAndRun("老王是活雷锋。老王装二。削老王！嘀咕：老王。"), "啥也不是\n")
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。
 张家庄来了个二。
@@ -806,42 +812,42 @@ class DongbeiTest(unittest.TestCase):
         )
 
     def testNumberLiteral(self):
-        self.assertEqual(Run("嘀咕：零。"), "0\n")
-        self.assertEqual(Run("嘀咕：鸭蛋。"), "0\n")
-        self.assertEqual(Run("嘀咕：一。"), "1\n")
-        self.assertEqual(Run("嘀咕：二。"), "2\n")
-        self.assertEqual(Run("嘀咕：两。"), "2\n")
-        self.assertEqual(Run("嘀咕：俩。"), "2\n")
-        self.assertEqual(Run("嘀咕：三。"), "3\n")
-        self.assertEqual(Run("嘀咕：仨。"), "3\n")
-        self.assertEqual(Run("嘀咕：四。"), "4\n")
-        self.assertEqual(Run("嘀咕：五。"), "5\n")
-        self.assertEqual(Run("嘀咕：六。"), "6\n")
-        self.assertEqual(Run("嘀咕：七。"), "7\n")
-        self.assertEqual(Run("嘀咕：八。"), "8\n")
-        self.assertEqual(Run("嘀咕：九。"), "9\n")
-        self.assertEqual(Run("嘀咕：十。"), "10\n")
-        self.assertEqual(Run("嘀咕：-10.5。"), "-10.5\n")
-        self.assertEqual(Run("嘀咕：5.。"), "5.0\n")
-        self.assertEqual(Run("嘀咕：-10。"), "-10\n")
-        self.assertEqual(Run("嘀咕：拉饥荒十。"), "-10\n")
-        self.assertEqual(Run("嘀咕：拉饥荒零。"), "0\n")
+        self.assertEqual(TranslateAndRun("嘀咕：零。"), "0\n")
+        self.assertEqual(TranslateAndRun("嘀咕：鸭蛋。"), "0\n")
+        self.assertEqual(TranslateAndRun("嘀咕：一。"), "1\n")
+        self.assertEqual(TranslateAndRun("嘀咕：二。"), "2\n")
+        self.assertEqual(TranslateAndRun("嘀咕：两。"), "2\n")
+        self.assertEqual(TranslateAndRun("嘀咕：俩。"), "2\n")
+        self.assertEqual(TranslateAndRun("嘀咕：三。"), "3\n")
+        self.assertEqual(TranslateAndRun("嘀咕：仨。"), "3\n")
+        self.assertEqual(TranslateAndRun("嘀咕：四。"), "4\n")
+        self.assertEqual(TranslateAndRun("嘀咕：五。"), "5\n")
+        self.assertEqual(TranslateAndRun("嘀咕：六。"), "6\n")
+        self.assertEqual(TranslateAndRun("嘀咕：七。"), "7\n")
+        self.assertEqual(TranslateAndRun("嘀咕：八。"), "8\n")
+        self.assertEqual(TranslateAndRun("嘀咕：九。"), "9\n")
+        self.assertEqual(TranslateAndRun("嘀咕：十。"), "10\n")
+        self.assertEqual(TranslateAndRun("嘀咕：-10.5。"), "-10.5\n")
+        self.assertEqual(TranslateAndRun("嘀咕：5.。"), "5.0\n")
+        self.assertEqual(TranslateAndRun("嘀咕：-10。"), "-10\n")
+        self.assertEqual(TranslateAndRun("嘀咕：拉饥荒十。"), "-10\n")
+        self.assertEqual(TranslateAndRun("嘀咕：拉饥荒零。"), "0\n")
 
     def testArithmetic(self):
-        self.assertEqual(Run("嘀咕：五加二。"), "7\n")
-        self.assertEqual(Run("嘀咕：五减二。"), "3\n")
-        self.assertEqual(Run("嘀咕：五乘二。"), "10\n")
-        self.assertEqual(Run("嘀咕：十除以二。"), "5.0\n")
-        self.assertEqual(Run("嘀咕：十齐整整地除以三。"), "3\n")
-        self.assertEqual(Run("嘀咕：十刨掉一堆堆三。"), "1\n")
-        self.assertEqual(Run("嘀咕：十刨掉一堆堆五。"), "0\n")
-        self.assertEqual(Run("嘀咕：五加七乘二。"), "19\n")
-        self.assertEqual(Run("嘀咕：（五加七）乘二。"), "24\n")
-        self.assertEqual(Run("嘀咕：(五加七)乘二。"), "24\n")
-        self.assertEqual(Run("嘀咕：(五减（四减三）)乘二。"), "8\n")
-        self.assertEqual(Run("嘀咕：拉饥荒（五加二）。"), "-7\n")
+        self.assertEqual(TranslateAndRun("嘀咕：五加二。"), "7\n")
+        self.assertEqual(TranslateAndRun("嘀咕：五减二。"), "3\n")
+        self.assertEqual(TranslateAndRun("嘀咕：五乘二。"), "10\n")
+        self.assertEqual(TranslateAndRun("嘀咕：十除以二。"), "5.0\n")
+        self.assertEqual(TranslateAndRun("嘀咕：十齐整整地除以三。"), "3\n")
+        self.assertEqual(TranslateAndRun("嘀咕：十刨掉一堆堆三。"), "1\n")
+        self.assertEqual(TranslateAndRun("嘀咕：十刨掉一堆堆五。"), "0\n")
+        self.assertEqual(TranslateAndRun("嘀咕：五加七乘二。"), "19\n")
+        self.assertEqual(TranslateAndRun("嘀咕：（五加七）乘二。"), "24\n")
+        self.assertEqual(TranslateAndRun("嘀咕：(五加七)乘二。"), "24\n")
+        self.assertEqual(TranslateAndRun("嘀咕：(五减（四减三）)乘二。"), "8\n")
+        self.assertEqual(TranslateAndRun("嘀咕：拉饥荒（五加二）。"), "-7\n")
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       张家庄都是活雷锋。
       张家庄来了个42。
@@ -852,21 +858,25 @@ class DongbeiTest(unittest.TestCase):
         )
 
     def testConcat(self):
-        self.assertEqual(Run("嘀咕：“牛”、二。"), "牛2\n")
-        self.assertEqual(Run("嘀咕：“老王”、665加一。"), "老王666\n")
+        self.assertEqual(TranslateAndRun("嘀咕：“牛”、二。"), "牛2\n")
+        self.assertEqual(TranslateAndRun("嘀咕：“老王”、665加一。"), "老王666\n")
 
     def testCompound(self):
-        self.assertEqual(Run("开整：整完了。"), "")
-        self.assertEqual(Run("开整：嘀咕：1。整完了。"), "1\n")
-        self.assertEqual(Run("开整：嘀咕：1。嘀咕：2。整完了。"), "1\n2\n")
+        self.assertEqual(TranslateAndRun("开整：整完了。"), "")
+        self.assertEqual(TranslateAndRun("开整：嘀咕：1。整完了。"), "1\n")
+        self.assertEqual(TranslateAndRun("开整：嘀咕：1。嘀咕：2。整完了。"), "1\n2\n")
 
     def testRunConditional(self):
-        self.assertEqual(Run("寻思：5比2还大？要行咧就嘀咕：“OK”。"), "OK\n")
-        self.assertEqual(Run("寻思：5比2还大？要行咧就开整：\n" "整完了。"), "")
-        self.assertEqual(Run("寻思：5比2还大？\n" "要行咧就开整：\n" "    嘀咕：5。\n" "整完了。"), "5\n")
-        self.assertEqual(Run("寻思：5比6还大？要行咧就嘀咕：“OK”。\n" "要不行咧就嘀咕：“不OK”。"), "不OK\n")
+        self.assertEqual(TranslateAndRun("寻思：5比2还大？要行咧就嘀咕：“OK”。"), "OK\n")
+        self.assertEqual(TranslateAndRun("寻思：5比2还大？要行咧就开整：\n" "整完了。"), "")
         self.assertEqual(
-            Run(
+            TranslateAndRun("寻思：5比2还大？\n" "要行咧就开整：\n" "    嘀咕：5。\n" "整完了。"), "5\n"
+        )
+        self.assertEqual(
+            TranslateAndRun("寻思：5比6还大？要行咧就嘀咕：“OK”。\n" "要不行咧就嘀咕：“不OK”。"), "不OK\n"
+        )
+        self.assertEqual(
+            TranslateAndRun(
                 "寻思：5比6还大？\n"
                 "要行咧就嘀咕：“OK”。\n"
                 "要不行咧就开整：\n"
@@ -878,7 +888,7 @@ class DongbeiTest(unittest.TestCase):
         )
         # Else should match the last If.
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
           寻思：2比1还大？   # condition 1: True
           要行咧就寻思：2比3还大？  # condition 2: False
@@ -890,18 +900,22 @@ class DongbeiTest(unittest.TestCase):
         )
 
     def testRunFunc(self):
-        self.assertEqual(Run("埋汰咋整：嘀咕：“你虎了吧唧”。整完了。"), "")
-        self.assertEqual(Run("埋汰咋整：嘀咕：“你虎了吧唧”。整完了。整埋汰。"), "你虎了吧唧\n")
+        self.assertEqual(TranslateAndRun("埋汰咋整：嘀咕：“你虎了吧唧”。整完了。"), "")
+        self.assertEqual(TranslateAndRun("埋汰咋整：嘀咕：“你虎了吧唧”。整完了。整埋汰。"), "你虎了吧唧\n")
 
     def testFuncCallWithParam(self):
-        self.assertEqual(Run("【加一】（那啥）咋整：嘀咕：那啥加一。整完了。\n" "整【加一】（五）。"), "6\n")
+        self.assertEqual(
+            TranslateAndRun("【加一】（那啥）咋整：嘀咕：那啥加一。整完了。\n" "整【加一】（五）。"), "6\n"
+        )
 
     def testFuncWithReturnValue(self):
-        self.assertEqual(Run("【加一】（那啥）咋整：滚犊子吧那啥加一。整完了。\n" "嘀咕：整【加一】（二）。"), "3\n")
+        self.assertEqual(
+            TranslateAndRun("【加一】（那啥）咋整：滚犊子吧那啥加一。整完了。\n" "嘀咕：整【加一】（二）。"), "3\n"
+        )
 
     def testNestedFunc(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 写三三表咋整：
   老王从一到三磨叽：
@@ -927,7 +941,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testArray(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。  # 张家庄是个群众变量。初始值是「」。
 嘀咕：张家庄。
@@ -963,7 +977,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testNestedArray(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       张家庄 装 「「一，二」，「三」」。
       嘀咕：张家庄的老二的老大。
@@ -975,7 +989,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testSubList(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。
 张家庄来了个三。
@@ -994,7 +1008,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testArrayAppend(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。  # 「」
 李家村都是活雷锋。  # 「」
@@ -1011,7 +1025,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testArrayExtend(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。  # 「」
 李家村都是活雷锋。  # 「」
@@ -1028,7 +1042,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testArrayLiteral(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
         张家庄 装 「」。
         嘀咕：张家庄。
@@ -1037,7 +1051,7 @@ class DongbeiTest(unittest.TestCase):
             "「」\n",
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
         张家庄 装 路银「」。
         嘀咕：张家庄。
@@ -1046,7 +1060,7 @@ class DongbeiTest(unittest.TestCase):
             "「」\n",
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
         张家庄 装 「1，二加三，五减一」。
         嘀咕：张家庄。
@@ -1055,7 +1069,7 @@ class DongbeiTest(unittest.TestCase):
             "「1, 5, 4」\n",
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
         张家庄 都是活雷锋。
         张家庄 来了群 「1，二加三，五减一」。
@@ -1075,7 +1089,7 @@ class DongbeiTest(unittest.TestCase):
     def testDel(self):
         self.assertTrue(
             "整叉劈了"
-            in Run(
+            in TranslateAndRun(
                 """
 老王是活雷锋。
 炮决老王。
@@ -1084,7 +1098,7 @@ class DongbeiTest(unittest.TestCase):
             )
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 张家庄都是活雷锋。
 张家庄来了个五。
@@ -1099,7 +1113,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testRecursiveFunc(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 【阶乘】（那啥）咋整：
 寻思：那啥比一还小？
@@ -1115,7 +1129,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testMultiArgFunc(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 求和（甲，乙）咋整：
   滚犊子吧 甲加乙。
@@ -1127,7 +1141,7 @@ class DongbeiTest(unittest.TestCase):
             "12\n",
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 求和（甲，乙）咋整：
   嘀咕：甲加乙。
@@ -1140,11 +1154,13 @@ class DongbeiTest(unittest.TestCase):
         )
 
     def testNormalizingBang(self):
-        self.assertEqual(Run("【加一】（那啥）咋整：嘀咕：那啥加一！整完了！\n" "整【加一】（五）！"), "6\n")
+        self.assertEqual(
+            TranslateAndRun("【加一】（那啥）咋整：嘀咕：那啥加一！整完了！\n" "整【加一】（五）！"), "6\n"
+        )
 
     def testImport(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       翠花，上 re。
       寻思：整re.match（“a.*”，“abc”）？
@@ -1155,7 +1171,7 @@ class DongbeiTest(unittest.TestCase):
         )
 
     def testCommandLine(self):
-        self.assertTrue("dongbei_test.py" in Run("""嘀咕：最高指示。"""))
+        self.assertTrue("dongbei_test.py" in TranslateAndRun("""嘀咕：最高指示。"""))
 
     def testClassDef(self):
         self.assertEqual(
@@ -1217,7 +1233,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testCtorCall(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       无产阶级的接班银有名阶级咋整：
         新对象咋整：
@@ -1233,7 +1249,7 @@ class DongbeiTest(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       无产阶级的接班银有名阶级咋整：
         新对象（名字）咋整：
@@ -1251,7 +1267,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testCallBaseCtor(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 无产 阶级的接班银 有名 阶级咋整：
   新对象（名字）咋整：
@@ -1276,7 +1292,7 @@ class DongbeiTest(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 无产 阶级的接班银 有名 阶级咋整：
   新对象咋整：
@@ -1301,7 +1317,7 @@ class DongbeiTest(unittest.TestCase):
     def testClassMethod(self):
         # Calling a method in an expression.
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 无产 阶级的接班银 有名 阶级咋整：
   新对象（名字）咋整：
@@ -1324,7 +1340,7 @@ class DongbeiTest(unittest.TestCase):
         )
         # Calling a method in a statement.
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
 无产 阶级的接班银 有名 阶级咋整：
   新对象（名字）咋整：
@@ -1347,7 +1363,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testBoolLiteral(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       老王 装 没毛病。
       寻思：老王？
@@ -1358,7 +1374,7 @@ class DongbeiTest(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       老王 装 有毛病。
       寻思：老王？
@@ -1372,7 +1388,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testNoneLiteral(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       老王 装 啥也不是。
       嘀咕：老王。
@@ -1388,7 +1404,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testTuple(self):
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       老王装抱团。
       嘀咕：老王。
@@ -1398,7 +1414,7 @@ class DongbeiTest(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       老王装三加一抱团。
       嘀咕：老王。
@@ -1408,7 +1424,7 @@ class DongbeiTest(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       老王装 四 跟 五 抱团。
       嘀咕：老王。
@@ -1418,7 +1434,7 @@ class DongbeiTest(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       老王装 四 跟 五 跟 七 抱团。
       嘀咕：老王。
@@ -1428,7 +1444,7 @@ class DongbeiTest(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       老王装 四 跟 五跟二一样一样的 抱团。
       嘀咕：老王。
@@ -1438,7 +1454,7 @@ class DongbeiTest(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       老王装 五减一 跟 五跟二一样一样的 抱团。
       嘀咕：老王。
@@ -1448,7 +1464,7 @@ class DongbeiTest(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       老王装 五减一 跟 五跟二一样一样的 跟 七跟七一样一样的 抱团。
       嘀咕：老王。
@@ -1458,7 +1474,7 @@ class DongbeiTest(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            Run(
+            TranslateAndRun(
                 """
       老王 装 五减一 跟 五跟二一样一样的 抱团。
       老张 装 老王的老大。
@@ -1520,6 +1536,11 @@ class DongbeiTest(unittest.TestCase):
     def test_repl_multiple_statements(self, mock_input):
         mock_input.side_effect = ["老王装二。", "嘀咕：老王。", "嘀咕：\\", "“你干哈？”。", "瞅你咋地"]
         self.assertEqual(["", "2\n", "你干哈？\n"], list(dongbei.repl()))
+
+    @patch("src.dongbei.get_input")
+    def test_repl_expression(self, mock_input):
+        mock_input.side_effect = ["二", "瞅你咋地"]
+        self.assertEqual(["2\n"], list(dongbei.repl()))
 
 
 if __name__ == "__main__":
