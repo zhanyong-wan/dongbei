@@ -100,6 +100,7 @@ KW_REMOVE_HEAD = "掐头"
 KW_REMOVE_TAIL = "去尾"
 KW_RETURN = "滚犊子吧"
 KW_SAY = "唠唠"
+KW_SAY_DIGU = "嘀咕"
 KW_STEP = "步"
 KW_STEP_LOOP = "蹿磨叽："
 KW_THEN = "？要行咧就"
@@ -181,6 +182,7 @@ KEYWORDS = (
     KW_REMOVE_TAIL,
     KW_RETURN,
     KW_SAY,
+    KW_SAY_DIGU,
     KW_STEP,
     KW_STEP_LOOP,
     KW_THEN,
@@ -199,6 +201,7 @@ KEYWORD_TO_NORMALIZED_KEYWORD = {
     KW_COLON_NARROW: KW_COLON,
     KW_COMMA_NARROW: KW_COMMA,
     KW_OPEN_BRACKET_VERBOSE: KW_OPEN_BRACKET,
+    KW_SAY: KW_SAY_DIGU,
 }
 
 # Types of tokens.
@@ -1075,8 +1078,8 @@ class DongbeiParser(object):
             self.ConsumeKeyword(KW_PERIOD)
             return Statement(STMT_DEL, expr)
 
-        # Parse 唠唠：
-        say = self.TryConsumeKeyword(KW_SAY)
+        # Parse 唠唠/嘀咕：
+        say = self.TryConsumeKeyword(KW_SAY_DIGU)
         if say:
             self.ConsumeKeyword(KW_COLON)
             expr = self.ParseExpr()
