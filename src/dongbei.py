@@ -1929,8 +1929,7 @@ def Run(code, src_file, xudao=False):
   return _dongbei_output
 
 def dongbei_cli(argv):
-  if argv and (
-    argv[0] == __file__ or argv[0].endswith('.exe') or os.path.basename(argv[0]) == 'dongbei'):
+  if argv and (argv[0].endswith('.exe') or os.path.basename(argv[0]) in ('dongbei', 'dongbei.py')):
     argv = argv[1:]
   
   if len(argv) == 0:
