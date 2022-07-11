@@ -1656,7 +1656,9 @@ class DongbeiParser(object):
     def ConsumeTokenType(self, tk_type):
         tk = self.TryConsumeTokenType(tk_type)
         if tk is None:
-            sys.exit("%s: 期望 %s，实际是 %s" % (self.tokens[0].loc, tk_type, self.tokens[0]))
+            raise Exception(
+                "%s: 期望 %s，实际是 %s" % (self.tokens[0].loc, tk_type, self.tokens[0])
+            )
         return tk
 
     def TryConsumeToken(self, token):
@@ -1670,9 +1672,9 @@ class DongbeiParser(object):
     def ConsumeToken(self, token):
         """Consumes the given token, ignoring token.loc."""
         if not self.tokens:
-            sys.exit(f"{self.loc}: 语句结束太早。")
+            raise Exception(f"{self.loc}: 语句结束太早。")
         if token != self.tokens[0]:
-            sys.exit(
+            raise Exception(
                 "%s: 期望符号 %s，实际却是 %s。" % (self.tokens[0].loc, token, self.tokens[0])
             )
         found_token = self.tokens[0]
@@ -1954,7 +1956,7 @@ def TranslateStatementToPython(stmt, indent=""):
     if stmt.kind == STMT_EXPR:
         return indent + stmt.value.ToPython()
 
-    sys.exit("俺不懂 %s 语句咋执行。" % (stmt.kind))
+    raise Exception("俺不懂 %s 语句咋执行。" % (stmt.kind))
 
 
 # Not meant to be in DongbeiParser.
@@ -2012,6 +2014,31 @@ def Run(code, src_file, xudao=False):
     return _dongbei_output
 
 
+def repl():
+    """dongbei 语言 REPL."""
+
+    print("你要跟 dongbei 大哥唠嗑啊？开整吧！要是一句话太长咧你就用\\拆开说。")
+    while True:
+        dongbei_code = ""
+        while True:
+            line = input("你瞅啥？ ")
+            if line.endswith("\\"):  # 未完待续
+                dongbei_code += line.rstrip("\\") + "\n"
+            else:
+                dongbei_code += line
+                break
+        if re.fullmatch(r"(瞅你咋的|瞅你咋地|瞅你咋滴)(\?|？|)", dongbei_code.strip()):
+            print("完犊子了！")
+            break
+
+        print(f"你要瞅：\n{dongbei_code}")
+        try:
+            output = Run(dongbei_code, "你瞅那玩意儿")
+            print(output)
+        except Exception as e:
+            print(e)
+
+
 def dongbei_cli(argv):
     if argv and (
         argv[0].endswith(".exe")
@@ -2020,7 +2047,8 @@ def dongbei_cli(argv):
         argv = argv[1:]
 
     if len(argv) == 0:
-        sys.exit(__doc__.format(version=DONGBEI_VERSION))
+        repl()
+        return
 
     if len(argv) > 1:
         sys.exit(
@@ -2057,7 +2085,10 @@ def dongbei_cli(argv):
     with io.open(program, "r", encoding="utf-8") as src_file:
         if FLAGS.xudao:
             print(f"执行 {program} ...")
-        Run(src_file.read(), src_file=program, xudao=FLAGS.xudao)
+        try:
+            Run(src_file.read(), src_file=program, xudao=FLAGS.xudao)
+        except Exception as e:
+            print(e)
 
 
 def main():
