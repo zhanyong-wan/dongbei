@@ -4,13 +4,14 @@
 import os
 import sys
 import unittest
+from unittest.mock import patch
 
 # Add the repo root to the beginning of the Python module path.
 # Even if the user has installed dongbei locally, the version
 # next to the test file will be used.
 sys.path = [os.path.join(os.path.dirname(__file__), "..")] + sys.path
 
-from src import dongbei
+from src import dongbei as dongbei
 from src.dongbei import ArithmeticExpr
 from src.dongbei import CallExpr
 from src.dongbei import ComparisonExpr
@@ -20,7 +21,7 @@ from src.dongbei import LiteralExpr
 from src.dongbei import ParenExpr
 from src.dongbei import ParseExprFromStr
 from src.dongbei import ParseStmtFromStr
-from src.dongbei import ParseToAst
+from src.dongbei import ParseToStatements
 from src.dongbei import TokenizeStrContainingNoKeyword
 from src.dongbei import TryParseNumber
 from src.dongbei import STMT_ASSIGN
@@ -405,27 +406,27 @@ class DongbeiTest(unittest.TestCase):
 
     def testParsingIncrements(self):
         self.assertEqual(
-            ParseToAst("老王走走。"),
+            ParseToStatements("老王走走。"),
             [Statement(STMT_INC_BY, (VariableExpr("老王"), NumberLiteralExpr(1)))],
         )
         self.assertEqual(
-            ParseToAst("老王走两步。"),
+            ParseToStatements("老王走两步。"),
             [Statement(STMT_INC_BY, (VariableExpr("老王"), NumberLiteralExpr(2)))],
         )
 
     def testParsingDecrements(self):
         self.assertEqual(
-            ParseToAst("老王稍稍。"),
+            ParseToStatements("老王稍稍。"),
             [Statement(STMT_DEC_BY, (VariableExpr("老王"), NumberLiteralExpr(1)))],
         )
         self.assertEqual(
-            ParseToAst("老王稍三步。"),
+            ParseToStatements("老王稍三步。"),
             [Statement(STMT_DEC_BY, (VariableExpr("老王"), NumberLiteralExpr(3)))],
         )
 
     def testParsingLoop(self):
         self.assertEqual(
-            ParseToAst("老王从1到9磨叽：磨叽完了。"),
+            ParseToStatements("老王从1到9磨叽：磨叽完了。"),
             [
                 Statement(
                     STMT_LOOP,
@@ -440,7 +441,7 @@ class DongbeiTest(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            ParseToAst("老王从二到十一步七蹿磨叽：磨叽完了。"),
+            ParseToStatements("老王从二到十一步七蹿磨叽：磨叽完了。"),
             [
                 Statement(
                     STMT_LOOP,
@@ -455,7 +456,7 @@ class DongbeiTest(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            ParseToAst("老王从二到十一步七减一蹿磨叽：磨叽完了。"),
+            ParseToStatements("老王从二到十一步七减一蹿磨叽：磨叽完了。"),
             [
                 Statement(
                     STMT_LOOP,
@@ -472,17 +473,17 @@ class DongbeiTest(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            ParseToAst("老王从一而终磨叽：磨叽完了。"),
+            ParseToStatements("老王从一而终磨叽：磨叽完了。"),
             [Statement(STMT_INFINITE_LOOP, (VariableExpr("老王"), []))],
         )
         self.assertEqual(
-            ParseToAst("老张在苹果总部磨叽：磨叽完了。"),
+            ParseToStatements("老张在苹果总部磨叽：磨叽完了。"),
             [Statement(STMT_INFINITE_LOOP, (VariableExpr("老张"), []))],
         )
 
     def testParsingComparison(self):
         self.assertEquals(
-            ParseToAst("嘀咕：2比5还大。"),
+            ParseToStatements("嘀咕：2比5还大。"),
             [
                 Statement(
                     STMT_SAY,
@@ -495,7 +496,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testParsingFuncDef(self):
         self.assertEqual(
-            ParseToAst("写九九表咋整：整完了。"),
+            ParseToStatements("写九九表咋整：整完了。"),
             [
                 Statement(
                     STMT_FUNC_DEF,
@@ -508,7 +509,7 @@ class DongbeiTest(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            ParseToAst("写九九表咋整：嘀咕：1。整完了。"),
+            ParseToStatements("写九九表咋整：嘀咕：1。整完了。"),
             [
                 Statement(
                     STMT_FUNC_DEF,
@@ -528,7 +529,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testParsingFuncDefWithParam(self):
         self.assertEqual(
-            ParseToAst("【阶乘】（那啥）咋整：整完了。"),
+            ParseToStatements("【阶乘】（那啥）咋整：整完了。"),
             [
                 Statement(
                     STMT_FUNC_DEF,
@@ -543,7 +544,7 @@ class DongbeiTest(unittest.TestCase):
 
     def testParsingFuncCallWithParam(self):
         self.assertEqual(
-            ParseToAst("整【阶乘】（五）。"),
+            ParseToStatements("整【阶乘】（五）。"),
             [Statement(STMT_CALL, CallExpr("阶乘", [NumberLiteralExpr(5)]))],
         )
 
@@ -1474,6 +1475,51 @@ class DongbeiTest(unittest.TestCase):
 有毛病
 """,
         )
+
+    @patch("src.dongbei.get_input")
+    def test_repl_terminator1(self, mock_input):
+        mock_input.return_value = "瞅你咋地"
+        self.assertEqual([], list(dongbei.repl()))
+
+    @patch("src.dongbei.get_input")
+    def test_repl_terminator2(self, mock_input):
+        mock_input.return_value = "瞅你咋的"
+        self.assertEqual([], list(dongbei.repl()))
+
+    @patch("src.dongbei.get_input")
+    def test_repl_terminator3(self, mock_input):
+        mock_input.return_value = "瞅你咋滴"
+        self.assertEqual([], list(dongbei.repl()))
+
+    @patch("src.dongbei.get_input")
+    def test_repl_terminator4(self, mock_input):
+        mock_input.return_value = "瞅你咋地？"
+        self.assertEqual([], list(dongbei.repl()))
+
+    @patch("src.dongbei.get_input")
+    def test_repl_terminator5(self, mock_input):
+        mock_input.return_value = "瞅你咋的?"
+        self.assertEqual([], list(dongbei.repl()))
+
+    @patch("src.dongbei.get_input")
+    def test_repl_terminator3(self, mock_input):
+        mock_input.return_value = "瞅你咋滴? "
+        self.assertEqual([], list(dongbei.repl()))
+
+    @patch("src.dongbei.get_input")
+    def test_repl_one_line_statement(self, mock_input):
+        mock_input.side_effect = ["嘀咕：“你干哈？”。", "瞅你咋地"]
+        self.assertEqual(["你干哈？\n"], list(dongbei.repl()))
+
+    @patch("src.dongbei.get_input")
+    def test_repl_two_line_statement(self, mock_input):
+        mock_input.side_effect = ["嘀咕：\\", "“你干哈？”。", "瞅你咋地"]
+        self.assertEqual(["你干哈？\n"], list(dongbei.repl()))
+
+    @patch("src.dongbei.get_input")
+    def test_repl_multiple_statements(self, mock_input):
+        mock_input.side_effect = ["老王装二。", "嘀咕：老王。", "嘀咕：\\", "“你干哈？”。", "瞅你咋地"]
+        self.assertEqual(["", "2\n", "你干哈？\n"], list(dongbei.repl()))
 
 
 if __name__ == "__main__":

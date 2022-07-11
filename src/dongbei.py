@@ -1005,7 +1005,7 @@ class DongbeiParser(object):
         tokens.extend(TokenizeStrContainingNoKeyword(chars, loc))
         return tokens
 
-    def TranslateTokensToAst(self, tokens):
+    def TranslateTokensToStatements(self, tokens):
         self.tokens = tokens
         statements = self.ParseStmts()
         assert not self.tokens, "多余符号：%s" % (self.tokens,)
@@ -1559,7 +1559,7 @@ class DongbeiParser(object):
 
     def ParseExpr(self):
         expr = self.TryParseExpr()
-        assert expr, "指望一个表达式，但是啥也没有；%s" % self.tokens[:5]
+        assert expr, "指望一个表达式，结果啥也没有；%s" % self.tokens[:5]
         return expr
 
     def TryParseCompOrArithExpr(self):
@@ -1966,10 +1966,10 @@ def TranslateStatementToPython(stmt, indent=""):
 
 
 # Not meant to be in DongbeiParser.
-def ParseToAst(code):
+def ParseToStatements(code):
     parser = DongbeiParser()
     tokens = parser.Tokenize(code, None)
-    return parser.TranslateTokensToAst(tokens)
+    return parser.TranslateTokensToStatements(tokens)
 
 
 _dongbei_output = ""
@@ -1994,7 +1994,7 @@ def _dongbei_1_infinite_loop():
 def TranslateDongbeiToPython(code, src_file):
     parser = DongbeiParser()
     tokens = parser.Tokenize(code, src_file)
-    statements = parser.TranslateTokensToAst(tokens)
+    statements = parser.TranslateTokensToStatements(tokens)
 
     py_code = []
     for s in statements:
@@ -2002,8 +2002,19 @@ def TranslateDongbeiToPython(code, src_file):
     return "\n".join(py_code)
 
 
-def Run(code, src_file, xudao=False):
-    py_code = TranslateDongbeiToPython(code, src_file=src_file)
+def Run(dongbei_code: str, src_file: str, xudao: bool = False) -> str:
+    """Runs the given dongbei code.
+
+    Args:
+        dongbei_code: the dongbei code
+        src_file: path to the source file containing the dongbei code; used for error reporting
+        xudao: if True, print the python code translated from the dongbei code
+
+    Returns:
+        the output of the dongbei code
+    """
+
+    py_code = TranslateDongbeiToPython(dongbei_code, src_file=src_file)
     if xudao:
         print("Python 代码：")
         print("%s" % (py_code,))
@@ -2020,14 +2031,22 @@ def Run(code, src_file, xudao=False):
     return _dongbei_output
 
 
+def get_input(prompt: str) -> str:
+    return input(prompt)
+
+
 def repl():
-    """dongbei 语言 REPL."""
+    """dongbei 语言 REPL.
+
+    Yields:
+        output of each statement
+    """
 
     print("你要跟 dongbei 大哥唠嗑啊？开整吧！要是一句话太长咧你就用\\拆开说。")
     while True:
         dongbei_code = ""
         while True:
-            line = input("你瞅啥？ ")
+            line = get_input("你瞅啥？ ")
             if line.endswith("\\"):  # 未完待续
                 dongbei_code += line.rstrip("\\") + "\n"
             else:
@@ -2039,7 +2058,7 @@ def repl():
 
         print(f"你要瞅：\n{dongbei_code}")
         try:
-            Run(dongbei_code, "你瞅那玩意儿")
+            yield Run(dongbei_code, "你瞅那玩意儿")
         except Exception as e:
             print(e)
 
@@ -2052,7 +2071,8 @@ def dongbei_cli(argv):
         argv = argv[1:]
 
     if len(argv) == 0:
-        repl()
+        for output in repl():
+            pass
         return
 
     if len(argv) > 1:
