@@ -6,12 +6,12 @@
 翠花，上 math。  # import math
 翠花，上 re。  # import re
 
-唠唠：整 math.factorial（五）。
+嘀咕：整 math.factorial（五）。
 
 老王装“abd”。
 寻思：整re.match（“a.*”，老王）？  # 调用 re.match()。
-要行咧就唠唠：“OK”。
-要不行咧就唠唠：“砸了！”。
+要行咧就嘀咕：“OK”。
+要不行咧就嘀咕：“砸了！”。
 
 # 运行结果:
 #
