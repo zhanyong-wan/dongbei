@@ -2023,7 +2023,11 @@ def dongbei_cli(argv):
         sys.exit(__doc__.format(version=DONGBEI_VERSION))
 
     if len(argv) > 1:
-        sys.exit("dongbei大哥一次只能上手一个源文件；不然扒蒜老妹儿会觉得大哥不够专一，把大哥爆锤。")
+        sys.exit(
+            "dongbei大哥一次只能上手一个源文件；不然扒蒜老妹儿会觉得大哥不够专一，把大哥爆锤。\n"
+            f"你咋给了 {len(argv)} 个源文件咧："
+            f"{'、'.join(argv)}。"
+        )
 
     program = argv[0]
 
