@@ -32,6 +32,7 @@ KW_APPEND = "来了个"
 KW_ASSERT = "保准"
 KW_ASSERT_FALSE = "辟谣"
 KW_BANG = "！"
+KW_BANG_NARROW = "!"
 KW_BASE_INIT = "领导的新对象"
 KW_BECOME = "装"
 KW_BEGIN = "开整："
@@ -112,6 +113,7 @@ KEYWORDS = (
     KW_ASSERT,
     KW_ASSERT_FALSE,
     KW_BANG,
+    KW_BANG_NARROW,
     KW_BASE_INIT,
     KW_BECOME,
     KW_BEGIN,
@@ -191,6 +193,7 @@ KEYWORDS = (
 # Maps a keyword to its normalized form.
 KEYWORD_TO_NORMALIZED_KEYWORD = {
     KW_BANG: KW_PERIOD,
+    KW_BANG_NARROW: KW_PERIOD,
     KW_OPEN_PAREN_NARROW: KW_OPEN_PAREN,
     KW_CLOSE_PAREN_NARROW: KW_CLOSE_PAREN,
     KW_COLON_NARROW: KW_COLON,
@@ -2033,8 +2036,7 @@ def repl():
 
         print(f"你要瞅：\n{dongbei_code}")
         try:
-            output = Run(dongbei_code, "你瞅那玩意儿")
-            print(output)
+            Run(dongbei_code, "你瞅那玩意儿")
         except Exception as e:
             print(e)
 

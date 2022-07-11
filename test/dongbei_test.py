@@ -733,6 +733,11 @@ class DongbeiTest(unittest.TestCase):
 整叉劈了：2小朋友请回避！
 ''')
 
+  def testBangNarrow(self):
+    self.assertEqual(
+      Run('老王是活雷锋!老王装二!唠唠：老王!'),
+      '2\n')
+
   def testDelete(self):
     self.assertEqual(
       Run('老王是活雷锋。老王装二。削老王！唠唠：老王。'),
