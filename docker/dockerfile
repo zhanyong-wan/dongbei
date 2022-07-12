@@ -1,0 +1,6 @@
+FROM python:3-alpine
+RUN pip3 install dongbei-lang
+
+ENTRYPOINT ["/usr/local/bin/dongbei"]
+
+
