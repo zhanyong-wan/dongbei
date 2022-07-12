@@ -24,7 +24,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_boolean("xudao", False, "絮叨: 在执行前先打印对应的 Python 代码。")
 flags.DEFINE_boolean("bihua", False, "比划: 直接执行dongbei宝典案例。")
 
-DONGBEI_VERSION = "0.0.13"
+DONGBEI_VERSION = "0.0.14"
 
 EXAMPLE_GROUP_SIZE = 5
 
