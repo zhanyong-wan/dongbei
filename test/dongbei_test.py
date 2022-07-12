@@ -1542,6 +1542,15 @@ class DongbeiTest(unittest.TestCase):
         mock_input.side_effect = ["二", "瞅你咋地"]
         self.assertEqual(["2\n"], list(dongbei.repl()))
 
+    @patch("src.dongbei.get_input")
+    def test_repl_narrow_period(self, mock_input):
+        mock_input.side_effect = ["嘀咕：\\", "“你干哈？”.", "瞅你咋地"]
+        self.assertEqual(["你干哈？\n"], list(dongbei.repl()))
+
+    def test_tokenize_period(self):
+        parser = dongbei.DongbeiParser()
+        self.assertEqual(None, parser.Tokenize("10.5。", "foo"))
+
 
 if __name__ == "__main__":
     unittest.main()
