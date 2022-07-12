@@ -2055,7 +2055,7 @@ def repl():
         output of each statement
     """
 
-    print("你要跟 dongbei 大哥唠嗑啊？开整吧！要是一句话太长咧你就用\\拆开说。")
+    print("你要跟 dongbei 大哥唠嗑啊？开整吧！要是一句话太长咧你就用\\拆开唠。")
     while True:
         dongbei_code = ""
         prompt = "你瞅啥？ "
@@ -2071,13 +2071,6 @@ def repl():
             print("完犊子了！")
             break
 
-        if "\n" in dongbei_code:
-            # Multi-line code.
-            print(f"你要瞅：\n{dongbei_code}")
-        else:
-            # Single-line code.
-            print(f"你要瞅：{dongbei_code}")
-
         try:
             py_code = TranslateDongbeiToPython(dongbei_code, src_file="你瞅那动静")
         except Exception as e1:
@@ -2086,6 +2079,14 @@ def repl():
                     f"嘀咕：{dongbei_code}。", src_file="你瞅那玩意儿"
                 )
             except Exception as e2:
+                if "\n" in dongbei_code:
+                    # Multi-line code.
+                    print(f"你要瞅：\n{dongbei_code}")
+                else:
+                    # Single-line code.
+                    print(f"你要瞅：{dongbei_code}")
+
+                print(e1)
                 print(e2)
 
         try:
