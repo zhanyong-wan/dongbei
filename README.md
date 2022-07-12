@@ -135,7 +135,7 @@ $ pip install -r requirements.txt
 
 学 dongbei 最快速的方法是跟大哥唠嗑。这种方式不用编程就可以上手，现学现用。
 
-打开唠嗑模式很简单。要是你已经安装了 0.0.15 版以上的 dongbei-lang，只需
+打开唠嗑模式很简单。要是你已经安装了 0.0.16 版以上的 dongbei-lang，只需
 
 ```{shell}
 dongbei
