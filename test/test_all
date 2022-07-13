@@ -1,0 +1,3 @@
+#!/bin/bash
+
+test/dongbei_test.py && find demo | xargs -L 1 src/dongbei.py
