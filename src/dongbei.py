@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -537,10 +538,17 @@ class MethodCallExpr(Expr):
         return f"({obj}).{call}"
 
 
+def _dongbei_add(a, b):
+    """dongbei专用的加法函数，能自动处理字符串和数字的拼接"""
+    if isinstance(a, str) or isinstance(b, str):
+        return str(a) + str(b)
+    return a + b
+
+
 ARITHMETIC_OPERATION_TO_PYTHON = {
-    KW_PLUS: "+",
+    KW_PLUS: "_dongbei_add",  # 修改这一行，使用我们自定义的加法函数
     KW_MINUS: "-",
-    KW_TIMES: "*",
+    KW_TIMES: "*", 
     KW_DIVIDE_BY: "/",
     KW_INTEGER_DIVIDE_BY: "//",
     KW_MODULO: "%",
@@ -567,11 +575,16 @@ class ArithmeticExpr(Expr):
         return f"{self.op1.ToDongbei()}{self.operation.value}{self.op2.ToDongbei()}"
 
     def ToPython(self):
-        return "%s %s %s" % (
-            self.op1.ToPython(),
-            ARITHMETIC_OPERATION_TO_PYTHON[self.operation.value],
-            self.op2.ToPython(),
-        )
+        if self.operation.value == KW_PLUS:
+            # 对于加法，使用我们自定义的_dongbei_add函数
+            return "_dongbei_add(%s, %s)" % (self.op1.ToPython(), self.op2.ToPython())
+        else:
+            # 其他运算保持原样
+            return "%s %s %s" % (
+                self.op1.ToPython(),
+                ARITHMETIC_OPERATION_TO_PYTHON[self.operation.value],
+                self.op2.ToPython(),
+            )
 
 
 class LiteralExpr(Expr):
